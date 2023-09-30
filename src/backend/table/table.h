@@ -20,7 +20,6 @@ extern const uint32_t ROW_SIZE;
 #define ROWS_PER_PAGE (PAGE_SIZE / ROW_SIZE)
 #define TABLE_MAX_ROWS (ROWS_PER_PAGE * TABLE_MAX_PAGES)
 
-
 typedef struct{
     Pager* pager;
     uint32_t num_rows;
