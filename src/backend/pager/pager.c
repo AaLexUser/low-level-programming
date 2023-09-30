@@ -17,12 +17,6 @@ Pager* pager_open(const char* filename){
         printf("Unable to open file\n");
         exit(EXIT_FAILURE);
     }
-//    if(fstat(fd, &statbuf) < 0){
-//        exit(0); //TODO: Сделать нормальный exception
-//    }
-//    if((src = mmap(0, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0)) == MAP_FAILED){
-//        exit(0);//TODO: Сделать нормальный exception
-//    }
     off_t file_length = lseek(fd, 0, SEEK_END);
     Pager* pager = malloc(sizeof(Pager));
     pager->file_descriptor = fd;
@@ -62,10 +56,6 @@ void* get_page(Pager* pager, uint32_t page_num){
             }
             
             memcpy(page, src + page_num * PAGE_SIZE, PAGE_SIZE);
-            // if (bytes_read == -1){
-            //     printf("Error reading file: %d\n", errno);
-            //     exit(EXIT_FAILURE);
-            // }
         }
         pager->pages[page_num] = page;
     }
@@ -92,9 +82,4 @@ void pager_flush(Pager* pager, uint32_t page_num, uint32_t size){
 
     if ((dst = mmap(0, statbuf.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, pager->file_descriptor, 0)) == MAP_FAILED )
     memcpy(dst + page_num * PAGE_SIZE, pager->pages[page_num], size);
-    // ssize_t bytes_written = write(pager->file_descriptor, pager->pages[page_num], size);
-    // if (bytes_written == -1){
-    //     printf("Error writing: %d\n", errno);
-    //     exit(EXIT_FAILURE);
-    // }
 }
