@@ -5,13 +5,16 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include "../../utils/linked_list.h"
+#include "../../utils/vector.h"
+#include "page.h"
 
 #define TABLE_MAX_PAGES 100
 extern const uint32_t PAGE_SIZE;
 typedef struct{
     int file_descriptor;
     uint32_t file_length;
-    void* pages[TABLE_MAX_PAGES];
+    Vector* pages;
 }  Pager;
 
 Pager* pager_open(const char* filename);

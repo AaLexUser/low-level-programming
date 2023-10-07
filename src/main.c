@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "utils/custom_print.h"
 #include "core/command_processor/parser/parse.h"
-#include "backend/io/io.h"
+#include "backend/io/input_buffer.h"
 #include "backend/db/db.h"
 #include "core/virtual_machine/meta_commands.h"
 #include "core/virtual_machine/execute_queries.h"

@@ -1,6 +1,6 @@
 #pragma once
 #include <string.h>
-#include "../../../backend/io/io.h"
+#include "../../../backend/io/input_buffer.h"
 #include "../../../backend/table/table.h"
 typedef enum {PREPARE_SUCCESS,
     PREPARE_UNRECOGNIZED_STATEMENT,

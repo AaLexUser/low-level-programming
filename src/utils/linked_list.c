@@ -44,7 +44,7 @@ void free_linked_list(LinkedList* list){
     free(list);
 }
 
-void add_node(LinkedList* list, void* data){
+void linked_list_add_node(LinkedList* list, void* data){
     if(list == NULL){
         return;
     }
@@ -61,7 +61,7 @@ void add_node(LinkedList* list, void* data){
     list->size++;
 }
 
-void remove_node(LinkedList* list, Node* node){
+void linked_list_remove_node(LinkedList* list, Node* node){
     if(list == NULL || node == NULL){
         return;
     }
@@ -85,7 +85,7 @@ void remove_node(LinkedList* list, Node* node){
     list->size--;
 }
 
-void* get_node(LinkedList* list, size_t index){
+void* linked_list_get_node(LinkedList* list, size_t index){
     if(list == NULL || index >= list->size){
         return NULL;
     }
@@ -94,6 +94,20 @@ void* get_node(LinkedList* list, size_t index){
         current = current->next;
     }
     return current;
+}
+
+void* linked_list_peek_head(LinkedList* list){
+    if(list == NULL || list->head == NULL){
+        return NULL;
+    }
+    return list->head->data;
+}
+
+void* linked_list_peek_tail(LinkedList* list){
+    if(list == NULL || list->tail == NULL){
+        return NULL;
+    }
+    return list->tail->data;
 }
 
 void* get_node_data(LinkedList* list, size_t index){
