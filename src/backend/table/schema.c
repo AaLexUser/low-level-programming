@@ -84,7 +84,7 @@ size_t schema_get_field_offset(Schema* schema, const char* name){
 }
 
 void schema_add_int_field(Schema* schema, const char* name){
-    schema_add_field(schema, name, INT, sizeof(int32_t));
+    schema_add_field(schema, name, INT, sizeof(int64_t));
 }
 
 void schema_add_float_field(Schema* schema, const char* name){

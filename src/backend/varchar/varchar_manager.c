@@ -14,46 +14,40 @@ void varcharmanager_destroy(VarcharManager* manager){
     free(manager);
 }
 
-void varcharmanager_clear(VarcharManager* manager){
-    if(manager == NULL){
-        return;
-    }
-    pool_clear(manager->pool);
-}
-//pfbi - pool first block index
-uint32_t get_pfbi_from_str(VarcharManager* vm, const char* str){
+//pfchblidx - pool first chunk and block index
+Chblidx* get_pfchblidx_from_str(VarcharManager* vm, const char* str){
     void* prev = NULL;
-    uint32_t pfbi = -1;
+    Chblidx* pfchblidx = NULL;
     for(size_t i = 0; i < strlen(str); i+= DATA_PER_BLOCK_SIZE){
         void* block = pool_alloc(vm->pool);
         if(block != NULL){
-           return pfbi;
+           return pfchblidx;
         }
-        memcpy(block, 0, sizeof(uint32_t));
-        memcpy(block + sizeof(uint32_t), str + i, DATA_PER_BLOCK_SIZE);
+        memcpy(block, 0, sizeof(Chblidx));
+        memcpy(block + sizeof(Chblidx), str + i, DATA_PER_BLOCK_SIZE);
         if(prev != NULL){
-            uint32_t index = pool_index_from_addr(vm->pool, prev);
-            memcpy(prev, &index, sizeof(uint32_t));
+            Chblidx* chblix = pool_chblidx_from_addr(vm->pool, prev);
+            memcpy(prev, chblix, sizeof(Chblidx));
         }
         else {
-            pfbi = pool_index_from_addr(vm->pool, block);
+            pfchblidx = pool_chblidx_from_addr(vm->pool, block);
         }
         prev = block;
     }
-    return pfbi;
+    return pfchblidx;
 }
 
-char* get_str_from_pfbi(VarcharManager* vm, uint32_t pfbi, size_t str_len){
+char* get_str_from_pfbi(VarcharManager* vm, Chblidx* pfchblidx, size_t str_len){
     char* str = malloc(str_len + 1);
-    uint32_t next = 0;
-    void* block = pool_addr_from_index(vm->pool, pfbi);
+    Chblidx* next = 0;
+    void* block = pool_addr_from_chblidx(vm->pool, pfchblidx);
     for(size_t i = 0; i < str_len; i+= DATA_PER_BLOCK_SIZE){
-        memcpy(&next, block, sizeof(uint32_t));
-        memcpy(str + i, block + sizeof(uint32_t), DATA_PER_BLOCK_SIZE);
+        memcpy(&next, block, sizeof(Chblidx));
+        memcpy(str + i, block + sizeof(Chblidx), DATA_PER_BLOCK_SIZE);
         if(next == 0){
             break;
         }
-        block = pool_addr_from_index(vm->pool, next);
+        block = pool_addr_from_chblidx(vm->pool, next);
     }
     str[str_len + 1] = '\0';
     return str;
