@@ -27,20 +27,18 @@ void free_field(void* ptr){
 Schema* create_schema(const char* name){
     Schema* schema = malloc(sizeof(Schema));
     schema->fields = create_linked_list_with_free(free_field);
-    schema->slot_size = sizeof (bool);
+    schema->slot_size = 0;
     strncpy(schema->name, name, MAX_NAME_LENGTH);
     return schema;
 }
 
 
-Schema* free_schema(Schema* schema){
+void free_schema(Schema* schema){
     if(schema == NULL){
-        return NULL;
+        return;
     }
-    clear_schema(schema);
+    free(schema->name);
     free_linked_list(schema->fields);
-    free(schema);
-    return NULL;
 }
 
 void schema_add_field(Schema* schema, const char* name, DATA_TYPE type, size_t length){

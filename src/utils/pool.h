@@ -52,6 +52,7 @@ void pool_destroy(Pool* pool);
 void* chunk_addr_from_index(Chunk* chunk, uint32_t index);
 void * pool_addr_from_chblidx(Pool* pool, Chblidx* chblidx);
 uint32_t chunk_index_from_addr(Chunk* chunk, const void* addr);
+Chblidx* chunk_chblidx_from_addr(Chunk* chunk, const void* addr);
 Chblidx* pool_chblidx_from_addr(Pool* pool, const void* addr);
 Chunk* add_new_chunk(Pool* pool);
 Chunk* get_chunk_from_addr(Pool* pool, void* addr);

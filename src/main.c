@@ -1,61 +1,30 @@
-#include <stdlib.h>
-#include <printf.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include "utils/custom_print.h"
-#include "core/command_processor/parser/parse.h"
-#include "backend/io/input_buffer.h"
-#include "backend/db/db.h"
-#include "core/virtual_machine/meta_commands.h"
-#include "core/virtual_machine/execute_queries.h"
-
+#include "backend/table/table.h"
+#include "backend/table/schema.h"
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        printf("Must supply a database filename.\n");
-        exit(EXIT_FAILURE);
-    }
+    setbuf(stdout, NULL);
+    Schema* schema = create_schema("test");
+    schema_add_int_field(schema, "id");
+    schema_add_char_field(schema, "name", 3);
+    schema_add_float_field(schema, "score");
+    schema_add_bool_field(schema, "pass");
 
-    char* filename = argv[1];
-    Table* table = db_open(filename);
-
-    InputBuffer* input_buffer = new_input_buffer();
-    while(true) {
-        print_prompt();
-        read_input(input_buffer);
-        if(input_buffer->buffer[0] == '.'){
-            switch (do_meta_command(input_buffer, table)) {
-                case (META_COMMAND_SUCCESS):
-                    continue;
-                case (META_COMMAND_UNRECOGNIZED_COMMAND):
-                    printf("Unrecognized command '%s'\n", input_buffer->buffer);
-                    continue;
-            }
-        }
-        Statement statement;
-        switch (prepare_statement(input_buffer, &statement)) {
-            case(PREPARE_SUCCESS):
-                break;
-            case(PREPARE_SYNTAX_ERROR):
-                printf("Syntax error. Could not parse statement\n");
-                continue;
-            case(PREPARE_UNRECOGNIZED_STATEMENT):
-                printf("Unrecognized keyword at start of '%s'.\n", input_buffer->buffer);
-                continue;
-            case PREPARE_STRING_TOO_LONG:
-                printf("String is too long.\n");
-                continue;
-            case PREPARE_NEGATIVE_ID:
-                printf("ID must be positive.\n");
-                continue;
-        }
-        switch (execute_statement(&statement, table)) {
-            case (EXECUTE_SUCCESS):
-                printf("Executed.\n");
-                break;
-            case (EXECUTE_TABLE_FULL):
-                printf("Error: Table full.\n");
-                break;
-        }
-    }
+    Table *table = create_table("test", schema);
+    void* data = malloc(schema->slot_size);
+    int64_t id = 1;
+    size_t offset = 0;
+    memcpy(data, &id, sizeof(int64_t));
+    offset += sizeof(int64_t);
+    char* name = "aaa";
+    strncpy(data + offset, name, sizeof(char) * 3);
+    offset += sizeof(char) * 4;
+    float score = 1.1f;
+    memcpy(data + offset, &score, sizeof(float));
+    offset += sizeof(float);
+    bool pass = true;
+    memcpy(data + offset, &pass, sizeof(bool));
+    table_insert(table, data);
+    free(data);
+    table_select(table);
+    free_table(table);
 }

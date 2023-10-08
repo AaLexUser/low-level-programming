@@ -21,7 +21,7 @@ typedef struct{
 
 Schema* create_schema(const char* name);
 void clear_schema(Schema* schema);
-Schema* free_schema(Schema* schema);
+void free_schema(Schema* schema);
 void schema_add_field(Schema* schema, const char* name, DATA_TYPE type, size_t length);
 Field* schema_get_field(Schema* schema, const char* name);
 DATA_TYPE schema_get_field_type(Schema* schema, const char* name);

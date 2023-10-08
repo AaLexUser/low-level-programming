@@ -25,6 +25,7 @@ Pool* pool_create(size_t block_size, uint32_t num_of_blocks){
     chunk->next = chunk->mem_start;
     pool->head = chunk;
     pool->poolHeader.chunks_number++;
+    pool->current_chunk = chunk;
     return pool;
 }
 
@@ -66,6 +67,7 @@ void* chunk_addr_from_index(Chunk* chunk, uint32_t index){
     return chunk->mem_start + (index * chunk->chunkHeader.block_size);
 }
 
+
 void * pool_addr_from_chblidx(Pool* pool, Chblidx* chblidx){
     if(pool == NULL){
         return NULL;
@@ -88,6 +90,16 @@ uint32_t chunk_index_from_addr(Chunk* chunk, const void* addr){
         return 0;
     }
     return (addr - chunk->mem_start) / chunk->chunkHeader.block_size;
+}
+
+Chblidx* chunk_chblidx_from_addr(Chunk* chunk, const void* addr){
+    Chblidx *chblidx = malloc(sizeof(Chblidx));
+    if(chunk == NULL || addr == NULL){
+        return NULL;
+    }
+    chblidx->chunkid = chunk->chunkHeader.chunkid;
+    chblidx->blockid = chunk_index_from_addr(chunk, addr);
+    return chblidx;
 }
 
 Chblidx* pool_chblidx_from_addr(Pool* pool, const void* addr){
