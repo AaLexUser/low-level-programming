@@ -2,7 +2,8 @@
 #define TABLE_MANAGER_H_
 
 typedef struct {
+
     
-} table_manager;
+} TableManager;
 
 #endif
