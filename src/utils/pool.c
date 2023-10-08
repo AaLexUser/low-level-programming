@@ -20,6 +20,7 @@ Pool* pool_create(size_t block_size, uint32_t num_of_blocks){
     if (ptr == NULL){
         exit(EXIT_FAILURE);
     }
+    memset(ptr, 0, block_size * num_of_blocks);
     chunk->mem_start = ptr;
     chunk->next = chunk->mem_start;
     pool->head = chunk;
@@ -241,9 +242,16 @@ void pool_dealloc(Pool* pool, void* p){
 
 
 void* pool_serialization(Pool* pool){
-    void* res = malloc(sizeof(PoolHeader)
-            + pool->poolHeader.chunks_number * sizeof(ChunkHeader)
-            + pool->poolHeader.num_of_blocks_per_chunk * pool->poolHeader.block_size * pool->poolHeader.chunks_number);
+    uint64_t total_size = sizeof(uint64_t)
+                    + sizeof(PoolHeader)
+                    + pool->poolHeader.chunks_number
+                        * sizeof(ChunkHeader)
+                    + pool->poolHeader.num_of_blocks_per_chunk
+                        * pool->poolHeader.block_size
+                        * pool->poolHeader.chunks_number;
+    void* res = malloc(total_size);
+    memset(res, 0, total_size);
+    memcpy(res, &total_size, sizeof(uint64_t));
     pool->poolHeader.head_index = pool->head->chunkHeader.chunkid;
     pool->poolHeader.current_chunk_index = pool->current_chunk->chunkHeader.chunkid;
     memcpy(res, &pool->poolHeader, sizeof(PoolHeader));
@@ -273,38 +281,30 @@ void* pool_serialization(Pool* pool){
 }
 
 Pool* pool_deserialization(void* data){
+    uint64_t total_size = 0;
+    memcpy(&total_size, data, sizeof(uint64_t));
     Pool* pool = malloc(sizeof(Pool));
-    memcpy(&pool->poolHeader, data, sizeof(PoolHeader));
+    memcpy(&pool->poolHeader, data + sizeof(uint64_t), sizeof(PoolHeader));
+    size_t offset = sizeof(uint64_t) + sizeof(PoolHeader);
     pool->head = malloc(sizeof(Chunk));
-    memcpy(&pool->head->chunkHeader, data + sizeof(PoolHeader), sizeof(ChunkHeader));
-    pool->head->mem_start = data + sizeof(PoolHeader) + sizeof(ChunkHeader);
+    memcpy(&pool->head->chunkHeader, data + offset, sizeof(ChunkHeader));
+    offset += sizeof(ChunkHeader);
+    pool->head->mem_start = data + offset;
     pool->head->next = chunk_turn_from_index_to_addr(pool->head, pool->head->chunkHeader.next_index);
     pool->head->next_chunk = NULL;
     pool->head->prev_chunk = NULL;
     pool->current_chunk = pool->head;
     Chunk* chunk = pool->head;
-    for(uint32_t i = 1; i < pool->poolHeader.chunks_number; i++){
+    for(uint32_t i = 1; i < pool->poolHeader.chunks_number; i++) {
         chunk->next_chunk = malloc(sizeof(Chunk));
         chunk->next_chunk->prev_chunk = chunk;
         chunk = chunk->next_chunk;
-        memcpy(&chunk->chunkHeader,
-               data + sizeof(PoolHeader)
-               + i * sizeof(ChunkHeader)
-               + i * pool->poolHeader.num_of_blocks_per_chunk * pool->poolHeader.block_size
-               , sizeof(ChunkHeader));
-        chunk->mem_start = data + sizeof(PoolHeader)
-                + (i+1) * sizeof(ChunkHeader)
-                + i * pool->poolHeader.num_of_blocks_per_chunk * pool->poolHeader.block_size;
+        memcpy(&chunk->chunkHeader, data + offset, sizeof(ChunkHeader));
+        offset += sizeof(ChunkHeader);
+        chunk->mem_start = data + offset;
+        offset += pool->poolHeader.num_of_blocks_per_chunk * pool->poolHeader.block_size;
         chunk->next = chunk_turn_from_index_to_addr(chunk, chunk->chunkHeader.next_index);
         chunk->next_chunk = NULL;
     }
     return pool;
-}
-
-uint32_t pool_serialized_size(Pool* pool){
-    return sizeof(PoolHeader)
-           + pool->poolHeader.chunks_number * sizeof(ChunkHeader)
-           + pool->poolHeader.num_of_blocks_per_chunk
-                * pool->poolHeader.block_size
-                * pool->poolHeader.chunks_number;
 }
