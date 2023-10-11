@@ -30,6 +30,7 @@ set(sources
         backend/table/table_manager.c
         backend/io/file_manager.c
         backend/db/db.c
+        utils/cstring.c
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)
 #list(FILTER sources EXCLUDE REGEX main.c)
