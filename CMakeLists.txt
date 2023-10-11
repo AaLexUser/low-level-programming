@@ -2,16 +2,45 @@ cmake_minimum_required(VERSION 3.26)
 project(LLP_Lab1 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Add the src directory and all its subdirectories to the list of source directories
-file(GLOB_RECURSE SOURCES "src/*.c" "src/*.cpp" "src/*.cxx")
-# Create the executable from the sources
-add_executable(${PROJECT_NAME}
-        ../src/main.c
-        ../src/backend/table/table.c
-        ../src/backend/table/schema.c
-        ../src/utils/pool.c
-        ../src/utils/linked_list.c
-)
+if(CMAKE_C_COMPILER_ID STREQUAL GNU)
+    set(CMAKE_CONFIGURATION_TYPES Debug Release ASan LSan UBSan)
+elseif(CMAKE_C_COMPILER_ID MATCHES Clang)
+    set(CMAKE_CONFIGURATION_TYPES Debug Release ASan LSan MSan UBSan)
+elseif(MSVC)
+    set(CMAKE_CONFIGURATION_TYPES Debug Release ASan)
+endif()
+
+if(CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE IN_LIST CMAKE_CONFIGURATION_TYPES)
+    message(FATAL_ERROR "Unexpected build type ${CMAKE_BUILD_TYPE}, possible values: ${CMAKE_CONFIGURATION_TYPES}")
+endif()
+
+if(CMAKE_C_COMPILER_ID STREQUAL GNU OR CMAKE_C_COMPILER_ID MATCHES Clang)
+    set(CMAKE_C_FLAGS       "-std=c17 -ggdb")
+    set(CMAKE_C_FLAGS_ASAN  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-optimize-sibling-calls -fno-omit-frame-pointer")
+    set(CMAKE_C_FLAGS_LSAN  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=leak")
+    set(CMAKE_C_FLAGS_MSAN  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=memory -fno-optimize-sibling-calls -fno-omit-frame-pointer")
+    set(CMAKE_C_FLAGS_UBSAN "${CMAKE_C_FLAGS_DEBUG} -fsanitize=undefined")
+elseif(MSVC)
+    set(CMAKE_C_FLAGS       "/std:c17")
+    set(CMAKE_C_FLAGS_ASAN  "${CMAKE_C_FLAGS_DEBUG} /fsanitize=address")
+    set(CMAKE_EXE_LINKER_FLAGS_ASAN "/debug /INCREMENTAL:NO")
+endif()
+
+add_compile_definitions(DEBUG)
+if(WIN32)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+endif()
+
+
+add_subdirectory(src)
+
+option(BUILD_TESTING "Enable tests" ON)
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tester)
+endif()
+
 
 

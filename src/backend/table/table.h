@@ -1,9 +1,8 @@
 #pragma once
-#include <stdint.h>
+#include "../../utils/pool.h"
+#include "schema.h"
 #include <inttypes.h>
 #include <stdio.h>
-#include "schema.h"
-#include "../../utils/pool.h"
 
 
 typedef struct _Row{
@@ -18,6 +17,6 @@ typedef struct{
 } Table;
 
 Table* create_table(const char* name, Schema* schema);
-void free_table(Table* table);
+void free_table(void* ptr);
 void table_insert(Table* table, void* data);
 void table_select(Table* table);

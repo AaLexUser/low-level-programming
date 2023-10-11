@@ -1,36 +1,18 @@
 #include "db.h"
+#include "../io/file_manager.h"
 
-Table* db_open(const char* filename){
-    Pager* pager = pager_open(filename);
-    uint32_t num_rows = pager->file_length / ROW_SIZE;
-    Table* table = malloc(sizeof(table));
-    table->pager = pager;
-    table->num_rows = num_rows;
-    return table;
+Database* db_open(const char* filename){
+    Database* db = malloc(sizeof(Database));
+    db->file_manager = create_file_manager_by_filename(filename);
+    db->table_manager = create_table_manager();
+    return db;
 }
 
-void db_close(Table* table){
-    Pager* pager = table->pager;
-    uint32_t num_full_pages = table->num_rows / ROWS_PER_PAGE;
-    for (uint32_t i = 0; i < num_full_pages; i++){
-        if(vector_get(pager->pages, i) == NULL){
-            continue;
-        }
-        pager_flush(pager, i, PAGE_SIZE);
+void db_close(Database* db){
+    if(db == NULL){
+        return;
     }
-    vector_free(pager->pages);
-
-    //There may be a partial page to write to the end of the file
-    uint32_t num_additional_rows = table->num_rows % ROWS_PER_PAGE;
-    if (num_additional_rows > 0){
-        uint32_t page_num = num_full_pages;
-        if (vector_get(pager->pages, page_num) != NULL){
-            pager_flush(pager, page_num, num_additional_rows * ROW_SIZE);
-            free(pager->pages[page_num]);
-            pager->pages[page_num] = NULL;
-        }
-    }
-    vector_free(pager->pages);
-    free(pager);
-    free(table);
+    close_file_manager(db->file_manager);
+    free_table_manager(db->table_manager);
+    free(db);
 }

@@ -1,14 +1,13 @@
 #include "schema.h"
 
+
 void clear_field(Field* field){
-    free(field->name);
     field->type = DATA_TYPE_UNKNOWN;
     field->length = 0;
     field->offset = 0;
 }
 
 void clear_schema(Schema* schema){
-    free(schema->name);
     clear_linked_list(schema->fields);
     schema->slot_size = 0;
 }
@@ -37,7 +36,6 @@ void free_schema(Schema* schema){
     if(schema == NULL){
         return;
     }
-    free(schema->name);
     free_linked_list(schema->fields);
 }
 

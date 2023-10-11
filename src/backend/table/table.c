@@ -1,15 +1,18 @@
 #include "table.h"
+
 #define TABLE_CHUNK_SIZE 4096
 
 Table* create_table(const char* name, Schema* schema){
     Table* table = malloc(sizeof(Table));
+    strncpy(schema->name, name, MAX_NAME_LENGTH);
     table->schema = schema;
     table->pool = pool_create_by_chunk_size(TABLE_CHUNK_SIZE, table->schema->slot_size);
     table->rows_chblidx = create_linked_list();
     return table;
 }
 
-void free_table(Table* table){
+void free_table(void* ptr){
+    Table* table = (Table*)ptr;
     if(table == NULL){
         return;
     }
@@ -63,6 +66,8 @@ void table_select(Table* table){
                     printf("%d ", data);
                     break;
                 }
+                default:
+                    break;
             }
         }
     }

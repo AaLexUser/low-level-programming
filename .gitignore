@@ -21,8 +21,13 @@ Thumbs.db
 */.idea
 #VS Code
 .vscode
+/.vscode
+/.cache
 
 .vs
 cmake-build-debug
 .idea
 build
+/build
+src/out
+tester/out

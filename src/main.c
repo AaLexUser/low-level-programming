@@ -1,7 +1,17 @@
 #include "backend/table/table.h"
+#include "backend/db/db.h"
 #include "backend/table/schema.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        printf("Must supply a database filename.\n");
+        exit(EXIT_FAILURE);
+    }
+    char* filename = argv[1];
+    Database* db = db_open(filename);
+    db_close(db);
     setbuf(stdout, NULL);
     Schema* schema = create_schema("test");
     schema_add_int_field(schema, "id");

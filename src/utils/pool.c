@@ -1,5 +1,6 @@
 #include "pool.h"
 
+
 Pool* pool_create_by_chunk_size(size_t chunk_size, size_t block_size){
     return pool_create(block_size, (chunk_size - sizeof(ChunkHeader))/ block_size);
 }
@@ -24,7 +25,7 @@ Pool* pool_create(size_t block_size, uint32_t num_of_blocks){
     chunk->mem_start = ptr;
     chunk->next = chunk->mem_start;
     pool->head = chunk;
-    pool->poolHeader.chunks_number++;
+    pool->poolHeader.chunks_number = 1;
     pool->current_chunk = chunk;
     return pool;
 }
@@ -95,6 +96,7 @@ uint32_t chunk_index_from_addr(Chunk* chunk, const void* addr){
 Chblidx* chunk_chblidx_from_addr(Chunk* chunk, const void* addr){
     Chblidx *chblidx = malloc(sizeof(Chblidx));
     if(chunk == NULL || addr == NULL){
+        free(chblidx);
         return NULL;
     }
     chblidx->chunkid = chunk->chunkHeader.chunkid;
@@ -103,18 +105,20 @@ Chblidx* chunk_chblidx_from_addr(Chunk* chunk, const void* addr){
 }
 
 Chblidx* pool_chblidx_from_addr(Pool* pool, const void* addr){
-    Chblidx *chblidx = malloc(sizeof(Chblidx));
     if(pool == NULL || addr == NULL){
         return NULL;
     }
     Chunk* chunk = pool->head;
     while(chunk != NULL){
         if(addr >= chunk->mem_start && addr <= chunk->mem_start + chunk->chunkHeader.num_of_blocks_per_chunk * chunk->chunkHeader.block_size){
+            Chblidx *chblidx = malloc(sizeof(Chblidx));
             chblidx->blockid = chunk_index_from_addr(chunk, addr);
             chblidx->chunkid  = chunk->chunkHeader.chunkid;
+            return chblidx;
         }
         chunk = chunk->next_chunk;
     }
+    return NULL;
 }
 
 uint32_t chunk_turn_from_addr_to_index(Chunk* chunk, void* next){

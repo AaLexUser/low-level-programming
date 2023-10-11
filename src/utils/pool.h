@@ -1,9 +1,9 @@
 #ifndef _POOL_H_
 #define _POOL_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 
 typedef struct __attribute__((packed)) _Chblidx {

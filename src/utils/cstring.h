@@ -1,7 +1,7 @@
 #ifndef STRING_H
 #define STRING_H
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 typedef struct __attribute__((__packed__)){
     uint64_t length;
     char* data;

@@ -1,4 +1,10 @@
 #include "linked_list.h"
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
 static void free_node_data_func(void* data){
     free(data);
 }
