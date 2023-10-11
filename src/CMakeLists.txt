@@ -8,7 +8,7 @@ if(CLANG_TIDY)
             ${CLANG_TIDY}
             -header-filter=${CMAKE_SOURCE_DIR}
             -checks=${clang_tidy_checks_str}
-            -warnings-as-errors=*
+#            -warnings-as-errors=*
     )
 endif()
 

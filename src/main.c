@@ -19,5 +19,4 @@ int main(int argc, char* argv[]) {
     schema_add_float_field(schema, "score");
     schema_add_bool_field(schema, "pass");
     table_manager_add_table_inplace(db->table_manager, "test", schema);
-    Table* table = table_manager_get_table(db->table_manager, "test");
 }
