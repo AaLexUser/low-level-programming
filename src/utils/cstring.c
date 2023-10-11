@@ -28,7 +28,7 @@ String *create_string(const char *str) {
     String *string = malloc(sizeof(String));
     string->length = strlen(str) + 1;
     string->data = malloc(string->length);
-    strcpy(string->data, str);
+    strlcpy(string->data, str, string->length);
     return string;
 }
 
