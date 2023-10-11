@@ -1,12 +1,14 @@
 #ifndef TABLE_MANAGER_H_
 #define TABLE_MANAGER_H_
 #include "../../utils/linked_list.h"
+#include "../varchar/varchar_manager.h"
 #include "schema.h"
 #include "table.h"
 #include <stdlib.h>
 
 typedef struct {
     LinkedList* tables;
+    VarcharManager* varcharManager;
 } TableManager;
 
 TableManager* create_table_manager();

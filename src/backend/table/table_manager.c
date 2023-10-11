@@ -9,6 +9,7 @@
 
 TableManager* create_table_manager(){
     TableManager* manager = malloc(sizeof(TableManager));
+    manager->varcharManager = varcharmanager_create();
     manager->tables = create_linked_list_with_free(free_table);
     return manager;
 }
@@ -42,6 +43,23 @@ Table* table_manager_get_table(TableManager* manager, const char* name){
     }
     return NULL;
 }
+
+void table_manager_insert_into_table(Table* table, void* data){
+    void* slot = pool_alloc(table->pool);
+    Chblidx* chblidx = chunk_chblidx_from_addr(table->pool->current_chunk, slot);
+    linked_list_add_node(table->rows_chblidx, chblidx);
+    if(slot == NULL){
+        return;
+    }
+    memcpy(slot, data, table->schema->slot_size);
+}
+
+void table_manager_insert_into_table_by_name(TableManager* tableManager, const char* name, void* data){
+    table_manager_insert_into_table(
+            table_manager_get_table(tableManager, name),
+            data);
+}
+
 
 void table_manager_remove_table(TableManager* manager, const char* name){
     Table* table;

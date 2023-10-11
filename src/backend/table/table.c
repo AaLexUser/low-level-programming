@@ -83,3 +83,4 @@ void table_update(Table* table, Chblidx* chblidx, Row* row){
     void* slot = pool_addr_from_chblidx(table->pool, chblidx);
     memcpy(slot, row->data, table->schema->slot_size);
 }
+

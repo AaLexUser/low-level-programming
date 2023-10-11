@@ -35,6 +35,7 @@ void close_file_manager(FileManager* manager){
 
 void* read_file(FileManager* manager, uint32_t offset, uint32_t length){
     void* dest = malloc(length);
+    memset(dest, 0, length);
     struct stat statbuf;
     void* src;
     lseek(manager->file_descriptor, offset, SEEK_SET);

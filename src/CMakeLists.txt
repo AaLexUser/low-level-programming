@@ -8,7 +8,7 @@ if(CLANG_TIDY)
             ${CLANG_TIDY}
             -header-filter=${CMAKE_SOURCE_DIR}
             -checks=${clang_tidy_checks_str}
-#            -warnings-as-errors=*
+            -warnings-as-errors=*
     )
 endif()
 
@@ -31,6 +31,7 @@ set(sources
         backend/io/file_manager.c
         backend/db/db.c
         utils/cstring.c
+        backend/varchar/varchar_manager.c
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)
 #list(FILTER sources EXCLUDE REGEX main.c)

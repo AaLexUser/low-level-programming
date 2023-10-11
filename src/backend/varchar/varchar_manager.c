@@ -20,10 +20,10 @@ Chblidx* get_pfchblidx_from_str(VarcharManager* vm, const char* str){
     Chblidx* pfchblidx = NULL;
     for(size_t i = 0; i < strlen(str); i+= DATA_PER_BLOCK_SIZE){
         void* block = pool_alloc(vm->pool);
-        if(block != NULL){
+        if(block == NULL){
            return pfchblidx;
         }
-        memcpy(block, 0, sizeof(Chblidx));
+        memset(block, 0, sizeof(Chblidx));
         memcpy(block + sizeof(Chblidx), str + i, DATA_PER_BLOCK_SIZE);
         if(prev != NULL){
             Chblidx* chblix = pool_chblidx_from_addr(vm->pool, prev);
