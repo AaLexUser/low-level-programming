@@ -1,4 +1,6 @@
 #include "cstring.h"
+#include <stdint.h>
+#include <string.h>
 
 int32_t compare_strings(String* a, String* b) {
     return strcmp(a->data, b->data);
@@ -27,7 +29,7 @@ String *create_string(const char *str) {
     String *string = malloc(sizeof(String));
     string->length = strlen(str) + 1;
     string->data = malloc(string->length);
-    strcpy(string->data, str);
+    strncpy(string->data, str, string->length);
     return string;
 }
 

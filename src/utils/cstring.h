@@ -1,5 +1,6 @@
 #ifndef STRING_H
 #define STRING_H
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 typedef struct __attribute__((__packed__)){

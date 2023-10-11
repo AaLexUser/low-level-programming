@@ -1,4 +1,5 @@
 #include "table.h"
+#include <string.h>
 
 #define TABLE_CHUNK_SIZE 4096
 
