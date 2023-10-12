@@ -229,19 +229,23 @@ void pool_dealloc(Pool* pool, void* p){
         return;
     }
     Chunk* chunk = get_chunk_from_addr(pool, p);
+    uint32_t index;
     if (chunk->next != NULL){
-        *(uint32_t*)p = chunk_index_from_addr(chunk, chunk->next);
-        chunk->next = p;
+        index = chunk_index_from_addr(chunk, chunk->next);
     }
     else {
-        *(uint32_t*)p = chunk->chunkHeader.num_of_used_blocks;
-        chunk->next = p;
+        index = chunk->chunkHeader.num_of_used_blocks;
     }
+    memcpy(p, &index, sizeof(uint32_t));
+    chunk->next = p;
+
     ++chunk->chunkHeader.num_of_free_blocks;
     if(chunk->chunkHeader.num_of_free_blocks == chunk->chunkHeader.num_of_blocks_per_chunk){
         if(pool->head == chunk){
-            chunk->next_chunk->prev_chunk = NULL;
-            pool->head = chunk->next_chunk;
+            if(chunk->next_chunk) {
+                chunk->next_chunk->prev_chunk = NULL;
+                pool->head = chunk->next_chunk;
+            }
         }
         else {
             chunk->prev_chunk->next_chunk = chunk->next_chunk;
