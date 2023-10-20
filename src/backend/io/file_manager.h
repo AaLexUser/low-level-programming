@@ -19,5 +19,5 @@ typedef struct{
 FileManager* create_file_manager();
 FileManager* create_file_manager_by_filename(const char* filename);
 void close_file_manager(FileManager* manager);
-void* read_file(FileManager* manager, uint32_t offset, uint32_t length);
+void* read_file(FileManager* manager, off_t offset, size_t length);
 #endif
