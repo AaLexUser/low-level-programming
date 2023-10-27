@@ -23,15 +23,8 @@ endif()
 #        ../src/backend/db/db.c
 #)
 set(sources
-        backend/table/table.c
-        backend/table/schema.c
-        utils/pool.c
-        utils/linked_list.c
-        backend/table/table_manager.c
         backend/io/file_manager.c
-        backend/db/db.c
-        utils/cstring.c
-        backend/varchar/varchar_manager.c
+        utils/logger.c
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)
 #list(FILTER sources EXCLUDE REGEX main.c)

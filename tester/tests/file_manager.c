@@ -1,17 +1,66 @@
 #include "../src/test.h"
 #include "../src/backend/io/file_manager.h"
 #include <stdio.h>
+
 DEFINE_TEST(write_and_read){
-    FileManager* fileManager = create_file_manager_by_filename("test.db");
+    if(init_file("test.db") == -1){
+        exit(EXIT_FAILURE);
+    }
     char str[] = "12345678";
-    write(fileManager->file_descriptor, str, 8);
-    char* read_str = read_file(fileManager, 0, 8);
+    init_page();
+    write_page(str, sizeof(str), 0);
+    unmap_page();
+    mmap_page(0);
+    char* read_str = malloc(sizeof(str));
+    read_page(read_str, sizeof(str), 0);
     assert(strcmp(str, read_str) == 0);
-    close_file_manager(fileManager);
-    free(read_str);
-    remove("test.db");
+    delete_file();
+}
+
+DEFINE_TEST(two_write){
+    if(init_file("test.db") == -1){
+        exit(EXIT_FAILURE);
+    }
+    char str1[] = "12345678";
+    init_page();
+    write_page(str1, sizeof(str1), 0);
+    unmap_page();
+    mmap_page(0);
+    char str2[] = "abcdefg";
+    write_page(str2, sizeof(str2), sizeof(str1));
+
+    char* read_str2 = malloc(sizeof(str2));
+    read_page(read_str2,sizeof(str2), sizeof(str1));
+    assert(strcmp(str2, read_str2) == 0);
+
+    delete_file();
+}
+DEFINE_TEST(two_pages){
+    if(init_file("test.db") == -1){
+        exit(EXIT_FAILURE);
+    }
+    char str1[] = "12345678";
+    init_page();
+    write_page(str1, sizeof(str1), 0);
+    unmap_page();
+    init_page();
+    char str2[] = "abcdefg";
+    write_page(str2, sizeof(str2), 0);
+    unmap_page();
+    mmap_page(0);
+    char* read_str1 = malloc(sizeof(str1));
+    read_page(read_str1,sizeof(str1), 0);
+    assert(strcmp(str1, read_str1) == 0);
+    unmap_page();
+    mmap_page(PAGE_SIZE);
+    char* read_str2 = malloc(sizeof(str2));
+    read_page(read_str2,sizeof(str2), 0);
+    assert(strcmp(str2, read_str2) == 0);
+    delete_file();
 }
 
 int main(){
     RUN_SINGLE_TEST(write_and_read);
+    RUN_SINGLE_TEST(two_write);
+    RUN_SINGLE_TEST(two_pages);
 }

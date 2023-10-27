@@ -2,7 +2,8 @@
 #include "../../src/utils/pool.h"
 
 DEFINE_TEST(dealloc){
-    Pool* pool = pool_create(8, 3);
+    Pool *pool = NULL;
+    pool_create(8, 3, pool);
     char str1[] = "12345678";
     void* block1 = pool_alloc(pool);
     strncpy(block1, str1, 8);
@@ -20,7 +21,8 @@ DEFINE_TEST(dealloc){
 }
 
 DEFINE_TEST(serialization_deserialization){
-    Pool* pool_before = pool_create(8, 3);
+    Pool *pool_before = NULL;
+    pool_create(8, 3, pool_before);
     char str1_before[] = "12345678";
     void* block1_before = pool_alloc(pool_before);
     strncpy(block1_before, str1_before, 8);
@@ -33,8 +35,8 @@ DEFINE_TEST(serialization_deserialization){
                                                       block1_before);
     Chblidx* chblidx_block_2 = pool_chblidx_from_addr(pool_before,
                                                       block2_before);
-
-    void* serialized_pool = pool_serialization(pool_before);
+    void* serialized_pool;
+    pool_serialization(pool_before, serialized_pool);
 
     Pool* pool_after = pool_deserialization(serialized_pool);
 

@@ -7,7 +7,10 @@ Table* create_table(const char* name, Schema* schema){
     Table* table = malloc(sizeof(Table));
     strncpy(schema->name, name, MAX_NAME_LENGTH);
     table->schema = schema;
-    table->pool = pool_create_by_chunk_size(TABLE_CHUNK_SIZE, table->schema->slot_size);
+    if(pool_create_by_chunk_size( table->schema->slot_size, table->pool, TABLE_CHUNK_SIZE)){
+        free(table);
+        return NULL;
+    }
     table->rows_chblidx = create_linked_list();
     return table;
 }

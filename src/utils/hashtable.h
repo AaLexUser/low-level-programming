@@ -1,15 +1,13 @@
 #pragma once
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <limits.h>
-
-
 
 #define HT(key_type, value_type) struct { \
-    size_t size, used, max_used, capacity; \
-    char *flags;                    \
-    key_type *keys;               \
-    value_type *values;           \
+	size_t size, used, max_used, capacity; \
+	char *flags; \
+	key_type *keys; \
+	value_type *values; \
 }
 
 // flag = 1 - occupied flag = 2 - deleted flag = 3 - free
@@ -37,7 +35,10 @@
 #define linear_probe(index, step) ((index) + (step))
 #define quadratic_probe(index, step) ((index) + (step) * (step))
 
-#ifdef HT_STEP_INCREMENT =  0
+#ifndef HT_STEP_INCREMENT
+#define HT_STEP_INCREMENT 2
+#endif
+#if HT_STEP_INCREMENT == 1
 #define ht_probe(index, step) linear_probe((index), (step))
 #else 
 #define ht_probe(index, step) quadratic_probe((index), (step))
@@ -50,7 +51,7 @@
 } while (0)
 
 #define ht_reserve(h, key_type, value_type, new_capacity, success, hash_func) do {\
-    if(new_capacity <= (h).max_used) {\
+    if((new_capacity) <= (h).max_used) {\
         (success) = true; \
         break;\
     }\
@@ -80,7 +81,7 @@
         (success) = false; \
         break;\
     }\
-    value_type* ht_new_values = malloc(ht_new_capacity * sizeof(value_type));\
+    value_type *ht_new_values = malloc(ht_new_capacity * sizeof(value_type));\
     if(!ht_new_values) {\
         free(ht_new_flags);\
         free(ht_new_keys);\
@@ -143,8 +144,8 @@
         (absent) = -1; \
         break;\
     }\
-    size_t ht_mask = (h).capacity - 1; \ 
-    (index) = hash_func(key) & ht_mask; \
+    size_t ht_mask = (h).capacity - 1;\
+    (index) = hash_func(key) & ht_mask;\
     size_t ht_step = 0; \
     while((h).flags[(index)] == 1 || !eq_func(h)(keys[(result)], (key)))){\
         (index) = ((index) + (++ht_step)) & ht_mask;\
@@ -203,8 +204,8 @@ static inline size_t ht_nearest_valid_index(const char *flags, size_t capacity, 
 
 #define ht_for_each(h, index) for ( \
 	size_t index = ht_nearest_valid_index((h).flags, (h).capacity, ht_begin((h))); \
-	index != ht_end((h)) && ht_valid((h), index); \
-	index++, index = ht_nearest_valid_index((h).flags, (h).capacity, index) \
+	(index) != ht_end((h)) && ht_valid((h), index); \
+	(index)++, (index) = ht_nearest_valid_index((h).flags, (h).capacity, (index)) \
 )
 
 
