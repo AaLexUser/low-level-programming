@@ -2,18 +2,17 @@
 #include "../backend/io/file_manager.h"
 #include <stdint.h>
 #include <stdlib.h>
-typedef struct _SimplePool {
+typedef struct {
     uint32_t num_of_blocks;
     uint32_t block_size;
     uint32_t num_of_free_blocks;
     uint32_t num_of_used_blocks;
     off_t mem_start;
     off_t next;
-    FileManager fileManager;
-} SimplePool;
+} Pager;
 
-inline SimplePool* create_pool (size_t block_size, uint32_t num_of_blocks){
-    SimplePool* pool = (SimplePool*)malloc(sizeof(SimplePool));
+inline Pager* create_pool (size_t block_size, uint32_t num_of_blocks){
+    Pager* pool = (Pager*)malloc(sizeof(Pager));
     pool->block_size = block_size;
     pool->num_of_blocks = num_of_blocks;
     void* ptr = malloc(block_size*num_of_blocks);

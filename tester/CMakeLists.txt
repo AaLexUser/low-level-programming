@@ -9,6 +9,7 @@ target_link_libraries(test_stubs PUBLIC db)
 
 file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS
         tests/file_manager.c
+        tests/caching.c
 )
 
 foreach(test_source IN LISTS test_sources)

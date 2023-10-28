@@ -9,7 +9,7 @@ DEFINE_TEST(write_and_read){
     char str[] = "12345678";
     init_page();
     write_page(str, sizeof(str), 0);
-    unmap_page();
+    unmap_page(get_cur_mmaped_data());
     mmap_page(0);
     char* read_str = malloc(sizeof(str));
     read_page(read_str, sizeof(str), 0);
@@ -24,7 +24,7 @@ DEFINE_TEST(two_write){
     char str1[] = "12345678";
     init_page();
     write_page(str1, sizeof(str1), 0);
-    unmap_page();
+    unmap_page(get_cur_mmaped_data());
     mmap_page(0);
     char str2[] = "abcdefg";
     write_page(str2, sizeof(str2), sizeof(str1));
@@ -42,16 +42,16 @@ DEFINE_TEST(two_pages){
     char str1[] = "12345678";
     init_page();
     write_page(str1, sizeof(str1), 0);
-    unmap_page();
+    unmap_page(get_cur_mmaped_data());
     init_page();
     char str2[] = "abcdefg";
     write_page(str2, sizeof(str2), 0);
-    unmap_page();
+    unmap_page(get_cur_mmaped_data());
     mmap_page(0);
     char* read_str1 = malloc(sizeof(str1));
     read_page(read_str1,sizeof(str1), 0);
     assert(strcmp(str1, read_str1) == 0);
-    unmap_page();
+    unmap_page(get_cur_mmaped_data());
     mmap_page(PAGE_SIZE);
     char* read_str2 = malloc(sizeof(str2));
     read_page(read_str2,sizeof(str2), 0);

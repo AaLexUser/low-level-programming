@@ -25,6 +25,7 @@ endif()
 set(sources
         backend/io/file_manager.c
         utils/logger.c
+        backend/io/caching.c
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)
 #list(FILTER sources EXCLUDE REGEX main.c)

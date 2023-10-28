@@ -5,16 +5,40 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 
-
 char* filename = NULL;
 int fd;
 uint64_t file_size;
-void* mmaped_data;
-off_t page_offset = 0;
+void* cur_mmaped_data;
+off_t cur_page_offset = 0;
 
-void* get_mmaped_data(){
-    return mmaped_data;
+off_t get_cur_page_offset(){
+    return cur_page_offset;
 }
+
+void* get_cur_mmaped_data(){
+    return cur_mmaped_data;
+}
+
+uint64_t get_file_size(){
+    return file_size;
+}
+
+uint64_t number_pages(){
+    return file_size / PAGE_SIZE;
+}
+
+uint64_t get_page_index(off_t page_offset){
+    return page_offset / PAGE_SIZE;
+}
+
+off_t get_page_offset(uint64_t page_index){
+    return (off_t)page_index * PAGE_SIZE;
+}
+
+uint64_t get_current_page_index(){
+    return cur_page_offset / PAGE_SIZE;
+}
+
 
 enum FileStatus {FILE_FAIL=-1, FILE_SUCCESS=0};
 
@@ -27,7 +51,7 @@ enum FileStatus {FILE_FAIL=-1, FILE_SUCCESS=0};
 
 int init_file(const char* file_name){
     filename = (char*)malloc(strlen(file_name)+1);
-    strcpy(filename, file_name);
+    strncpy(filename, file_name, strlen(file_name)+1);
     logger(LL_INFO, __func__ ,"Opening file %s.", filename);
     fd = open(filename,
                            O_RDWR | // Read/Write mode
@@ -41,7 +65,7 @@ int init_file(const char* file_name){
     }
     file_size = (uint64_t) lseek(fd, 0, SEEK_END);
     if(file_size != 0){
-        if(mmap_page(page_offset) == FILE_FAIL){
+        if(mmap_page(cur_page_offset) == FILE_FAIL){
             logger(LL_ERROR, __func__, "Unable map file");
             return FILE_FAIL;
         }
@@ -63,14 +87,15 @@ int mmap_page(off_t offset){
         return FILE_FAIL;
     }
 
-    if((mmaped_data = mmap(NULL, PAGE_SIZE,
+    if((cur_mmaped_data = mmap(NULL, PAGE_SIZE,
                                             PROT_WRITE |
                                             PROT_READ,
                            MAP_SHARED, fd, offset)) == MAP_FAILED){
         logger(LL_ERROR, __func__ , "Unable to map file: %s %d.", strerror(errno), errno);
         return FILE_FAIL;
     };
-    page_offset = offset;
+    cur_page_offset = offset;
+    logger(LL_INFO, __func__, "Page %ld mapped on address %p", get_current_page_index(), cur_mmaped_data);
     return FILE_SUCCESS;
 }
 
@@ -79,10 +104,11 @@ int mmap_page(off_t offset){
  * @return FILE_SUCCESS or FILE_FAIL
  */
 
-int sync_page(){
-    logger(LL_INFO, __func__, "Syncing page from file with fd %d.", fd);
+int sync_page(void* mmaped_data){
+    logger(LL_INFO, __func__, "Syncing page on address - %p.", mmaped_data);
     if(msync(mmaped_data, PAGE_SIZE, MS_ASYNC) == -1){
-        logger(LL_ERROR, __func__ , "Unable sync page: %s %d.", strerror(errno), errno);
+        logger(LL_ERROR, __func__ ,
+               "Unable sync page on address - %p: %s %d.", mmaped_data, strerror(errno), errno);
         return FILE_FAIL;
     }
     return FILE_SUCCESS;
@@ -93,7 +119,7 @@ int sync_page(){
  * @return FILE_SUCCESS or FILE_FAIL
  */
 
-int unmap_page(){
+int unmap_page(void* mmaped_data){
     if(file_size == 0){
         return FILE_SUCCESS;
     }
@@ -101,11 +127,11 @@ int unmap_page(){
     logger(LL_INFO, __func__,
            "Unmapping page from file with pointer %p and file size %" PRIu64,
            mmaped_data, file_size);
-    if(sync_page() == FILE_FAIL){
+    if(sync_page(mmaped_data) == FILE_FAIL){
         return FILE_FAIL;
     }
     if(munmap(mmaped_data, PAGE_SIZE) == -1){
-        logger(LL_ERROR, __func__, "Unable unmap page: %s %d.", strerror(errno), errno);
+        logger(LL_ERROR, __func__, "Unable unmap page with pointer %p: %s %d.", mmaped_data, strerror(errno), errno);
         return FILE_FAIL;
     };
     mmaped_data = NULL;
@@ -117,10 +143,6 @@ int unmap_page(){
  * @return FILE_SUCCESS or FILE_FAIL
  */
 int close_file(){
-    if(unmap_page() == FILE_FAIL){
-        logger(LL_ERROR, __func__, "Unable unmap file.");
-        return FILE_FAIL;
-    }
     close(fd);
     fd = -1;
     file_size = -1;
@@ -138,10 +160,7 @@ int delete_file(){
         logger(LL_ERROR, __func__, "Unable delete file with name %s.", filename);
         return FILE_FAIL;
     }
-    if(close_file() == FILE_FAIL){
-        logger(LL_ERROR, __func__, "Unable close file.");
-        return FILE_FAIL;
-    }
+    close_file();
     return FILE_SUCCESS;
 }
 
@@ -153,17 +172,13 @@ int delete_file(){
 
 int init_page(){
     logger(LL_INFO, __func__ , "Init new page");
-    if(mmaped_data && unmap_page() == FILE_FAIL){
-        logger(LL_ERROR, __func__, "Unable unmap file.");
-        return FILE_FAIL;
-    }
     if(ftruncate(fd,  (off_t) (file_size + PAGE_SIZE)) == -1){
         logger(LL_ERROR, __func__, "Unable change file size: %s %d", strerror(errno), errno);
         return FILE_FAIL;
     }
-    page_offset = (off_t)file_size;
+    cur_page_offset = (off_t)file_size;
     file_size += PAGE_SIZE;
-    if(mmap_page(page_offset) == FILE_FAIL){
+    if(mmap_page(cur_page_offset) == FILE_FAIL){
         logger(LL_ERROR, __func__, "Unable to mmap file.");
     }
     return FILE_SUCCESS;
@@ -180,12 +195,12 @@ int init_page(){
 
 int write_page(void* src, uint64_t size, off_t offset){
     logger(LL_INFO, __func__ , "Writing to fd %d with size %"PRIu64 "%"PRIu64 " bytes.", fd, file_size, size);
-    if(mmaped_data == NULL){
+    if(cur_mmaped_data == NULL){
         logger(LL_ERROR, __func__, "Unable write, mapped file is NULL.");
         return FILE_FAIL;
     }
-    memcpy(mmaped_data + offset, src, size);
-    sync_page();
+    memcpy(cur_mmaped_data + offset, src, size);
+    sync_page(cur_mmaped_data);
     return FILE_SUCCESS;
 }
 
@@ -199,10 +214,11 @@ int write_page(void* src, uint64_t size, off_t offset){
 
 int read_page(void* dest, uint64_t size, off_t offset){
     logger(LL_INFO, __func__ , "Reading from fd %d with size %"PRIu64 "%"PRIu64 " bytes.", fd, file_size, size);
-    if(mmaped_data == NULL){
+    if(cur_mmaped_data == NULL){
         logger(LL_ERROR, __func__, "Unable write, mapped file is NULL.");
         return FILE_FAIL;
     }
-    memcpy(dest, mmaped_data + offset, size);
+    memcpy(dest, cur_mmaped_data + offset, size);
     return FILE_SUCCESS;
 }
+

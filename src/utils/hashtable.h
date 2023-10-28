@@ -139,7 +139,7 @@
 #define ht_put(h, key_type, value_type, key, index, absent, hash_func, eq_func) do {\
     bool ht_success;\
     size_t ht_new_size = (h).size ? (h).size + 1 : 2;\
-    ht_reserve((h), key_type, value_type, ht_new_size, absent, ht_success, hash_func);\
+    ht_reserve((h), key_type, value_type, ht_new_size, ht_success, hash_func);\
     if (!ht_success) {\
         (absent) = -1; \
         break;\
@@ -207,6 +207,15 @@ static inline size_t ht_nearest_valid_index(const char *flags, size_t capacity, 
 	(index) != ht_end((h)) && ht_valid((h), index); \
 	(index)++, (index) = ht_nearest_valid_index((h).flags, (h).capacity, (index)) \
 )
+
+#define ht_reserve_int(h, value_type, new_capacity, success) \
+ht_reserve((h), int, value_type, (new_capacity), (success), ht_int_hash, ht_int_eq)
+
+#define ht_get_int(h, key, result) \
+ht_get((h), (key), (result), ht_int_hash, ht_int_eq)
+
+#define ht_put_int(h, value_type, key, index, absent) \
+ht_put((h), int, value_type, (key), (index), (absent), ht_int_hash, ht_int_eq)
 
 
 

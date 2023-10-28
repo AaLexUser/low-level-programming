@@ -1,4 +1,3 @@
-clang-analyzer-*
 clang-diagnostic-implicit-function-declaration
 llvm-include-order
 performance-*

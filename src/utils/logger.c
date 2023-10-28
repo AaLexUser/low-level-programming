@@ -9,14 +9,14 @@
 #define LOGGER_LEVEL 0
 #endif
 
-static char* __get_current_time_str(){
+static char* get_current_time_str(){
     time_t now;
     time(&now);
     char *time_str = ctime(&now);
     return time_str;
 }
 
-static char* __get_log_level_name(enum LoggerLevel ll){
+static char* get_log_level_name(enum LoggerLevel ll){
     switch (ll) {
         case LL_DEBUG:
             return "DEBUG";
@@ -44,9 +44,9 @@ void logger(enum LoggerLevel ll, const char *tag, const char *message, ...){
             printf("\033[0;34m");
         }
 
-        char* time = __get_current_time_str();
+        char* time = get_current_time_str();
 
-        printf("%s - %s [%s]: ", time, __get_log_level_name(ll), tag);
+        printf("%s - %s [%s]: ", time, get_log_level_name(ll), tag);
         vprintf(message, args);
         va_end(args);
         printf("\n");

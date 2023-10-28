@@ -16,10 +16,16 @@
 #endif
 
 int init_file(const char* file_name);
-void* get_mmaped_data();
+off_t get_cur_page_offset();
+void* get_cur_mmaped_data();
+uint64_t number_pages();
+uint64_t get_page_index(off_t page_offset);
+uint64_t get_current_page_index();
+off_t get_page_offset(uint64_t page_index);
+uint64_t get_file_size();
 int mmap_page(off_t offset);
-int sync_page();
-int unmap_page();
+int sync_page(void* mmaped_data);
+int unmap_page(void* mmaped_data);
 int close_file();
 int delete_file();
 int init_page();
