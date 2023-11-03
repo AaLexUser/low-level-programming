@@ -283,6 +283,12 @@ int ch_destroy(){
     return CachingSuccess;
 }
 
+/**
+ * Unmap some pages
+ * @brief Unmapping pages with smallest usage count
+ * @return number of unmapped pages
+ */
+
 uint64_t ch_unmap_some_pages(){
     logger(LL_INFO, __func__, "Page unmapping start");
     uint64_t unmap_count = 0;
@@ -300,6 +306,32 @@ uint64_t ch_unmap_some_pages(){
     }
     logger(LL_INFO, __func__, "Unmapped %ld pages with usage %ld", unmap_count, usage_c);
     return unmap_count;
+}
+
+
+/**
+ * Delete last page
+ * @brief Delete last page from file
+ * @return CachingSuccess or CachingFail
+ */
+
+int ch_delete_last_page(){
+    if(get_file_size() == 0){
+        return CachingSuccess;
+    }
+    uint64_t page_index = get_file_size() - PAGE_SIZE;
+    logger(LL_INFO, __func__, "Deleting page %ld", page_index);
+    if(ch.flags[page_index] == 1){
+        if(ch_remove(page_index) == CachingFail){
+            logger(LL_ERROR, __func__, "Unable to delete last page");
+            return CachingFail;
+        }
+    }
+    if(delete_last_page() == FILE_FAIL){
+        logger(LL_ERROR, __func__, "Unable to delete last page");
+        return CachingFail;
+    }
+    return CachingSuccess;
 }
 
 

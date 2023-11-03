@@ -12,8 +12,10 @@
 #include <unistd.h>
 
 #ifndef PAGE_SIZE
-#define PAGE_SIZE 4096
+#define PAGE_SIZE getpagesize()
 #endif
+
+enum FileStatus {FILE_FAIL=-1, FILE_SUCCESS=0};
 
 int init_file(const char* file_name);
 off_t get_cur_page_offset();
@@ -29,6 +31,7 @@ int unmap_page(void* mmaped_data);
 int close_file();
 int delete_file();
 int init_page();
+int delete_last_page();
 int write_page(void* src, uint64_t size, off_t offset);
 int read_page(void* dest, uint64_t size, off_t offset);
 #endif

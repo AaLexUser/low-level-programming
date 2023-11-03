@@ -40,9 +40,6 @@ uint64_t get_current_page_index(){
 }
 
 
-enum FileStatus {FILE_FAIL=-1, FILE_SUCCESS=0};
-
-
 /**
  * File initialization
  * @param filename
@@ -142,6 +139,7 @@ int unmap_page(void* mmaped_data){
  * Close file
  * @return FILE_SUCCESS or FILE_FAIL
  */
+
 int close_file(){
     close(fd);
     fd = -1;
@@ -154,6 +152,7 @@ int close_file(){
  * Delete file
  * @return FILE_SUCCESS or FILE_FAIL
  */
+
 int delete_file(){
     logger(LL_INFO, __func__, "Deleting file with name %s.", filename);
     if(unlink(filename) == -1){
@@ -181,6 +180,24 @@ int init_page(){
     if(mmap_page(cur_page_offset) == FILE_FAIL){
         logger(LL_ERROR, __func__, "Unable to mmap file.");
     }
+    return FILE_SUCCESS;
+}
+
+/**
+ * Delete last page in file
+ * @return FILE_SUCCESS or FILE_FAIL
+ */
+
+int delete_last_page(){
+    if(file_size == 0){
+        return FILE_SUCCESS;
+    }
+    logger(LL_INFO, __func__ , "Starting delete page %ld", get_page_index((off_t)file_size - PAGE_SIZE));
+    if(ftruncate(fd,  (off_t) (file_size - PAGE_SIZE)) == -1){
+        logger(LL_ERROR, __func__, "Unable change file size: %s %d", strerror(errno), errno);
+        return FILE_FAIL;
+    }
+    file_size -= PAGE_SIZE;
     return FILE_SUCCESS;
 }
 

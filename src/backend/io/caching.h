@@ -15,3 +15,4 @@ void* ch_load_page(uint64_t page_index);
 int ch_write(uint64_t page_index, void* src, size_t size, off_t offset);
 int ch_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset);
 uint64_t ch_unmap_some_pages();
+int ch_delete_last_page();
