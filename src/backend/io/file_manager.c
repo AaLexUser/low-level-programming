@@ -23,6 +23,10 @@ uint64_t get_file_size(){
     return file_size;
 }
 
+int64_t get_max_page_index(){
+    return (int64_t)(file_size / PAGE_SIZE) - 1;
+}
+
 uint64_t number_pages(){
     return file_size / PAGE_SIZE;
 }
@@ -35,7 +39,7 @@ off_t get_page_offset(uint64_t page_index){
     return (off_t)page_index * PAGE_SIZE;
 }
 
-uint64_t get_current_page_index(){
+int64_t get_current_page_index(){
     return cur_page_offset / PAGE_SIZE;
 }
 

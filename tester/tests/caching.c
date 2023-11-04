@@ -81,6 +81,85 @@ DEFINE_TEST(two_pages){
     delete_file();
 }
 
+DEFINE_TEST(read_after_closing){
+    assert(init_file("test.db") == 0);
+    char str1[] = "12345678";
+    ch_init();
+    uint64_t page1 = ch_new_page();
+    if(ch_write(page1, str1, sizeof(str1), 0) == -1){
+        ch_destroy();
+        delete_file();
+        exit(EXIT_FAILURE);
+    }
+    ch_new_page();
+    ch_new_page();
+    ch_new_page();
+    char str2[] = "abcdefg";
+    uint64_t page2 = ch_new_page();
+    if(ch_write(page2, str2, sizeof(str2), 0) == -1){
+        ch_destroy();
+        delete_file();
+        exit(EXIT_FAILURE);
+    }
+    ch_new_page();
+    ch_new_page();
+    ch_new_page();
+    ch_destroy();
+    close_file();
+    assert(init_file("test.db") == 0);
+    ch_init();
+    char* read_str1 = malloc(sizeof(str1));
+    ch_copy_read(page1, read_str1, sizeof(str1), 0);
+    assert(strcmp(str1, read_str1) == 0);
+    char* read_str2 = malloc(sizeof(str2));
+    ch_copy_read(page2, read_str2, sizeof(str2), 0);
+    assert(strcmp(str2, read_str2) == 0);
+    ch_destroy();
+    delete_file();
+}
+
+DEFINE_TEST(write_after_closing){
+    assert(init_file("test.db") == 0);
+    char str1[] = "12345678";
+    ch_init();
+    uint64_t page1 = ch_new_page();
+    if(ch_write(page1, str1, sizeof(str1), 0) == -1){
+        ch_destroy();
+        delete_file();
+        exit(EXIT_FAILURE);
+    }
+    ch_new_page();
+    ch_new_page();
+    ch_new_page();
+    char str2[] = "abcdefg";
+    uint64_t page2 = ch_new_page();
+    if(ch_write(page2, str2, sizeof(str2), 0) == -1){
+        ch_destroy();
+        delete_file();
+        exit(EXIT_FAILURE);
+    }
+    ch_new_page();
+    ch_new_page();
+    ch_new_page();
+    ch_destroy();
+    close_file();
+    assert(init_file("test.db") == 0);
+    ch_init();
+    char str3[] = "12345678";
+    ch_write(page1, str3, sizeof(str3), sizeof(str1));
+    char* read_str1 = malloc(sizeof(str1));
+    ch_copy_read(page1, read_str1, sizeof(str1), 0);
+    assert(strcmp(str1, read_str1) == 0);
+    char* read_str2 = malloc(sizeof(str2));
+    ch_copy_read(page2, read_str2, sizeof(str2), 0);
+    assert(strcmp(str2, read_str2) == 0);
+    char* read_str3 = malloc(sizeof(str3));
+    ch_copy_read(page1, read_str3, sizeof(str3), sizeof(str1));
+    assert(strcmp(str3, read_str3) == 0);
+    ch_destroy();
+    delete_file();
+}
+
 DEFINE_TEST(delete_last_page){
     assert(init_file("test.db") == 0);
     if(get_file_size() != 0){
@@ -110,11 +189,11 @@ DEFINE_TEST(delete_last_page){
     ch_new_page();
     ch_new_page();
     assert(get_file_size() == 8 * PAGE_SIZE);
-    assert(ch_delete_last_page() == 0);
+    assert(ch_delete_page(get_max_page_index()) == 0);
     assert(get_file_size() == 7 * PAGE_SIZE);
-    assert(ch_delete_last_page() == 0);
+    assert(ch_delete_page(get_max_page_index()) == 0);
     assert(get_file_size() == 6 * PAGE_SIZE);
-    assert(ch_delete_last_page() == 0);
+    assert(ch_delete_page(get_max_page_index()) == 0);
     assert(get_file_size() == 5 * PAGE_SIZE);
     char* read_str1 = malloc(sizeof(str1));
     ch_copy_read(page1, read_str1, sizeof(str1), 0);
@@ -122,7 +201,7 @@ DEFINE_TEST(delete_last_page){
     char* read_str2 = malloc(sizeof(str2));
     ch_copy_read(page2, read_str2, sizeof(str2), 0);
     assert(strcmp(str2, read_str2) == 0);
-    assert(ch_delete_last_page() == 0);
+    assert(ch_delete_page(get_max_page_index()) == 0);
     assert(get_file_size() == 4 * PAGE_SIZE);
     assert(ch_new_page() == 4);
     ch_destroy();
@@ -181,6 +260,30 @@ DEFINE_TEST(cache_memory_save){
     delete_file();
 }
 
+DEFINE_TEST(unsafe_read){
+    if(init_file("test.db") == -1){
+        exit(EXIT_FAILURE);
+    }
+    char str1[] = "12345678";
+    ch_init();
+    uint64_t page1 = ch_new_page();
+    ch_write(page1, str1, sizeof(str1), 0);
+    ch_new_page();
+    ch_new_page();
+    ch_new_page();
+    char str2[] = "abcdefg";
+    ch_write(page1, str2, sizeof(str2), sizeof(str1));
+
+    char* read_str2 = ch_read(page1, sizeof(str1));
+    assert(strcmp(str2, read_str2) == 0);
+
+    char* read_str1 = ch_read(page1, 0);
+    assert(strcmp(str1, read_str1) == 0);
+
+    ch_destroy();
+    delete_file();
+}
+
 
 
 
@@ -189,6 +292,9 @@ int main(){
     RUN_SINGLE_TEST(write_and_read);
     RUN_SINGLE_TEST(two_write);
     RUN_SINGLE_TEST(two_pages);
+    RUN_SINGLE_TEST(read_after_closing);
+    RUN_SINGLE_TEST(write_after_closing);
     RUN_SINGLE_TEST(delete_last_page);
+    RUN_SINGLE_TEST(unsafe_read);
   //  RUN_SINGLE_TEST(cache_memory_save);
 }

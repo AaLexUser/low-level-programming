@@ -1,4 +1,5 @@
-#include "pool.h"
+#include "chunky_pool.h"
+#include "logger.h"
 #include <stdio.h>
 
 /**

@@ -6,7 +6,7 @@
 
 #define CH_MAX_MEMORY_USAGE (PAGE_SIZE * 100)
 
-// flag = 1 - occupied flag = 2 - deleted flag = 3 - free
+// flag = 1 - occupied flag = 2 - removed_from_cache flag = 3 - deleted flag = 0 - unknown
 
 typedef struct{
     size_t size, used, max_used, capacity;
@@ -17,8 +17,6 @@ typedef struct{
 
 Cacher ch;
 
-
-enum CH_Status {CachingSuccess = 0, CachingFail = -1};
 
 /**
  * Cacher initialization
@@ -40,6 +38,7 @@ size_t ch_page_index(off_t offset) {return get_page_index(offset);}
 size_t get_ch_usage_memory_space(){
     return PAGE_SIZE * ch.size;
 }
+int ch_page_status(size_t index) {return index <= ch.capacity ? ch.flags[index]: -1;}
 
 /**
  * Reserve new capacity for cacher.
@@ -112,6 +111,7 @@ int ch_reserve(size_t new_capacity){
  */
 
 int ch_put(uint64_t page_index, void* mapped_page_ptr){
+    logger(LL_INFO, __func__, "Putting page %ld to cache", page_index);
     if(get_ch_usage_memory_space() >= CH_MAX_MEMORY_USAGE){
         uint64_t count = ch_unmap_some_pages();
         logger(LL_INFO, __func__, "Unmaped %ld pages", count);
@@ -141,11 +141,11 @@ int ch_put(uint64_t page_index, void* mapped_page_ptr){
 
 void* ch_get(uint64_t page_index){
     if(!ch.size){
-        logger(LL_ERROR, __func__ , "Cacher size is 0.");
+        logger(LL_INFO, __func__ , "Cacher size is 0.");
         return NULL;
     }
     if(page_index > ch.capacity){
-        logger(LL_WARN, __func__, "Requesting not existing key");
+        logger(LL_INFO, __func__, "Requesting not existing key");
         return NULL;
     }
     if(ch.flags[page_index] != 1){
@@ -159,6 +159,7 @@ void* ch_get(uint64_t page_index){
  * @param index
  * @return CachingSuccess or CachingFail
  */
+
 int ch_remove(uint64_t index){
     logger(LL_INFO, __func__, "Removing page %ld from cache", index);
     void* page = NULL;
@@ -178,21 +179,27 @@ int ch_remove(uint64_t index){
 
 /**
  * Mapping new page and caching it.
- * @return new page index
+ * @return new page index or CachingFail
  */
-uint64_t ch_new_page(){
+
+int64_t ch_new_page(){
     logger(LL_INFO, __func__, "Requesting new page");
-    init_page();
-    uint64_t page_index = get_current_page_index();
+    if (init_page() == FILE_FAIL) {
+        logger(LL_ERROR, __func__, "Unable to init page");
+        return CachingFail;
+    }
+    int64_t page_index = get_current_page_index();
     void* mmaped_page_ptr = get_cur_mmaped_data();
     ch_put(page_index, mmaped_page_ptr);
     return page_index;
 }
+
 /**
  * Load page from Cache or from File
  * @param page_index
  * @return pointer to page or NULL
  */
+
 void* ch_load_page(uint64_t page_index){
     logger(LL_INFO, __func__, "Loading page %ld", page_index);
     void* page = NULL;
@@ -200,6 +207,7 @@ void* ch_load_page(uint64_t page_index){
         return page;
     }
     if(page_index >= get_file_size()){
+        logger(LL_ERROR, __func__, "Page index is out of file range");
         return NULL;
     }
     mmap_page(get_page_offset(page_index));
@@ -221,6 +229,10 @@ int ch_write(uint64_t page_index, void* src, size_t size, off_t offset){
     logger(LL_INFO, __func__,
            "Writing to page %ld on offset %ld, size %ld bytes.", page_index, offset, size);
     void* page = NULL;
+    if(page_index > get_max_page_index()){
+        logger(LL_ERROR, __func__, "Page index is out of range");
+        return CachingFail;
+    }
     if(!(page = ch_load_page(page_index))){
         return CachingFail;
     }
@@ -230,6 +242,30 @@ int ch_write(uint64_t page_index, void* src, size_t size, off_t offset){
     };
     return CachingSuccess;
 }
+
+/**
+ * Clear page
+ * @param page_index
+ * @return CachingSuccess or CachingFail
+ */
+
+int ch_clear_page(uint64_t page_index){
+    logger(LL_INFO, __func__, "Clearing page %ld", page_index);
+    void* page = NULL;
+    if(page_index > get_max_page_index()){
+        logger(LL_ERROR, __func__, "Page index is out of range");
+        return CachingFail;
+    }
+    if(!(page = ch_load_page(page_index))){
+        logger(LL_ERROR, __func__, "Unable to load page %ld", page_index);
+        return CachingFail;
+    }
+    memset(page, 0, PAGE_SIZE);
+    sync_page(page);
+    return CachingSuccess;
+}
+
+
 /**
  * Make copy to dest from page
  * @param page_index
@@ -238,6 +274,7 @@ int ch_write(uint64_t page_index, void* src, size_t size, off_t offset){
  * @param offset
  * @return CachingSuccess or CachingFail
  */
+
 int ch_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset){
     void* page = NULL;
     if(!(page = ch_load_page(page_index))){
@@ -248,24 +285,60 @@ int ch_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset){
     return CachingSuccess;
 }
 
+/**
+ * Unsafe read from page
+ * @param page_index
+ * @param dest
+ * @param offset
+ * @return CachingSuccess or CachingFail
+ */
+
+void* ch_read(uint64_t page_index, off_t offset){
+    void* page = NULL;
+    if(!(page = ch_load_page(page_index))){
+        return NULL;
+    }
+    return page + offset;
+}
+
+
 uint64_t ch_begin(){return 0;}
 uint64_t ch_end(){return ch.capacity;}
 
-static uint64_t ch_nearest_valid_index(const char *flags, size_t capacity, uint64_t index){
+static uint64_t ch_nearest_cached_index(const char *flags, size_t capacity, uint64_t index){
     while (index < capacity && flags[index] != 1) {
         index++;
     }
     return index;
 }
-bool ch_valid(uint64_t index){
+
+bool ch_cached(uint64_t index){
     return ch.flags[index] == 1;
 }
 
-#define ch_for_each(index) for ( \
-size_t index = ch_nearest_valid_index(ch.flags, ch.capacity, ch_begin());\
+#define ch_for_each_cached(index) for ( \
+size_t index = ch_nearest_cached_index(ch.flags, ch.capacity, ch_begin());\
+(index) != ch_end() && ch_cached(index);                                  \
+(index)++, (index) = ch_nearest_cached_index(ch.flags, ch.capacity, (index)) \
+)                                \
+
+bool ch_valid(uint64_t index){
+    return  ch.flags[index] == 1 || ch.flags[index] == 2;
+}
+
+static uint64_t ch_nearest_valid_index(const char *flags, size_t capacity, uint64_t index){
+    while (index < capacity && !ch_valid(index)){
+        index++;
+    }
+    return index;
+}
+
+#define ch_for_each_valid(index) for ( \
+size_t index = ch_nearest_cached_valid(ch.flags, ch.capacity, ch_begin());\
 (index) != ch_end() && ch_valid(index);                                  \
 (index)++, (index) = ch_nearest_valid_index(ch.flags, ch.capacity, (index)) \
 )                                \
+
 
 /**
  * Cacher destroy
@@ -274,7 +347,7 @@ size_t index = ch_nearest_valid_index(ch.flags, ch.capacity, ch_begin());\
 int ch_destroy(){
     logger(LL_INFO, __func__ , "Cacher destroy");
     ch.size = ch.used = ch.max_used = ch.capacity = 0;
-    ch_for_each(index){
+    ch_for_each_cached(index){
         ch_remove(index);
     }
     free(ch.usage_count);
@@ -294,7 +367,7 @@ uint64_t ch_unmap_some_pages(){
     uint64_t unmap_count = 0;
     uint64_t usage_c = 0;
     while (unmap_count == 0) {
-        ch_for_each(index) {
+        ch_for_each_cached(index) {
             if (ch.usage_count[index] <= usage_c) {
                 if (ch_remove(index) != CachingFail) {
                     logger(LL_INFO, __func__, "Unmapped page %ld", index);
@@ -319,17 +392,44 @@ int ch_delete_last_page(){
     if(get_file_size() == 0){
         return CachingSuccess;
     }
-    uint64_t page_index = get_file_size() - PAGE_SIZE;
-    logger(LL_INFO, __func__, "Deleting page %ld", page_index);
-    if(ch.flags[page_index] == 1){
-        if(ch_remove(page_index) == CachingFail){
-            logger(LL_ERROR, __func__, "Unable to delete last page");
-            return CachingFail;
-        }
+    int64_t page_index = get_max_page_index();
+    if(ch.flags[page_index] != 3){
+        logger(LL_ERROR, __func__, "Last page is not marked as deleted");
+        return CachingFail;
     }
+    logger(LL_INFO, __func__, "Deleting page %ld", page_index);
     if(delete_last_page() == FILE_FAIL){
         logger(LL_ERROR, __func__, "Unable to delete last page");
         return CachingFail;
+    }
+    return CachingSuccess;
+}
+
+/**
+ * Mark as deleted page
+ * @brief Mark page as deleted
+ * @param page_index
+ * @return CachingSuccess or CachingFail
+ */
+
+int ch_delete_page(uint64_t page_index){
+    if(get_file_size() == 0){
+        logger(LL_ERROR, __func__, "File is empty");
+        return CachingFail;
+    }
+    if(page_index > get_max_page_index()){
+        logger(LL_ERROR, __func__, "Page index is out of range");
+        return CachingFail;
+    }
+    logger(LL_INFO, __func__, "Deleting page %ld", page_index);
+    ch_clear_page(page_index);
+    if(ch_remove(page_index) == CachingFail){ // Remove page from cache
+        logger(LL_ERROR, __func__, "Unable to remove page %ld from cache", page_index);
+        return CachingFail;
+    }
+    ch.flags[page_index] = 3; // Mark page as deleted
+    if(page_index == get_max_page_index()){
+        ch_delete_last_page();
     }
     return CachingSuccess;
 }

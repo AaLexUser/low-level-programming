@@ -26,6 +26,11 @@ set(sources
         backend/io/file_manager.c
         utils/logger.c
         backend/io/caching.c
+        backend/io/pager.c
+        backend/pstack/pstack.c
+#        utils/chunky_pool.c
+        backend/io/page_pool.c
+
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)
 #list(FILTER sources EXCLUDE REGEX main.c)
