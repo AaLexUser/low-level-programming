@@ -29,7 +29,11 @@ set(sources
         backend/io/pager.c
         backend/pstack/pstack.c
 #        utils/chunky_pool.c
-        backend/io/page_pool.c
+        backend/page_pool/page_pool.c
+        backend/page_pool/librarian.c
+        backend/page_pool/page_set.c
+        backend/virt_mem/page_virt_mem.c
+        backend/io/LinkedPages.c
 
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)

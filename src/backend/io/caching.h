@@ -3,6 +3,8 @@
 
 enum CH_Status {CachingSuccess = 0, CachingFail = -1};
 
+#define CH_MAX_MEMORY_USAGE (PAGE_SIZE * 100)
+
 int ch_init();
 int ch_destroy();
 size_t ch_size();

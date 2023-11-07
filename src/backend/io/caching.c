@@ -3,14 +3,15 @@
 #include "../../utils/logger.h"
 #include "../../utils/roundup.h"
 #include <inttypes.h>
-
-#define CH_MAX_MEMORY_USAGE (PAGE_SIZE * 100)
+#include <math.h>
+#include <time.h>
 
 // flag = 1 - occupied flag = 2 - removed_from_cache flag = 3 - deleted flag = 0 - unknown
 
 typedef struct{
     size_t size, used, max_used, capacity;
     uint32_t* usage_count;
+    time_t* last_used;
     void** cached_page_ptr;
     char* flags;
 } Cacher;
@@ -26,6 +27,7 @@ int ch_init(){
     logger(LL_INFO, __func__ , "Caching initialization.");
     ch.size = ch.used = ch.max_used = ch.capacity = 0;
     ch.usage_count = NULL;
+    ch.last_used = NULL;
     ch.cached_page_ptr = NULL;
     ch.flags = NULL;
     return CachingSuccess;
@@ -84,6 +86,15 @@ int ch_reserve(size_t new_capacity){
         logger(LL_ERROR, __func__, "Unable allocate new usage_count for cacher.");
         return CachingFail;
     }
+    time_t* ch_new_last_used = malloc(ch_new_capacity * sizeof(time_t));
+    if(!ch_new_last_used){
+        free(ch_new_flags);
+        free(ch_new_cached_page_ptr);
+        free(ch_new_usage_count);
+        logger(LL_ERROR, __func__, "Unable allocate new last_used for cacher.");
+        return CachingFail;
+    }
+    memset(ch_new_last_used, 0, ch_new_capacity);
     memset(ch_new_flags, 0, ch_new_capacity);
     memset(ch_new_usage_count, 0, ch_new_capacity);
     for(size_t ch_i = 0; ch_i < ch.capacity; ch_i++){
@@ -91,6 +102,7 @@ int ch_reserve(size_t new_capacity){
         ch_new_flags[ch_i] = 1;
         ch_new_cached_page_ptr[ch_i] = ch.cached_page_ptr[ch_i];
         ch_new_usage_count[ch_i] = ch.usage_count[ch_i];
+        ch_new_last_used[ch_i] = ch.last_used[ch_i];
     }
     free(ch.flags);
     free(ch.cached_page_ptr);
@@ -99,6 +111,7 @@ int ch_reserve(size_t new_capacity){
     ch.capacity = ch_new_capacity;
     ch.max_used = ch_new_max_used;
     ch.usage_count = ch_new_usage_count;
+    ch.last_used = ch_new_last_used;
     ch.used = ch.size;
     return CachingSuccess;
 }
@@ -152,6 +165,8 @@ void* ch_get(uint64_t page_index){
         return NULL;
     }
     ch.usage_count[page_index]++;
+    time_t now;
+    ch.last_used[page_index] = time(&now);
     return ch.cached_page_ptr[page_index];
 }
 /**
@@ -213,7 +228,12 @@ void* ch_load_page(uint64_t page_index){
     mmap_page(get_page_offset(page_index));
     void* mmaped_page_ptr = get_cur_mmaped_data();
     ch_put(page_index, mmaped_page_ptr);
+
+    //Increase usage
     ch.usage_count[page_index]++;
+    time_t now;
+    ch.last_used[page_index] = time(&now);
+
     return mmaped_page_ptr;
 }
 /**
@@ -228,6 +248,7 @@ void* ch_load_page(uint64_t page_index){
 int ch_write(uint64_t page_index, void* src, size_t size, off_t offset){
     logger(LL_INFO, __func__,
            "Writing to page %ld on offset %ld, size %ld bytes.", page_index, offset, size);
+
     void* page = NULL;
     if(page_index > get_max_page_index()){
         logger(LL_ERROR, __func__, "Page index is out of range");
@@ -236,10 +257,17 @@ int ch_write(uint64_t page_index, void* src, size_t size, off_t offset){
     if(!(page = ch_load_page(page_index))){
         return CachingFail;
     }
+
     memcpy(page + offset, src, size);
     if(sync_page(page) == -1){
         return CachingFail;
     };
+
+    //Increase usage
+    ch.usage_count[page_index]++;
+    time_t now;
+    ch.last_used[page_index] = time(&now);
+
     return CachingSuccess;
 }
 
@@ -282,6 +310,12 @@ int ch_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset){
     }
     memcpy(dest, page + offset, size);
     sync_page(page);
+
+    //Increase usage
+    ch.usage_count[page_index]++;
+    time_t now;
+    ch.last_used[page_index] = time(&now);
+
     return CachingSuccess;
 }
 
@@ -298,6 +332,12 @@ void* ch_read(uint64_t page_index, off_t offset){
     if(!(page = ch_load_page(page_index))){
         return NULL;
     }
+
+    //Increase usage
+    ch.usage_count[page_index]++;
+    time_t now;
+    ch.last_used[page_index] = time(&now);
+
     return page + offset;
 }
 
@@ -356,6 +396,38 @@ int ch_destroy(){
     return CachingSuccess;
 }
 
+
+/**
+ * Find least used count
+ * @return  least used count
+ */
+
+uint32_t ch_find_least_used_count(){
+    uint32_t min_usage = UINT32_MAX;
+    ch_for_each_cached(index){
+        if(ch.usage_count[index] < min_usage){
+            min_usage = ch.usage_count[index];
+        }
+    }
+    return min_usage;
+}
+
+/**
+ * Find least used time
+ * @return  least used time
+ */
+
+time_t ch_find_least_used_time(){
+    time_t min_time = time(NULL);
+    ch_for_each_cached(index){
+        if(ch.last_used[index] < min_time){
+            min_time = ch.last_used[index];
+        }
+    }
+    return min_time;
+}
+
+
 /**
  * Unmap some pages
  * @brief Unmapping pages with smallest usage count
@@ -366,16 +438,20 @@ uint64_t ch_unmap_some_pages(){
     logger(LL_INFO, __func__, "Page unmapping start");
     uint64_t unmap_count = 0;
     uint64_t usage_c = 0;
+    uint64_t min_time = ch_find_least_used_time();
+    double time_threshold = 2; // 2 sec
+    double execute_count = 0;
     while (unmap_count == 0) {
+        execute_count++;
         ch_for_each_cached(index) {
-            if (ch.usage_count[index] <= usage_c) {
+            if ((double)ch.last_used[index] < ((double)min_time + time_threshold)) {
                 if (ch_remove(index) != CachingFail) {
                     logger(LL_INFO, __func__, "Unmapped page %ld", index);
                     unmap_count++;
                 }
             }
         }
-        usage_c++;
+        time_threshold = time_threshold + pow(2, execute_count);
     }
     logger(LL_INFO, __func__, "Unmapped %ld pages with usage %ld", unmap_count, usage_c);
     return unmap_count;

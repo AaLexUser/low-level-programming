@@ -12,6 +12,8 @@ file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS
         tests/caching.c
         tests/pstack.c
         tests/pager.c
+        tests/page_pool.c
+        tests/linked_pages.c
 )
 
 foreach(test_source IN LISTS test_sources)
