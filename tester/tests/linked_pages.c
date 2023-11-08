@@ -2,7 +2,7 @@
 #include "../src/backend/io/file_manager.h"
 #include "../src/backend/io/caching.h"
 #include "backend/io/pager.h"
-#include "backend/io/LinkedPages.h"
+#include "backend/io/linked_pages.h"
 
 DEFINE_TEST(simple_to_start){
     assert(init_file("test.db") == FILE_SUCCESS);
@@ -10,7 +10,7 @@ DEFINE_TEST(simple_to_start){
     pg_init();
     int64_t lp_idx = lp_init();
     assert(lp_idx != -1);
-    LinkedPage* lp = lp_load(lp_idx);
+    linked_page_t* lp = lp_load(lp_idx);
     assert(lp->next_page == -1);
     assert(lp->page_index != -1);
     assert(lp_delete(lp->page_index) == LP_SUCCESS);

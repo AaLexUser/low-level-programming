@@ -222,7 +222,7 @@ void* ch_load_page(uint64_t page_index){
         return page;
     }
     if(page_index >= get_file_size()){
-        logger(LL_ERROR, __func__, "Page index is out of file range");
+        logger(LL_ERROR, __func__, "chunk_t index is out of file range");
         return NULL;
     }
     mmap_page(get_page_offset(page_index));
@@ -251,7 +251,7 @@ int ch_write(uint64_t page_index, void* src, size_t size, off_t offset){
 
     void* page = NULL;
     if(page_index > get_max_page_index()){
-        logger(LL_ERROR, __func__, "Page index is out of range");
+        logger(LL_ERROR, __func__, "chunk_t index is out of range");
         return CachingFail;
     }
     if(!(page = ch_load_page(page_index))){
@@ -281,7 +281,7 @@ int ch_clear_page(uint64_t page_index){
     logger(LL_INFO, __func__, "Clearing page %ld", page_index);
     void* page = NULL;
     if(page_index > get_max_page_index()){
-        logger(LL_ERROR, __func__, "Page index is out of range");
+        logger(LL_ERROR, __func__, "chunk_t index is out of range");
         return CachingFail;
     }
     if(!(page = ch_load_page(page_index))){
@@ -435,7 +435,7 @@ time_t ch_find_least_used_time(){
  */
 
 uint64_t ch_unmap_some_pages(){
-    logger(LL_INFO, __func__, "Page unmapping start");
+    logger(LL_INFO, __func__, "chunk_t unmapping start");
     uint64_t unmap_count = 0;
     uint64_t usage_c = 0;
     uint64_t min_time = ch_find_least_used_time();
@@ -494,7 +494,7 @@ int ch_delete_page(uint64_t page_index){
         return CachingFail;
     }
     if(page_index > get_max_page_index()){
-        logger(LL_ERROR, __func__, "Page index is out of range");
+        logger(LL_ERROR, __func__, "chunk_t index is out of range");
         return CachingFail;
     }
     logger(LL_INFO, __func__, "Deleting page %ld", page_index);

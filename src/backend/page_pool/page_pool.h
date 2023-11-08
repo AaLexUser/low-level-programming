@@ -1,0 +1,51 @@
+#pragma once
+
+#include "backend/io/linked_pages.h"
+#include "backend/pstack/pstack.h"
+#include <stdint.h>
+
+#define sizeof_Page_Header (sizeof(int64_t) * 7)
+
+typedef struct chblix{
+    int64_t block_idx;
+    int64_t chunk_idx;
+} chblix_t;
+
+typedef struct chunk {
+    linked_page_t lp_header;
+    int64_t page_index;
+    int64_t capacity;
+    int64_t num_of_free_blocks;
+    int64_t num_of_used_blocks;
+    int64_t next;
+    int64_t prev_page;
+    int64_t next_page;
+} chunk_t;
+
+typedef struct page_pool {
+    linked_page_t lp_header;
+    int64_t current_idx;
+    int64_t head;
+    int64_t block_size;
+    int64_t wait_first_idx;
+    int64_t wait; // parray index
+} page_pool_t;
+
+typedef enum {PPL_SUCCESS = 0, PPL_FAIL = -1, PPL_EMPTY = 1} page_pool_status_t;
+
+chblix_t chblix_fail();
+int chblix_cmp(const chblix_t* chblix1, const chblix_t* chblix2);
+
+int64_t ppl_chunk_init(page_pool_t* ppl);
+chunk_t* ppl_create_page(page_pool_t* ppl);
+chunk_t* ppl_load_page(int64_t page_index);
+int ppl_delete_page(chunk_t* page);
+int ppl_write_block(page_pool_t* ppl, chblix_t* chblix, void* src, int64_t size, int64_t src_offset);
+void* ppl_read_block(page_pool_t* ppl, const chblix_t* chblix, int64_t src_offset);
+int ppl_pool_expand(page_pool_t* ppl);
+chblix_t ppl_alloc(page_pool_t* ppl);
+int ppl_pool_reduce(page_pool_t* ppl, chunk_t* page);
+int ppl_dealloc(page_pool_t* ppl, chblix_t* chblix);
+int64_t ppl_init(int64_t block_size);
+page_pool_t* ppl_load(int64_t start_page_index);
+int ppl_destroy(page_pool_t* ppl);

@@ -96,7 +96,7 @@ int mmap_page(off_t offset){
         return FILE_FAIL;
     };
     cur_page_offset = offset;
-    logger(LL_INFO, __func__, "Page %ld mapped on address %p", get_current_page_index(), cur_mmaped_data);
+    logger(LL_INFO, __func__, "chunk_t %ld mapped on address %p", get_current_page_index(), cur_mmaped_data);
     return FILE_SUCCESS;
 }
 

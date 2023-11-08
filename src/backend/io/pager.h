@@ -9,7 +9,7 @@
 #endif
 
 typedef struct {
-    PStack_List* deleted_pages;
+    int64_t deleted_pages; // index of parray page with deleted pages
 
 } Pager;
 
@@ -20,4 +20,5 @@ int pg_destroy();
 int64_t pg_alloc();
 void* pg_alloc_page();
 int pg_dealloc(int64_t page_index);
+void* pg_load_page(int64_t page_index);
 

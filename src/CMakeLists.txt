@@ -33,7 +33,10 @@ set(sources
         backend/page_pool/librarian.c
         backend/page_pool/page_set.c
         backend/virt_mem/page_virt_mem.c
-        backend/io/LinkedPages.c
+        backend/io/linked_pages.c
+        backend/utils/parray.c
+        backend/utils/pset.c
+        backend/io/linked_blocks.c
 
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)

@@ -14,6 +14,7 @@ file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS
         tests/pager.c
         tests/page_pool.c
         tests/linked_pages.c
+        tests/parray.c
 )
 
 foreach(test_source IN LISTS test_sources)

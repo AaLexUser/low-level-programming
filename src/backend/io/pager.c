@@ -1,5 +1,6 @@
 #include "pager.h"
 #include "../../utils/logger.h"
+#include "../utils/parray.h"
 #include "caching.h"
 
 
@@ -20,7 +21,7 @@ Pager pg;
 
 int pg_init(){
     logger(LL_INFO, __func__, "Initializing pager");
-    pg.deleted_pages = pst_list_init(sizeof(uint64_t), DELETED_PAGES_START_INDEX);
+    pg.deleted_pages = pa_init(sizeof(int64_t));
     return PAGER_SUCCESS;
 }
 
@@ -32,7 +33,6 @@ int pg_init(){
 
 int pg_destroy() {
     logger(LL_INFO, __func__, "Destroying pager");
-    pst_list_destroy(pg.deleted_pages);
     return PAGER_SUCCESS;
 }
 
@@ -45,12 +45,14 @@ int pg_destroy() {
 int64_t pg_alloc(){
     logger(LL_INFO, __func__, "Allocating page");
     int64_t page_idx = -1;
-    int res = pst_pop(pg.deleted_pages, &page_idx);
-    if(res == PSTACK_FAIL){
-        logger(LL_ERROR, __func__, "Unable to read from pstack");
-        return PAGER_FAIL;
+
+    int64_t del_pag_idx = -1;
+
+    if((pa_pop(pg.deleted_pages, &del_pag_idx)) == PA_SUCCESS){
+       page_idx = del_pag_idx;
     }
-    if(res == PSTACK_EMPTY){
+
+    if(del_pag_idx == -1){
         logger(LL_INFO, __func__, "Unable to pop page from deleted pages, allocating new page");
         if((page_idx = ch_new_page()) == CachingFail){
             logger(LL_ERROR, __func__, "Unable to load new page");
@@ -84,6 +86,7 @@ void* pg_alloc_page(){
 
 /**
  * Deallocates page
+ * @warning double deleting same page may cause program crash in future
  * @brief Deallocates page
  * @param page_index
  * @return PAGER_SUCCESS or PAGER_FAIL
@@ -91,14 +94,24 @@ void* pg_alloc_page(){
 
 int pg_dealloc(int64_t page_index) {
     logger(LL_INFO, __func__, "Deallocating page");
-    if (pst_push(pg.deleted_pages, &page_index) == PSTACK_FAIL) {
-        logger(LL_ERROR, __func__, "Unable to push page to deleted pages");
-        return PAGER_FAIL;
-    }
-    if( ch_delete_page(page_index) == CachingFail){
-        logger(LL_ERROR, __func__, "Unable to delete page");
-        return PAGER_FAIL;
-    }
+    pa_push_unique_int64(pg.deleted_pages, page_index);
     return PAGER_SUCCESS;
+}
+
+/**
+ * Loads page
+ * @brief Loads page
+ * @param page_index
+ * @return pointer to page or NULL
+ */
+
+void* pg_load_page(int64_t page_index){
+    logger(LL_INFO, __func__, "Loading page");
+    void* page_ptr = NULL;
+    if((page_ptr = ch_load_page(page_index)) == NULL){
+        logger(LL_ERROR, __func__, "Unable to load page");
+        return NULL;
+    }
+    return page_ptr;
 }
 
