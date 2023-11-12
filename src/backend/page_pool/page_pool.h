@@ -27,7 +27,6 @@ typedef struct page_pool {
     int64_t current_idx;
     int64_t head;
     int64_t block_size;
-    int64_t wait_first_idx;
     int64_t wait; // parray index
 } page_pool_t;
 
@@ -40,12 +39,11 @@ int64_t ppl_chunk_init(page_pool_t* ppl);
 chunk_t* ppl_create_page(page_pool_t* ppl);
 chunk_t* ppl_load_page(int64_t page_index);
 int ppl_delete_page(chunk_t* page);
-int ppl_write_block(page_pool_t* ppl, chblix_t* chblix, void* src, int64_t size, int64_t src_offset);
-void* ppl_read_block(page_pool_t* ppl, const chblix_t* chblix, int64_t src_offset);
+int ppl_write_block(int64_t ppidx, const chblix_t* chblix, void* src, int64_t size, int64_t src_offset);
+int ppl_read_block(int64_t ppidx, const chblix_t* chblix, void* dest,  int64_t size, int64_t src_offset);
 int ppl_pool_expand(page_pool_t* ppl);
-chblix_t ppl_alloc(page_pool_t* ppl);
+chblix_t ppl_alloc(int64_t ppidx);
 int ppl_pool_reduce(page_pool_t* ppl, chunk_t* page);
-int ppl_dealloc(page_pool_t* ppl, chblix_t* chblix);
+int ppl_dealloc(int64_t ppidx, chblix_t* chblix);
 int64_t ppl_init(int64_t block_size);
 page_pool_t* ppl_load(int64_t start_page_index);
-int ppl_destroy(page_pool_t* ppl);

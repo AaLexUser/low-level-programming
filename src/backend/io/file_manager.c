@@ -19,8 +19,10 @@ void* get_cur_mmaped_data(){
     return cur_mmaped_data;
 }
 
-uint64_t get_file_size(){
-    return file_size;
+off_t get_file_size(){
+    struct stat st;
+    stat(filename, &st);
+    return st.st_size;
 }
 
 int64_t get_max_page_index(){
@@ -64,6 +66,7 @@ int init_file(const char* file_name){
         logger(LL_ERROR, __func__ ,"Unable to open file.");
         return FILE_FAIL;
     }
+
     file_size = (uint64_t) lseek(fd, 0, SEEK_END);
     if(file_size != 0){
         if(mmap_page(cur_page_offset) == FILE_FAIL){

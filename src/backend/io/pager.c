@@ -1,11 +1,7 @@
 #include "pager.h"
 #include "../../utils/logger.h"
-#include "../utils/parray.h"
+#include "../utils/parray64.h"
 #include "caching.h"
-
-
-
-
 
 Pager pg;
 
@@ -21,7 +17,8 @@ Pager pg;
 
 int pg_init(){
     logger(LL_INFO, __func__, "Initializing pager");
-    pg.deleted_pages = pa_init(sizeof(int64_t));
+    pg.deleted_pages = -1;
+    pg.deleted_pages = pa_init64(sizeof(int64_t), -1);
     return PAGER_SUCCESS;
 }
 
@@ -48,8 +45,10 @@ int64_t pg_alloc(){
 
     int64_t del_pag_idx = -1;
 
-    if((pa_pop(pg.deleted_pages, &del_pag_idx)) == PA_SUCCESS){
-       page_idx = del_pag_idx;
+    if(pg.deleted_pages != -1){
+        if((pa_pop64(pg.deleted_pages, &del_pag_idx)) == PA_SUCCESS){
+            page_idx = del_pag_idx;
+        }
     }
 
     if(del_pag_idx == -1){
@@ -94,7 +93,8 @@ void* pg_alloc_page(){
 
 int pg_dealloc(int64_t page_index) {
     logger(LL_INFO, __func__, "Deallocating page");
-    pa_push_unique_int64(pg.deleted_pages, page_index);
+    pa_push_unique64(pg.deleted_pages, page_index);
+    ch_delete_page(page_index);
     return PAGER_SUCCESS;
 }
 

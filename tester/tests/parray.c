@@ -12,7 +12,7 @@ DEFINE_TEST(write_and_read){
     char str[] = "1234567";
     int64_t array = pa_init(sizeof(str));
     for(int64_t i = 0; i < 1000; i++){
-        pa_append(array, str);
+        pa_append(array, str, sizeof(str));
     }
     for(int64_t i = 0; i < 1000; i++){
         char* read_str = malloc(sizeof(str));
@@ -33,7 +33,7 @@ DEFINE_TEST(close_and_open){
     char str[] = "1234567";
     int64_t array = pa_init(sizeof(str));
     for(int64_t i = 0; i < 3000; i++){
-        pa_append(array, str);
+        pa_append(array, str, sizeof(str));
     }
     pg_destroy();
     ch_destroy();

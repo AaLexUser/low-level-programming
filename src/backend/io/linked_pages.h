@@ -14,6 +14,7 @@ int64_t lp_init();
 int64_t lp_useful_space_size(linked_page_t* linkedPage);
 linked_page_t* lp_load(int64_t page_index);
 int lp_delete(int64_t page_index);
+int lp_delete_last(int64_t page_index);
 int lp_write_page(linked_page_t *lp, void* src, int64_t size, int64_t src_offset);
 linked_page_t* lp_load_next(linked_page_t* lp);
 linked_page_t* lp_go_to(int64_t start_page_index, int64_t start_idx, int64_t stop_idx);

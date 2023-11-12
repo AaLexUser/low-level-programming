@@ -27,6 +27,7 @@ PStack* pst_load(size_t block_size, int64_t page_index);
 int pst_destroy(PStack* pst);
 int pst_list_expand(PStack_List* pstl);
 int pst_list_reduce(PStack_List* pstl);
+PStack* pst_create(size_t block_size);
 int pst_push(PStack_List* pstl, void* data);
 int pst_pop(PStack_List* pstl, void* data);
 PStack_List* pst_list_init(size_t block_size, int64_t start_page_index);

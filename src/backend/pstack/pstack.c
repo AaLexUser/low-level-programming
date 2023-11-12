@@ -118,6 +118,34 @@ int pst_destroy(PStack* pst) {
     return PSTACK_SUCCESS;
 }
 
+
+/**
+ * @brief Creates a new pstack
+ *
+ * @param block_size The size of a block in the pstack
+ * @return PStack* The initialized pstack or NULL
+ */
+
+PStack* pst_create(size_t block_size){
+    logger(LL_INFO, __func__, "Creating pstack");
+    int64_t page_idx;
+    if((page_idx = ch_new_page()) == CachingFail){
+        logger(LL_ERROR, __func__, "Unable to load new page");
+        return NULL;
+    }
+    PStack* pstack;
+    if(!(pstack = ch_load_page(page_idx))){
+        logger(LL_ERROR, __func__, "Unable to load page");
+        return NULL;
+    }
+    if(!(pst_init(block_size, page_idx, pstack))){
+        logger(LL_ERROR, __func__, "Unable to initialize pstack");
+        return NULL;
+    }
+    return pstack;
+
+}
+
 /**
  * Expand PStack List
  * @param pstl
@@ -144,15 +172,8 @@ int pst_list_expand(PStack_List* pstl){
         new_pst = pst_load(block_size, (int64_t) new_page_idx);
     }
     else {
-        if((new_page_idx = ch_new_page()) == CachingFail){
-            logger(LL_ERROR, __func__, "Unable to load new page");
-            return PSTACK_FAIL;
-        }
-        new_pst = pst_load(block_size, (int64_t) new_page_idx);
-        if(!(pst_init(block_size, (int64_t)new_page_idx, new_pst))){
-            logger(LL_ERROR, __func__, "Unable to initialize new pstack");
-            return PSTACK_FAIL;
-        }
+        new_pst = pst_create(block_size);
+        new_page_idx = new_pst->page_index;
     }
 
     if(!new_pst){

@@ -69,11 +69,39 @@ int lp_delete(int64_t page_index) {
 
     while (current->next_page != -1) {
         linked_page_t *next = (linked_page_t *) ch_load_page(current->next_page);
+        logger(LL_INFO, __func__, "Deleting linked_page_t %ld", current->page_index);
         if (pg_dealloc(current->page_index) == PAGER_FAIL) {
             logger(LL_ERROR, __func__, "Unable to deallocate page");
             return LP_FAIL;
         }
         current = next;
+    }
+
+    if (pg_dealloc(current->page_index) == PAGER_FAIL) {
+        logger(LL_ERROR, __func__, "Unable to deallocate page");
+        return LP_FAIL;
+    }
+    return LP_SUCCESS;
+}
+
+/**
+ * @breif       Delete last page in linked_page_t
+ * @param[in]   page_index: Fist page index of linked_page_t
+ * @return      LP_SUCCESS or LP_FAIL
+ */
+
+int lp_delete_last(int64_t page_index) {
+    logger(LL_INFO, __func__, "Deleting linked_page_t");
+
+    linked_page_t *current = (linked_page_t *) pg_load_page(page_index);
+
+    while (current->next_page != -1) {
+        linked_page_t *next = (linked_page_t *) pg_load_page(current->next_page);
+        current = next;
+    }
+    if(page_index == current->page_index){
+        logger(LL_ERROR, __func__, "Delete only page in linked_page_t is not permitted");
+        return LP_FAIL;
     }
 
     if (pg_dealloc(current->page_index) == PAGER_FAIL) {
@@ -138,9 +166,9 @@ linked_page_t* lp_load_next(linked_page_t* lp){
 
 
 /**
- *  Goes to linked_page_t with given index
- *  @breif Goes to linked_page_t with given index
- * @return pointer to linked_page_t or NULL
+ * Goes to linked_page_t with given index
+ * @breif   Goes to linked_page_t with given index
+ * @return  pointer to linked_page_t or NULL
  */
 
 linked_page_t* lp_go_to(int64_t start_page_index, int64_t start_idx, int64_t stop_idx){
