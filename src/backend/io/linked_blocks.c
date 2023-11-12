@@ -5,6 +5,7 @@
 
 #include <math.h>
 
+
 /**
  * \brief Allocates new linked block
  * \param[in] page_pool_idx
@@ -416,6 +417,47 @@ int64_t lb_ppl_init(int64_t block_size){
     return ppidx;
 }
 
+static chblix_t lb_nearest_valid_chblix_chunk(page_pool_t* ppl, chunk_t* chunk, int64_t block_idx){
+    chblix_t chblix = {.block_idx = block_idx, .chunk_idx = chunk->page_index};
+    int64_t pplidx = ppl->lp_header.page_index;
+    linked_block_t* temp = malloc(ppl->block_size);
+    while (chblix.block_idx != chunk->capacity){
+        if(lb_load(pplidx, &chblix, temp) == LB_FAIL){
+            logger(LL_ERROR, __func__, "Unable to load linked block");
+            free(temp);
+            return chblix_fail();
+        }
+        if(temp->flag == LB_USED){
+            free(temp);
+            return chblix;
+        }
+        chblix.block_idx++;
+    }
+
+    free(temp);
+    return chblix_fail();
+}
+
+chblix_t lb_nearest_valid_chblix(page_pool_t* ppl, chblix_t chblix){
+    chunk_t* chunk = ppl_load_page(chblix.chunk_idx);
+    do{
+        chblix_t chblix_res = lb_nearest_valid_chblix_chunk(ppl, chunk, chblix.block_idx);
+        if(chblix_cmp(&chblix, &CHBLIX_FAIL) != 0){
+            return chblix_res;
+        }
+        if(chunk->next_page != -1){
+            chunk = ppl_load_page(chunk->next_page);
+        }
+    } while(chunk->next_page != -1);
+    return chblix_fail();
+}
+
+chblix_t lb_pool_start(page_pool_t* ppl){
+    if(ppl->head == -1){
+        return chblix_fail();
+    }
+    return lb_nearest_valid_chblix_chunk(ppl, ppl_load_page(ppl->head), 0);
+}
 
 
 

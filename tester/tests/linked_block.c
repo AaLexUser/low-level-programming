@@ -169,6 +169,33 @@ DEFINE_TEST(varchar){
     delete_file();
 }
 
+DEFINE_TEST(foreach){
+    assert(init_file("test.db") == FILE_SUCCESS);
+
+    ch_init();
+    pg_init();
+    char str[] = "12345678";
+    int64_t block_size = 9;
+    int64_t poop_idx = lb_ppl_init(block_size);
+    int64_t count = 2;
+    chblix_t blocks[count];
+    for(int64_t i = 0; i < count; i++){
+        chblix_t block = lb_alloc(poop_idx);
+        blocks[i] = block;
+        lb_write(poop_idx, &block, str, sizeof(str), 0);
+    }
+    page_pool_t* ppl = ppl_load(poop_idx);
+    lb_for_each(chblix, ppl){
+        char* read_srt = malloc(sizeof(str));
+        lb_read(poop_idx, &chblix, read_srt, sizeof(str), 0);
+        assert(strcmp(str, read_srt) == 0);
+        free(read_srt);
+    }
+    pg_destroy();
+    ch_destroy();
+    delete_file();
+}
+
 
 int main(){
     RUN_SINGLE_TEST(write_read);
@@ -177,4 +204,5 @@ int main(){
     RUN_SINGLE_TEST(dealloc);
     RUN_SINGLE_TEST(ultra_wide_page);
     RUN_SINGLE_TEST(varchar);
+    RUN_SINGLE_TEST(foreach);
 }
