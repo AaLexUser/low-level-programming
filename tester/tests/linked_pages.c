@@ -1,28 +1,21 @@
 #include "../src/test.h"
-#include "../src/backend/io/file_manager.h"
 #include "../src/backend/io/caching.h"
 #include "backend/io/pager.h"
 #include "backend/io/linked_pages.h"
 
 DEFINE_TEST(simple_to_start){
-    assert(init_file("test.db") == FILE_SUCCESS);
-    ch_init();
-    pg_init();
+    assert(pg_init("test.db") == PAGER_SUCCESS);
     int64_t lp_idx = lp_init();
     assert(lp_idx != -1);
     linked_page_t* lp = lp_load(lp_idx);
     assert(lp->next_page == -1);
     assert(lp->page_index != -1);
     assert(lp_delete(lp->page_index) == LP_SUCCESS);
-    pg_destroy();
-    ch_destroy();
-    delete_file();
+    pg_delete();
 }
 
 DEFINE_TEST(write_read_to_single_page){
-    assert(init_file("test.db") == FILE_SUCCESS);
-    ch_init();
-    pg_init();
+    assert(pg_init("test.db") == PAGER_SUCCESS);
     int64_t lp = lp_init();
     assert(lp != -1);
     char str[] = "12345678";
@@ -32,15 +25,11 @@ DEFINE_TEST(write_read_to_single_page){
     assert(strcmp(str, read_str) == 0);
     free(read_str);
     assert(lp_delete(lp) == LP_SUCCESS);
-    pg_destroy();
-    ch_destroy();
-    delete_file();
+    pg_delete();
 }
 
 DEFINE_TEST(write_reade_to_two_page){
-    assert(init_file("test.db") == FILE_SUCCESS);
-    ch_init();
-    pg_init();
+    assert(pg_init("test.db") == PAGER_SUCCESS);
     int64_t lp = lp_init();
     assert(lp != -1);
     char str1[] = "12345678";
@@ -56,28 +45,20 @@ DEFINE_TEST(write_reade_to_two_page){
     assert(strcmp(str2, read_str2) == 0);
     free(read_str2);
     assert(lp_delete(lp) == LP_SUCCESS);
-    pg_destroy();
-    ch_destroy();
-    delete_file();
+    pg_delete();
 }
 
 DEFINE_TEST(close_and_open){
-    assert(init_file("test.db") == FILE_SUCCESS);
-    ch_init();
-    pg_init();
+    assert(pg_init("test.db") == PAGER_SUCCESS);
     int64_t lp = lp_init();
     assert(lp != -1);
     char str1[] = "12345678";
     assert(lp_write(lp, str1, sizeof(str1), PAGE_SIZE + 40) == LP_SUCCESS);
     char str2[] = "abcdefgh";
     assert(lp_write(lp, str2, sizeof(str2), 12) == LP_SUCCESS);
-    pg_destroy();
-    ch_destroy();
-    close_file();
+    pg_close();
 
-    assert(init_file("test.db") == FILE_SUCCESS);
-    ch_init();
-    pg_init();
+    assert(pg_init("test.db") == PAGER_SUCCESS);
     assert(lp != -1);
     char* read_str1 = malloc(sizeof(str1));
     assert(lp_read_copy(lp, read_str1, sizeof(str1), PAGE_SIZE + 40) == LP_SUCCESS);
@@ -88,15 +69,11 @@ DEFINE_TEST(close_and_open){
     assert(strcmp(str2, read_str2) == 0);
     free(read_str2);
     assert(lp_delete(lp) == LP_SUCCESS);
-    pg_destroy();
-    ch_destroy();
-    delete_file();
+    pg_delete();
 }
 
 DEFINE_TEST(caching_remove){
-    assert(init_file("test.db") == FILE_SUCCESS);
-    ch_init();
-    pg_init();
+    assert(pg_init("test.db") == PAGER_SUCCESS);
     int64_t lp = lp_init();
     assert(lp != -1);
     char str1[] = "12345678";
@@ -112,9 +89,7 @@ DEFINE_TEST(caching_remove){
     assert(strcmp(str2, read_str2) == 0);
     free(read_str2);
     assert(lp_delete(lp) == LP_SUCCESS);
-    pg_destroy();
-    ch_destroy();
-    delete_file();
+    pg_delete();
 }
 
 

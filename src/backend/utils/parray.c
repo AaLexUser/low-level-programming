@@ -2,12 +2,14 @@
 #include "utils/logger.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <sys/types.h>
 /**
  * @brief       Initializes PArray
  * @param[in]   block_size: size of block
  * @param[in]   inval: invalid value used when deleting blocks
  * @return      page_index or PA_FAIL
  */
+
 int64_t pa_init(int64_t block_size){
     int64_t page_index = lp_init_m(sizeof(parray_t));
     if(page_index == LP_FAIL){

@@ -19,7 +19,7 @@ int64_t lp_init_m(int64_t mem_start){
         logger(LL_ERROR, __func__, "Unable to allocate page");
         return LP_FAIL;
     }
-    linked_page_t *lp = (linked_page_t *) ch_load_page(page_index);
+    linked_page_t *lp = (linked_page_t *) pg_load_page(page_index);
     if(lp == NULL){
         logger(LL_ERROR, __func__, "Unable to allocate page");
         return LP_FAIL;
@@ -65,10 +65,10 @@ linked_page_t* lp_load(int64_t page_index){
 int lp_delete(int64_t page_index) {
     logger(LL_INFO, __func__, "Deleting linked_page_t");
 
-    linked_page_t *current = (linked_page_t *) ch_load_page(page_index);
+    linked_page_t *current = (linked_page_t *) pg_load_page(page_index);
 
     while (current->next_page != -1) {
-        linked_page_t *next = (linked_page_t *) ch_load_page(current->next_page);
+        linked_page_t *next = (linked_page_t *) pg_load_page(current->next_page);
         logger(LL_INFO, __func__, "Deleting linked_page_t %ld", current->page_index);
         if (pg_dealloc(current->page_index) == PAGER_FAIL) {
             logger(LL_ERROR, __func__, "Unable to deallocate page");
@@ -136,7 +136,7 @@ int lp_write_page(linked_page_t *lp, void* src, int64_t size, int64_t src_offset
                lp->page_index, size, src_offset);
         return LP_FAIL;
     }
-    if(ch_write(lp->page_index, src, size, (off_t)(lp->mem_start + src_offset)) == CachingFail){
+    if(pg_write(lp->page_index, src, size, (off_t)(lp->mem_start + src_offset)) == PAGER_FAIL){
         logger(LL_ERROR, __func__, "Unable to write to linked_page_t %ld", lp->page_index);
         return LP_FAIL;
     }
@@ -161,7 +161,12 @@ linked_page_t* lp_load_next(linked_page_t* lp){
         lp =  lp_load(page_index); // cache can remove page from memory after new page init
         lp->next_page = next_idx;
     }
-    return lp_load(next_idx);
+    linked_page_t* res = lp_load(next_idx);
+    if(res == NULL){
+        logger(LL_ERROR, __func__, "Unable to load linked_page_t %ld", next_idx);
+        return NULL;
+    }
+    return res;
 }
 
 
@@ -180,6 +185,10 @@ linked_page_t* lp_go_to(int64_t start_page_index, int64_t start_idx, int64_t sto
 
     while (stop_idx > start_idx){
         lp = lp_load_next(lp);
+        if(lp == NULL){
+            logger(LL_ERROR, __func__, "Unable to load linked_page_t %ld", start_page_index);
+            return NULL;
+        }
         start_idx++;
     }
     return lp;
@@ -255,7 +264,7 @@ int lp_read_copy_page(linked_page_t* lp, void* dest, int64_t size, int64_t src_o
                lp->page_index, size, src_offset);
         return LP_FAIL;
     }
-    if(ch_copy_read(lp->page_index, dest, size, (off_t)(lp->mem_start + src_offset)) == CachingFail){
+    if(pg_copy_read(lp->page_index, dest, size, (off_t)(lp->mem_start + src_offset)) == PAGER_FAIL){
         logger(LL_ERROR, __func__, "Unable to read from linked_page_t %ld", lp->page_index);
         return LP_FAIL;
     }
@@ -286,10 +295,15 @@ int lp_read_copy(int64_t page_index, void* dest, int64_t size, int64_t src_offse
 
     lp = lp_go_to(lp->page_index, current_page_idx,starting_page);
 
+    if(lp == NULL){
+        logger(LL_ERROR, __func__, "Unable to load linked_page_t %ld", page_index);
+        return LP_FAIL;
+    }
+
     while (pages_needed > 0 ){
         int64_t size_to_read = size > lp_useful_space_size(lp) - starting_offset
                 ? (int64_t)lp_useful_space_size(lp) - starting_offset : size;
-        if(lp_read_copy_page(lp, dest, size_to_read, starting_offset) == CachingFail){
+        if(lp_read_copy_page(lp, dest, size_to_read, starting_offset) == CH_FAIL){
             logger(LL_ERROR, __func__, "Unable to read from linked_page_t %ld", lp->page_index);
             return LP_FAIL;
         }

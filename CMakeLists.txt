@@ -17,7 +17,7 @@ if(CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE IN_LIST CMAKE_CONFIGURATION_TYPES)
 endif()
 
 if(CMAKE_C_COMPILER_ID STREQUAL GNU OR CMAKE_C_COMPILER_ID MATCHES Clang)
-    set(CMAKE_C_FLAGS       "-std=c17 -ggdb")
+    set(CMAKE_C_FLAGS       "-std=c17 -ggdb -lm")
     set(CMAKE_C_FLAGS_ASAN  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-optimize-sibling-calls -fno-omit-frame-pointer")
     set(CMAKE_C_FLAGS_LSAN  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=leak")
     set(CMAKE_C_FLAGS_MSAN  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=memory -fno-optimize-sibling-calls -fno-omit-frame-pointer")
@@ -32,17 +32,6 @@ add_compile_definitions(DEBUG)
 if(WIN32)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
-
-# GoogleTest
-include(FetchContent)
-FetchContent_Declare(
-        googletest
-        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
 
 add_subdirectory(src)
 

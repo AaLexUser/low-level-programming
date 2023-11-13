@@ -95,7 +95,7 @@ chunk_t* ppl_create_page(page_pool_t* ppl){
 chunk_t* ppl_load_page(int64_t page_index){
     logger(LL_INFO, __func__, "Loading page");
 
-    if(page_index > get_max_page_index()){
+    if(page_index > pg_max_page_index()){
         logger(LL_ERROR, __func__, "chunk_t index is out of range");
         return NULL;
     }
@@ -153,7 +153,7 @@ int ppl_write_block(int64_t ppidx, const chblix_t* chblix, void* src, int64_t si
     int64_t page_index = chblix->chunk_idx;
     off_t offset = chblix->block_idx * ppl->block_size + src_offset;
 
-    if(lp_write(page_index, src, size, offset) == CachingFail){
+    if(lp_write(page_index, src, size, offset) == CH_FAIL){
         logger(LL_ERROR, __func__, "Unable to write to page");
         return PPL_FAIL;
     }
@@ -484,7 +484,7 @@ int64_t ppl_init(int64_t block_size){
 
 page_pool_t* ppl_load(int64_t start_page_index){
     logger(LL_INFO, __func__, "Loading chunk_t Pool %ld.", start_page_index);
-    if(start_page_index > get_max_page_index()){
+    if(start_page_index > pg_max_page_index()){
         logger(LL_ERROR, __func__, "You need to init page pool before");
         return NULL;
     }

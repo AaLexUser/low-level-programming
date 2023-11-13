@@ -11,7 +11,7 @@ typedef struct parray{
     int64_t block_size;
 } parray_t;
 
-enum parray_statuses{PA_SUCCESS = 0, PA_FAIL = -1, PA_EMPTY = -2} parray_statuses_t;
+enum {PA_SUCCESS = 0, PA_FAIL = -1, PA_EMPTY = -2};
 
 int64_t pa_init(int64_t block_size);
 parray_t* pa_load(int64_t page_index);

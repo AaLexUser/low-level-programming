@@ -1,5 +1,6 @@
 #include "../../utils/logger.h"
 #include "../io/caching.h"
+#include "backend/io/pager.h"
 #include "pstack.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -31,12 +32,12 @@ PStack* pst_init(size_t block_size, int64_t page_index, PStack* pstack){
 PStack* pst_load(size_t block_size, int64_t page_index){
     logger(LL_INFO, __func__, "Initializing pstack");
     PStack* pstack;
-    if(page_index > get_max_page_index()){
-        if ((page_index = ch_new_page()) == CachingFail){
+    if(page_index > pg_max_page_index()){
+        if ((page_index = pg_alloc()) == PAGER_FAIL){
             logger(LL_ERROR, __func__, "Unable to allocate new page");
             return NULL;
         }
-        if(!(pstack = ch_load_page(page_index))) {
+        if(!(pstack = pg_load_page(page_index))) {
             logger(LL_INFO, __func__, "Unable to load page");
             return NULL;
         }
@@ -46,7 +47,7 @@ PStack* pst_load(size_t block_size, int64_t page_index){
         }
     }
     else {
-        if(!(pstack = ch_load_page(page_index))) {
+        if(!(pstack = pg_load_page(page_index))) {
             logger(LL_INFO, __func__, "Unable to load page");
             return NULL;
         }
@@ -63,7 +64,7 @@ PStack* pst_load(size_t block_size, int64_t page_index){
 PStack* pst_load_current(PStack_List* pstl){
     logger(LL_INFO, __func__, "Loading current pstack");
     PStack* current;
-    if(!(current= ch_load_page(pstl->current_idx))){
+    if(!(current= pg_load_page(pstl->current_idx))){
         logger(LL_ERROR, __func__, "Unable to load current PStack");
         return NULL;
     }
@@ -114,7 +115,7 @@ PStack* pst_go_to_head(PStack_List* pstl){
 
 int pst_destroy(PStack* pst) {
     logger(LL_INFO, __func__, "Destroying pstack");
-    ch_delete_page(pst->page_index);
+    pg_dealloc(pst->page_index);
     return PSTACK_SUCCESS;
 }
 
@@ -129,12 +130,12 @@ int pst_destroy(PStack* pst) {
 PStack* pst_create(size_t block_size){
     logger(LL_INFO, __func__, "Creating pstack");
     int64_t page_idx;
-    if((page_idx = ch_new_page()) == CachingFail){
+    if((page_idx = pg_alloc()) == PAGER_FAIL){
         logger(LL_ERROR, __func__, "Unable to load new page");
         return NULL;
     }
     PStack* pstack;
-    if(!(pstack = ch_load_page(page_idx))){
+    if(!(pstack = pg_load_page(page_idx))){
         logger(LL_ERROR, __func__, "Unable to load page");
         return NULL;
     }
@@ -198,7 +199,7 @@ int pst_list_reduce(PStack_List* pstl){
     PStack* current = pst_load_current(pstl);
 
     void* page;
-    if(!(page = ch_load_page(current->prev_page))){
+    if(!(page = pg_load_page(current->prev_page))){
         logger(LL_ERROR, __func__, "Unable to load previous PStack");
         return PSTACK_FAIL;
     }
@@ -235,7 +236,7 @@ int pst_push(PStack_List* pstl, void* data){
 
     size_t size = current->block_size;
     unsigned long offset = current->block_size * current->size + sizeof_PStack_Header;
-    if(ch_write(current->page_index, data, size, (off_t)offset) == CachingFail){
+    if(pg_write(current->page_index, data, size, (off_t)offset) == CH_FAIL){
         logger(LL_ERROR, __func__, "Unable to write to pstack");
         return PSTACK_FAIL;
     }
@@ -288,7 +289,7 @@ int pst_pop(PStack_List* pstl, void* data){
         }
     }
     unsigned long offset = current->block_size * (current->size - 1) + sizeof_PStack_Header;
-    if(ch_copy_read(current->page_index, data, current->block_size, (off_t)offset) == CachingFail){
+    if(pg_copy_read(current->page_index, data, current->block_size, (off_t)offset) == CH_FAIL){
         logger(LL_ERROR, __func__, "Unable to read from pstack");
         return PSTACK_FAIL;
     }

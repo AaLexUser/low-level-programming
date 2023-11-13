@@ -1,14 +1,11 @@
 #include "../src/test.h"
-#include "../src/backend/io/file_manager.h"
 #include "../src/backend/io/caching.h"
 #include "backend/io/pager.h"
 #include "backend/io/linked_pages.h"
 #include "backend/utils/parray.h"
 
 DEFINE_TEST(write_and_read){
-    assert(init_file("test.db") == FILE_SUCCESS);
-    ch_init();
-    pg_init();
+    assert(pg_init("test.db") == PAGER_SUCCESS);
     char str[] = "1234567";
     int64_t array = pa_init(sizeof(str));
     for(int64_t i = 0; i < 1000; i++){
@@ -21,27 +18,19 @@ DEFINE_TEST(write_and_read){
         free(read_str);
     }
     pa_destroy(array);
-    pg_destroy();
-    ch_destroy();
-    delete_file();
+    pg_delete();
 }
 
 DEFINE_TEST(close_and_open){
-    assert(init_file("test.db") == FILE_SUCCESS);
-    ch_init();
-    pg_init();
+    assert(pg_init("test.db") == PAGER_SUCCESS);
     char str[] = "1234567";
     int64_t array = pa_init(sizeof(str));
     for(int64_t i = 0; i < 3000; i++){
         pa_append(array, str, sizeof(str));
     }
-    pg_destroy();
-    ch_destroy();
-    close_file();
+    pg_close();
 
-    assert(init_file("test.db") == FILE_SUCCESS);
-    ch_init();
-    pg_init();
+    assert(pg_init("test.db") == PAGER_SUCCESS);
     for(int64_t i = 0; i < 3000; i++){
         char* read_str = malloc(sizeof(str));
         pa_at(array, i, read_str);
@@ -49,9 +38,7 @@ DEFINE_TEST(close_and_open){
         free(read_str);
     }
     pa_destroy(array);
-    pg_destroy();
-    ch_destroy();
-    delete_file();
+    pg_delete();
 }
 
 

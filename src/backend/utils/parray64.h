@@ -1,3 +1,4 @@
+#pragma once
 #include "parray.h"
 
 typedef struct parray64{

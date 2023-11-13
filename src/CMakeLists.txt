@@ -1,4 +1,3 @@
-
 find_program(CLANG_TIDY clang-tidy)
 message(STATUS "Clang-tidy: ${CLANG_TIDY}")
 if(CLANG_TIDY)
@@ -23,7 +22,7 @@ endif()
 #        ../src/backend/db/db.c
 #)
 set(sources
-        backend/io/file_manager.c
+        backend/io/file.c
         utils/logger.c
         backend/io/caching.c
         backend/io/pager.c
@@ -41,7 +40,7 @@ set(sources
 
 add_library(db STATIC ${sources})
 target_include_directories(db PUBLIC .)
-
+target_link_libraries(db PUBLIC m)
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/main.c)
     add_executable(db_exe main.c)
     target_link_libraries(db_exe PRIVATE db)

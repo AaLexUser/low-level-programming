@@ -1,90 +1,97 @@
 #include "../src/test.h"
-#include "../src/backend/io/file_manager.h"
+#include "../src/backend/io/file.h"
 #include <stdio.h>
 
 DEFINE_TEST(write_and_read){
-    if(init_file("test.db") == -1){
+    file_t* file = malloc(sizeof(file_t));
+    if(init_file("test.db", file) == -1){
         exit(EXIT_FAILURE);
     }
     char str[] = "12345678";
-    init_page();
-    write_page(str, sizeof(str), 0);
-    unmap_page(get_cur_mmaped_data());
-    mmap_page(0);
+    init_page(file);
+    write_page(file, str, sizeof(str), 0);
+    unmap_page(fl_cur_mmaped_data(file), file);
+    mmap_page(0, file);
     char* read_str = malloc(sizeof(str));
-    read_page(read_str, sizeof(str), 0);
+    read_page(file, read_str, sizeof(str), 0);
     assert(strcmp(str, read_str) == 0);
-    delete_file();
+    delete_file(file);
+    free(file);
 }
 
 DEFINE_TEST(two_write){
-    if(init_file("test.db") == -1){
+    file_t* file = malloc(sizeof(file_t));
+    if(init_file("test.db", file) == -1){
         exit(EXIT_FAILURE);
     }
     char str1[] = "12345678";
-    init_page();
-    write_page(str1, sizeof(str1), 0);
-    unmap_page(get_cur_mmaped_data());
-    mmap_page(0);
+    init_page(file);
+    write_page(file, str1, sizeof(str1), 0);
+    unmap_page(fl_cur_mmaped_data(file), file);
+    mmap_page(0, file);
     char str2[] = "abcdefg";
-    write_page(str2, sizeof(str2), sizeof(str1));
+    write_page(file, str2, sizeof(str2), sizeof(str1));
 
     char* read_str2 = malloc(sizeof(str2));
-    read_page(read_str2,sizeof(str2), sizeof(str1));
+    read_page(file, read_str2,sizeof(str2), sizeof(str1));
     assert(strcmp(str2, read_str2) == 0);
-
-    delete_file();
+    delete_file(file);
+    free(file);
 }
 DEFINE_TEST(two_pages){
-    if(init_file("test.db") == -1){
+    file_t* file = malloc(sizeof(file_t));
+    if(init_file("test.db", file) == -1){
         exit(EXIT_FAILURE);
     }
     char str1[] = "12345678";
-    init_page();
-    write_page(str1, sizeof(str1), 0);
-    unmap_page(get_cur_mmaped_data());
-    init_page();
+    init_page(file);
+    write_page(file, str1, sizeof(str1), 0);
+    unmap_page(fl_cur_mmaped_data(file), file);
+    init_page(file);
     char str2[] = "abcdefg";
-    write_page(str2, sizeof(str2), 0);
-    unmap_page(get_cur_mmaped_data());
-    mmap_page(0);
+    write_page(file, str2, sizeof(str2), 0);
+    unmap_page(fl_cur_mmaped_data(file), file);
+    mmap_page(0, file);
     char* read_str1 = malloc(sizeof(str1));
-    read_page(read_str1,sizeof(str1), 0);
+    read_page(file, read_str1,sizeof(str1), 0);
     assert(strcmp(str1, read_str1) == 0);
-    unmap_page(get_cur_mmaped_data());
-    mmap_page(PAGE_SIZE);
+    unmap_page(fl_cur_mmaped_data(file), file);
+    mmap_page(PAGE_SIZE, file);
     char* read_str2 = malloc(sizeof(str2));
-    read_page(read_str2,sizeof(str2), 0);
+    read_page(file, read_str2,sizeof(str2), 0);
     assert(strcmp(str2, read_str2) == 0);
-    delete_file();
+    delete_file(file);
+    free(file);
 }
 
 DEFINE_TEST(delete_last_page){
-    if(init_file("test.db") == -1){
+    file_t* file = malloc(sizeof(file_t));
+    if(init_file("test.db", file) == -1){
         exit(EXIT_FAILURE);
     }
     char str1[] = "12345678";
-    init_page();
-    write_page(str1, sizeof(str1), 0);
-    unmap_page(get_cur_mmaped_data());
-    init_page();
+    init_page(file);
+    write_page(file, str1, sizeof(str1), 0);
+    unmap_page(fl_cur_mmaped_data(file), file);
+    init_page(file);
     char str2[] = "abcdefg";
-    write_page(str2, sizeof(str2), 0);
-    unmap_page(get_cur_mmaped_data());
-    mmap_page(0);
+    write_page(file, str2, sizeof(str2), 0);
+    unmap_page(fl_cur_mmaped_data(file), file);
+    mmap_page(0, file);
     char* read_str1 = malloc(sizeof(str1));
-    read_page(read_str1,sizeof(str1), 0);
+    read_page(file, read_str1,sizeof(str1), 0);
     assert(strcmp(str1, read_str1) == 0);
-    unmap_page(get_cur_mmaped_data());
-    mmap_page(PAGE_SIZE);
+    unmap_page(fl_cur_mmaped_data(file), file);
+    mmap_page(PAGE_SIZE, file);
     char* read_str2 = malloc(sizeof(str2));
-    read_page(read_str2,sizeof(str2), 0);
+    read_page(file, read_str2,sizeof(str2), 0);
     assert(strcmp(str2, read_str2) == 0);
-    assert(unmap_page(get_cur_mmaped_data()) == 0);
-    assert(2 * PAGE_SIZE == (int) get_file_size());
-    assert(delete_last_page() == 0);
-    assert(1 * PAGE_SIZE == (int) get_file_size());
-    assert(delete_file() == 0);
+    assert(unmap_page(fl_cur_mmaped_data(file), file) == 0);
+    assert(2 * PAGE_SIZE == (int) fl_file_size(file));
+    assert(delete_last_page(file) == 0);
+    assert(1 * PAGE_SIZE == (int) fl_file_size(file));
+    assert(delete_file(file) == 0);
+    free(file);
 }
 
 int main(){
