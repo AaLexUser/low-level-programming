@@ -38,8 +38,8 @@ int chblix_cmp(const chblix_t* chblix1, const chblix_t* chblix2);
 
 int64_t ppl_chunk_init(page_pool_t* ppl);
 chunk_t* ppl_create_page(page_pool_t* ppl);
-chunk_t* ppl_load_page(int64_t page_index);
-int ppl_delete_page(chunk_t* page);
+chunk_t* ppl_load_chunk(int64_t chunk_index);
+int ppl_delete_chunk(chunk_t* chunk);
 int ppl_write_block(int64_t ppidx, const chblix_t* chblix, void* src, int64_t size, int64_t src_offset);
 int ppl_read_block(int64_t ppidx, const chblix_t* chblix, void* dest,  int64_t size, int64_t src_offset);
 int ppl_pool_expand(page_pool_t* ppl);
@@ -48,3 +48,4 @@ int ppl_pool_reduce(page_pool_t* ppl, chunk_t* page);
 int ppl_dealloc(int64_t ppidx, chblix_t* chblix);
 int64_t ppl_init(int64_t block_size);
 page_pool_t* ppl_load(int64_t start_page_index);
+int ppl_destroy(int64_t pplidx);
