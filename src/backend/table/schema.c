@@ -1,163 +1,115 @@
 #include "schema.h"
+#include "backend/page_pool/linked_blocks.h"
+#include "utils/logger.h"
 
+/**
+ * @brief       Initialize a schema
+ * @return      index of the schema on success, SCHEMA_FAIL on failure
+ */
 
-void clear_field(Field* field){
-    field->type = DATA_TYPE_UNKNOWN;
-    field->length = 0;
-    field->offset = 0;
-}
-
-void clear_schema(Schema* schema){
-    clear_linked_list(schema->fields);
-    schema->slot_size = 0;
-}
-
-void free_field_data(void* ptr){
-    Field* field = (Field*)ptr;
-    clear_field(field);
-}
-
-void free_field(void* ptr){
-    Field* field = (Field*)ptr;
-    free_field_data(field);
-    free(field);
-}
-
-Schema* create_schema(const char* name){
-    Schema* schema = malloc(sizeof(Schema));
-    schema->fields = create_linked_list_with_free(free_field);
-    schema->slot_size = 0;
-    strncpy(schema->name, name, MAX_NAME_LENGTH);
-    return schema;
-}
-
-
-void free_schema(Schema* schema){
-    if(schema == NULL){
-        return;
+int64_t sch_init(){
+    int64_t schidx = lb_ppl_init(sizeof(field_t) - sizeof(linked_block_t));
+    schema_t* sch = (schema_t*)lb_ppl_load(schidx);
+    if(sch == NULL) {
+        logger(LL_ERROR, __func__, "Failed to load schema %ld", schidx);
+        return SCHEMA_FAIL;
     }
-    free_linked_list(schema->fields);
+    sch->slot_size = 0;
+    return schidx;
 }
 
-void schema_add_field(Schema* schema, const char* name, DATA_TYPE type, size_t length){
-    Field* field = malloc(sizeof(Field));
-    strncpy(field->name, name, MAX_NAME_LENGTH);
-    field->type = type;
-    field->length = length;
-    field->offset = schema->slot_size;
-    schema->slot_size += length;
-    linked_list_add_node(schema->fields, field);
+/**
+ * @brief       Add a field
+ * @param[in]   schidx: index of the schema
+ * @param[in]   name: name of the field
+ * @param[in]   type: type of the field
+ * @param[in]   size: size of the type
+ * @return      SCHEMA_SUCCESS on success, SCHEMA_FAIL on failure
+ */
+
+int sch_add_field(int64_t schidx, const char* name, DATA_TYPE type, size_t size){
+    schema_t* sch = sch_load(schidx);
+    if(sch == NULL) {
+        logger(LL_ERROR, __func__, "Failed to load schema %ld", schidx);
+        return SCHEMA_FAIL;
+    }
+
+    chblix_t fieldix = lb_alloc_m(schidx, sizeof(field_t));
+    if(chblix_cmp(&fieldix, &CHBLIX_FAIL) == 0){
+        logger(LL_ERROR, __func__, "Failed to allocate field %s", name);
+        return SCHEMA_FAIL;
+    }
+    field_t field;
+    if(sch_field_load(schidx, &fieldix, &field) == LB_FAIL){
+        logger(LL_ERROR, __func__, "Failed to load field %s", name);
+        return SCHEMA_FAIL;
+    }
+    strncpy(field.name, name, MAX_NAME_LENGTH);
+    field.type = type;
+    field.size = size;
+    field.offset = sch->slot_size;
+    sch->slot_size += size;
+    if(sch_field_update(schidx, &fieldix, &field) == LB_FAIL){
+        logger(LL_ERROR, __func__, "Failed to update field %s", name);
+        return SCHEMA_FAIL;
+    }
+    return SCHEMA_SUCCESS;
 }
 
-Field* schema_get_field(Schema* schema, const char* name){
-    Field* field;
-    LinkedListIterator* llr = create_linked_list_iterator(schema->fields);
-    while (iterator_has_next(llr))
-    {
-        field = iterator_next_data(llr);
+/**
+ * @brief       Get a field
+ * @param[in]   schidx: index of the schema
+ * @param[in]   name: name of the field
+ * @param[out]  field: pointer to destination field
+ * @return
+ */
+
+int sch_get_field(int64_t schidx, const char* name, field_t* field){
+    schema_t* sch = sch_load(schidx);
+    if(sch == NULL) {
+        logger(LL_ERROR, __func__, "Failed to load schema %ld", schidx);
+        return SCHEMA_FAIL;
+    }
+
+    lb_for_each(chblix, (page_pool_t*)sch){
+        if(sch_field_load(schidx, &chblix, field) == LB_FAIL){
+            logger(LL_ERROR, __func__, "Failed to read field %s", name);
+            return SCHEMA_FAIL;
+        }
         if(strcmp(field->name, name) == 0){
-            free_linked_list_iterator(llr);
-            return field;
+            return SCHEMA_SUCCESS;
         }
     }
-    free_linked_list_iterator(llr);
-    return NULL;
+    logger(LL_ERROR, __func__, "Failed to find field %s", name);
+    return SCHEMA_NOT_FOUND;
 }
 
-DATA_TYPE schema_get_field_type(Schema* schema, const char* name){
-    Field* field = schema_get_field(schema, name);
-    if(field == NULL){
-        return DATA_TYPE_UNKNOWN;
+/**
+ * @brief       Delete a field
+ * @warning     This function delete field, but dont touch offsets in other fields in schema.
+ * @param[in]   schidx: index of the schema
+ * @param[in]   name: name of the field
+ * @return      SCHEMA_SUCCESS on success, SCHEMA_FAIL on failure
+ */
+
+int sch_delete_field(int64_t schidx, const char* name){
+    schema_t* sch = sch_load(schidx);
+    if(sch == NULL) {
+        logger(LL_ERROR, __func__, "Failed to load schema %ld", schidx);
+        return SCHEMA_FAIL;
     }
-    return field->type;
-}
 
-size_t schema_get_field_length(Schema* schema, const char* name){
-    Field* field = schema_get_field(schema, name);
-    if(field == NULL){
-        return 0;
+    sch_for_each(sch, field){
+        if(strcmp(field.name, name) == 0){
+            if(lb_dealloc(schidx, &field.lb_header.chblix) == LB_FAIL){
+                logger(LL_ERROR, __func__, "Failed to deallocate field %s", name);
+                return SCHEMA_FAIL;
+            }
+            return SCHEMA_SUCCESS;
+        }
     }
-    return field->length;
-}
 
-size_t schema_get_field_offset(Schema* schema, const char* name){
-    Field* field = schema_get_field(schema, name);
-    if(field == NULL){
-        return 0;
-    }
-    return field->offset;
-}
-
-void schema_add_int_field(Schema* schema, const char* name){
-    schema_add_field(schema, name, INT, sizeof(int64_t));
-}
-
-void schema_add_float_field(Schema* schema, const char* name){
-    schema_add_field(schema, name, FLOAT, sizeof(float));
-}
-
-void schema_add_varchar_field(Schema* schema, const char* name){
-    schema_add_field(schema, name, VARCHAR, sizeof(Chblidx));
-}
-
-void schema_add_char_field(Schema* schema, const char* name, size_t length){
-    schema_add_field(schema, name, CHAR, length + 1);
-}
-
-void schema_add_bool_field(Schema* schema, const char* name){
-    schema_add_field(schema, name, BOOL, sizeof(bool));
-}
-
-LinkedList* schema_get_fields(Schema* schema){
-    return schema->fields;
-}
-
-void* schema_serialize(Schema* schema){
-    if(schema == NULL){
-        return NULL;
-    }
-    uint64_t total_size = sizeof(uint64_t ) + MAX_NAME_LENGTH + schema->fields->size * (MAX_NAME_LENGTH + sizeof(DATA_TYPE) + sizeof(uint64_t));
-    void* buffer = malloc(total_size);
-    memset(buffer, 0, total_size);
-    memcpy(buffer, &total_size, sizeof(uint64_t));
-    strncpy(buffer + sizeof(uint64_t), schema->name, MAX_NAME_LENGTH);
-    uint64_t offset = sizeof(uint64_t) + MAX_NAME_LENGTH;
-    LinkedListIterator* llr = create_linked_list_iterator(schema->fields);
-    while(iterator_has_next(llr)){
-        Field* field = iterator_next_data(llr);
-        strncpy(buffer + offset, field->name, MAX_NAME_LENGTH);
-        offset += MAX_NAME_LENGTH;
-        memcpy(buffer + offset, &field->type, sizeof(DATA_TYPE));
-        offset += sizeof(DATA_TYPE);
-        memcpy(buffer + offset, &field->length, sizeof(field->length));
-        offset += sizeof(field->length);
-    }
-    free_linked_list_iterator(llr);
-    return buffer;
-}
-
-Schema* schema_deserialize(void* buffer){
-    if(buffer == NULL){
-        return NULL;
-    }
-    uint64_t total_size = 0;
-    memcpy(&total_size, buffer, sizeof(uint64_t));
-    char name[MAX_NAME_LENGTH];
-    strncpy(name, buffer + sizeof(uint64_t), MAX_NAME_LENGTH);
-    Schema* schema = create_schema(name);
-    uint64_t offset = sizeof(uint64_t) + MAX_NAME_LENGTH;
-    while(offset != total_size){
-        char name[MAX_NAME_LENGTH];
-        strncpy(name, buffer + offset, MAX_NAME_LENGTH);
-        offset += MAX_NAME_LENGTH;
-        DATA_TYPE type = DATA_TYPE_UNKNOWN;
-        memcpy(&type, buffer + offset, sizeof(DATA_TYPE));
-        offset += sizeof(DATA_TYPE);
-        uint64_t length = 0;
-        memcpy(&length, buffer + offset, sizeof(uint64_t));
-        offset += sizeof(uint64_t);
-        schema_add_field(schema, name, type, length);
-    }
-    return schema;
+    logger(LL_ERROR, __func__, "Failed to find field %s", name);
+    return SCHEMA_FAIL;
 }
 

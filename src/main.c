@@ -1,5 +1,4 @@
-#include "backend/table/table.h"
-#include "backend/table/schema.h"
+
 #include "utils/hashtable.h"
 #include <stdio.h>
 #include <stdlib.h>

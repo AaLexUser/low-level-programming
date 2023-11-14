@@ -1,18 +1,17 @@
 #include "linked_blocks.h"
 #include "backend/page_pool/page_pool.h"
-#include "file.h"
+#include "backend/io/file.h"
 #include "utils/logger.h"
 
 #include <math.h>
 
-
 /**
- * \brief Allocates new linked block
- * \param[in] page_pool_idx
- * \return chblix or chblix_fail
+ * \brief       Allocates new linked block, with custom memory start
+ * \param[in]   page_pool_idx
+ * \return      chblix or chblix_fail
  */
 
-chblix_t lb_alloc(int64_t page_pool_idx) {
+chblix_t lb_alloc_m(int64_t page_pool_idx, int64_t mem_start){
     logger(LL_INFO, __func__, "Linked_block allocating start.");
 
     page_pool_t *ppl = ppl_load(page_pool_idx);
@@ -33,7 +32,7 @@ chblix_t lb_alloc(int64_t page_pool_idx) {
     lb->next_block = chblix_fail();
     lb->chblix = chblix;
     lb->flag = LB_USED;
-    lb->mem_start = sizeof(linked_block_t);
+    lb->mem_start = mem_start;
 
     lb_update(page_pool_idx, &chblix, lb);
 
@@ -43,6 +42,17 @@ chblix_t lb_alloc(int64_t page_pool_idx) {
 
     free(lb);
     return chblix;
+}
+
+
+/**
+ * \brief Allocates new linked block
+ * \param[in] page_pool_idx
+ * \return chblix or chblix_fail
+ */
+
+chblix_t lb_alloc(int64_t page_pool_idx) {
+    return lb_alloc_m(page_pool_idx, sizeof(linked_block_t));
 }
 
 /**
@@ -417,6 +427,16 @@ int64_t lb_ppl_init(int64_t block_size){
     return ppidx;
 }
 
+/**
+ * @brief       Load existing page pool for Linked Blocks
+ * @param[in]   ppidx: Fist page index of page pool
+ * @return      pointer to page pool on success, `NULL` otherwise
+ */
+
+page_pool_t* lb_ppl_load(int64_t ppidx){
+    return ppl_load(ppidx);
+}
+
 static chblix_t lb_nearest_valid_chblix_chunk(page_pool_t* ppl, chunk_t* chunk, int64_t block_idx){
     chblix_t chblix = {.block_idx = block_idx, .chunk_idx = chunk->page_index};
     int64_t pplidx = ppl->lp_header.page_index;
@@ -439,14 +459,14 @@ static chblix_t lb_nearest_valid_chblix_chunk(page_pool_t* ppl, chunk_t* chunk, 
 }
 
 chblix_t lb_nearest_valid_chblix(page_pool_t* ppl, chblix_t chblix){
-    chunk_t* chunk = ppl_load_page(chblix.chunk_idx);
+    chunk_t* chunk = ppl_load_chunk(chblix.chunk_idx);
     do{
         chblix_t chblix_res = lb_nearest_valid_chblix_chunk(ppl, chunk, chblix.block_idx);
         if(chblix_cmp(&chblix, &CHBLIX_FAIL) != 0){
             return chblix_res;
         }
         if(chunk->next_page != -1){
-            chunk = ppl_load_page(chunk->next_page);
+            chunk = ppl_load_chunk(chunk->next_page);
         }
     } while(chunk->next_page != -1);
     return chblix_fail();
@@ -456,8 +476,9 @@ chblix_t lb_pool_start(page_pool_t* ppl){
     if(ppl->head == -1){
         return chblix_fail();
     }
-    return lb_nearest_valid_chblix_chunk(ppl, ppl_load_page(ppl->head), 0);
+    return lb_nearest_valid_chblix_chunk(ppl, ppl_load_chunk(ppl->head), 0);
 }
+
 
 
 

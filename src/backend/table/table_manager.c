@@ -1,7 +1,7 @@
 #include "table_manager.h"
 #include "../../utils/linked_list.h"
-#include "schema.h"
-#include "table.h"
+#include "schema-old.h"
+#include "table-old.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>

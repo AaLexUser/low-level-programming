@@ -1,27 +1,47 @@
 #pragma once
-#include "file_manager.h"
+#include "file.h"
 
-enum CH_Status {CachingSuccess = 0, CachingFail = -1};
+enum CH_Status {CH_SUCCESS = 0, CH_FAIL = -1};
 
 #define CH_MAX_MEMORY_USAGE (PAGE_SIZE * 100)
 
-int ch_init();
-int ch_destroy();
-size_t ch_size();
-size_t ch_used();
-void* ch_cached_page(size_t index);
-size_t ch_page_index(off_t offset);
-int ch_page_status(size_t index);
-int ch_reserve(size_t new_capacity);
-int ch_put(uint64_t page_index, void* mapped_page_ptr);
-void* ch_get(uint64_t page_index);
-int64_t ch_new_page();
-int ch_remove(uint64_t index);
-void* ch_load_page(uint64_t page_index);
-int ch_write(uint64_t page_index, void* src, size_t size, off_t offset);
-int ch_clear_page(uint64_t page_index);
-int ch_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset);
-void* ch_read(uint64_t page_index, off_t offset);
-uint64_t ch_unmap_some_pages();
-int ch_delete_last_page();
-int ch_delete_page(uint64_t page_index);
+typedef struct caching{
+    file_t file;
+    size_t size, used, max_used, capacity;
+    uint32_t* usage_count;
+    time_t* last_used;
+    void** cached_page_ptr;
+    char* flags;
+} caching_t;
+
+off_t ch_file_size(caching_t* ch);
+int64_t ch_max_page_index(caching_t* ch);
+uint64_t ch_number_pages(caching_t* ch);
+uint64_t ch_page_index(off_t page_offset);
+off_t ch_page_offset(uint64_t page_index);
+int ch_init(const char* file_name, caching_t* ch);
+size_t ch_size(caching_t* ch);
+size_t ch_used(caching_t* ch);
+void* ch_cached_page(caching_t* ch, size_t index);
+size_t ch_usage_memory_space(caching_t* ch);
+int ch_page_status(caching_t* ch, size_t index);
+int ch_reserve(caching_t* ch, size_t new_capacity);
+int ch_put(caching_t* ch, uint64_t page_index, void* mapped_page_ptr);
+void* ch_get(caching_t* ch, uint64_t page_index);
+int ch_remove(caching_t* ch, uint64_t index);
+int64_t ch_new_page(caching_t* ch);
+void* ch_load_page(caching_t* ch, uint64_t page_index);
+int ch_write(caching_t* ch, uint64_t page_index, void* src, size_t size, off_t offset);
+int ch_clear_page(caching_t* ch, uint64_t page_index);
+int ch_copy_read(caching_t* ch, uint64_t page_index, void* dest, size_t size, off_t offset);
+void* ch_read(caching_t* ch, uint64_t page_index, off_t offset);
+uint64_t ch_begin();
+uint64_t ch_end(caching_t* ch);
+int ch_destroy(caching_t* ch);
+int ch_delete(caching_t* ch);
+int ch_close(caching_t* ch);
+uint32_t ch_find_least_used_count(caching_t* ch);
+time_t ch_find_least_used_time(caching_t* ch);
+uint64_t ch_unmap_some_pages(caching_t* ch);
+int ch_delete_last_page(caching_t* ch);
+int ch_delete_page(caching_t* ch, uint64_t page_index);

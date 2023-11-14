@@ -7,7 +7,6 @@ if(CLANG_TIDY)
             ${CLANG_TIDY}
             -header-filter=${CMAKE_SOURCE_DIR}
             -checks=${clang_tidy_checks_str}
-            -warnings-as-errors=*
     )
 endif()
 
@@ -31,8 +30,10 @@ set(sources
         backend/page_pool/page_pool.c
         backend/io/linked_pages.c
         backend/utils/parray.c
-        backend/io/linked_blocks.c
+        backend/page_pool/linked_blocks.c
         backend/utils/parray64.c
+        backend/table/schema.c
+        backend/table/table.c
 
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)

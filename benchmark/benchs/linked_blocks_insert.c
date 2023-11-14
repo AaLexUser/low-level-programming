@@ -2,27 +2,28 @@
 #include "backend/io/caching.h"
 #include "backend/io/pager.h"
 #include "backend/page_pool/page_pool.h"
-#include "backend/io/linked_blocks.h"
+#include "backend/page_pool/linked_blocks.h"
 #include "utils/logger.h"
 #include <sys/time.h>
 #include <stdio.h>
 
-#ifndef LOGGER_LEVEL
-#define LOGGER_LEVEL 2
+#ifdef LOGGER_LEVEL
+#undef LOGGER_LEVEL
 #endif
+#define LOGGER_LEVEL 2
 
 void init_db(const char* filename){
     /* Init new db file */
-    if(init_file(filename) != FILE_SUCCESS){
+    if(pg_init(filename) != FILE_SUCCESS){
         printf("Failed to init file\n");
         exit(EXIT_FAILURE);
     }
-    if(get_file_size() != 0){
-        if(delete_file() != 0){
+    if(pg_file_size() != 0){
+        if(pg_delete() != 0){
             printf("Failed to delete file\n");
             exit(EXIT_FAILURE);
         }
-        if(init_file("test.db") != 0){
+        if(pg_init("test.db") != 0){
             printf("Failed to init file\n");
             exit(EXIT_FAILURE);
         }
@@ -49,8 +50,6 @@ int main(){
 
     init_db("test.db");
 
-    ch_init();
-    pg_init();
     char str[] = "2345678";
     int fd = out_file("linked_blocks_insert.csv");
     FILE *file = fdopen(fd, "w");
@@ -72,10 +71,8 @@ int main(){
         uint64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
         fprintf(file, "%llu;%llu\n", delta_us, block_count);
         fflush(file);
-        logger(LL_WARN, __func__, "File size: %llu, blocks count: %llu", get_file_size(), block_count);
+        logger(LL_WARN, __func__, "File size: %llu, blocks count: %llu", pg_file_size(), block_count);
     }
     close(fd);
-    pg_destroy();
-    ch_destroy();
-    delete_file();
+    pg_delete();
 }

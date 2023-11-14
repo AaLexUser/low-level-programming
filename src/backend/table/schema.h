@@ -1,37 +1,81 @@
-#ifndef SCHEMA_H
-#define SCHEMA_H
-#include "../../utils/cstring.h"
-#include "../../utils/linked_list.h"
-#include "../../utils/pool.h"
+#pragma once
 #include "../data_type.h"
+#include "../page_pool/page_pool.h"
+#include "backend/page_pool/linked_blocks.h"
+#include <stdint.h>
 #include <string.h>
+
 #define MAX_NAME_LENGTH 32
-typedef struct __attribute__((packed)){
+typedef struct field{
+    linked_block_t lb_header;
     char name[MAX_NAME_LENGTH];
     DATA_TYPE type;
-    uint64_t length;
+    uint64_t size;
     uint64_t offset;
-} Field;
+} field_t;
 
-typedef struct{
-    char name[MAX_NAME_LENGTH];
-    LinkedList* fields;
+typedef struct schema{
+    page_pool_t ppl_header;
     size_t slot_size;
-} Schema;
+} schema_t;
 
-Schema* create_schema(const char* name);
-void clear_schema(Schema* schema);
-void free_schema(Schema* schema);
-void schema_add_field(Schema* schema, const char* name, DATA_TYPE type, size_t length);
-Field* schema_get_field(Schema* schema, const char* name);
-DATA_TYPE schema_get_field_type(Schema* schema, const char* name);
-size_t schema_get_field_length(Schema* schema, const char* name);
-size_t schema_get_field_offset(Schema* schema, const char* name);
-void schema_add_int_field(Schema* schema, const char* name);
-void schema_add_float_field(Schema* schema, const char* name);
-void schema_add_varchar_field(Schema* schema, const char* name);
-void schema_add_char_field(Schema* schema, const char* name, size_t length);
-void schema_add_bool_field(Schema* schema, const char* name);
-void* schema_serialize(Schema* schema);
-Schema* schema_deserialize(void* buffer);
-#endif
+typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schema_status_t;
+
+/**
+ * @brief       Load a schema
+ * @param[in]   schidx: index of the schema
+ * @return      pointer to the schema on success, NULL on failure
+ */
+
+#define sch_load(schidx) ((schema_t*)lb_ppl_load(schidx))
+
+/**
+ * @brief       Delete a schema
+ * @param[in]   schidx: index of the schema
+ * @return      SCHEMA_SUCCESS on success, SCHEMA_FAIL on failure
+ */
+
+#define sch_delete(schidx) (lb_ppl_destroy(schidx)))
+
+/**
+ * @brief      Load field
+ * @param[in]  schidx: index of the schema
+ * @param[in]  fieldix: index of the field
+ * @param[out] field: pointer to the field
+ * @return     LB_SUCCESS on success, LB_FAIL on failure
+ */
+
+#define sch_field_load(schidx, fieldix, field) (lb_load((schidx), (fieldix), (linked_block_t*)(field)))
+
+/**
+ * @brief      Update field
+ * @param[in]  schidx: index of the schema
+ * @param[in]  fieldix: index of the field
+ * @param[out] field: pointer to the field
+ * @return     LB_SUCCESS on success, LB_FAIL on failure
+ */
+
+#define sch_field_update(schidx, fieldix, field) (lb_update((schidx), (fieldix), (linked_block_t*)(field)))
+
+
+
+#define sch_add_int_field(schidx, name) sch_add_field(schidx, name, INT, sizeof(int64_t))
+#define sch_add_char_field(schidx, name, size) sch_add_field(schidx, name, CHAR, size)
+#define sch_add_varchar_field(schidx, name) sch_add_field(schidx, name, VARCHAR, sizeof(chblix_t))
+#define sch_add_float_field(schidx, name) sch_add_field(schidx, name, FLOAT, sizeof(float))
+#define sch_add_bool_field(schidx, name) sch_add_field(schidx, name, BOOL, sizeof(bool))
+
+
+#define sch_for_each(sch, field) \
+    field_t field;\
+    chblix_t sch_chblix = lb_pool_start((page_pool_t*)sch);\
+    sch_field_load(schidx, &sch_chblix, &field);\
+    for(sch_chblix;\
+    chblix_cmp(&sch_chblix, &CHBLIX_FAIL) != 0 &&\
+    sch_field_load(schidx, &sch_chblix, &field) != LB_FAIL; \
+    ++sch_chblix.block_idx,  sch_chblix = lb_nearest_valid_chblix((page_pool_t*)sch, sch_chblix))
+
+int64_t sch_init();
+int sch_add_field(int64_t schidx, const char* name, DATA_TYPE type, size_t size);
+int sch_get_field(int64_t schidx, const char* name, field_t* field);
+int sch_delete_field(int64_t schidx, const char* name);

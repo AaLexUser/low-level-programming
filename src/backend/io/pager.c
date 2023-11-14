@@ -3,7 +3,10 @@
 #include "../utils/parray64.h"
 #include "caching.h"
 
-Pager pg;
+#ifndef PAGER
+Pager pager;
+#define PAGER pager
+#endif
 
 #ifndef DELETED_PAGES_START_INDEX
 #define DELETED_PAGES_START_INDEX 0
@@ -17,12 +20,12 @@ Pager pg;
 
 int pg_init(const char* file_name){
     logger(LL_INFO, __func__, "Initializing pager");
-    if (ch_init(file_name, &pg.ch) == CH_FAIL) {
+    if (ch_init(file_name, &PAGER.ch) == CH_FAIL) {
         logger(LL_ERROR, __func__, "Unable to initialize caching");
         return PAGER_FAIL;
     }
-    pg.deleted_pages = -1;
-    pg.deleted_pages = pa_init64(sizeof(int64_t), -1);
+    PAGER.deleted_pages = -1;
+    PAGER.deleted_pages = pa_init64(sizeof(int64_t), -1);
     return PAGER_SUCCESS;
 }
 
@@ -33,7 +36,7 @@ int pg_init(const char* file_name){
 
 int pg_delete(){
     logger(LL_INFO, __func__, "Deleting file");
-    if(ch_delete(&pg.ch) == CH_FAIL){
+    if(ch_delete(&PAGER.ch) == CH_FAIL){
         logger(LL_ERROR, __func__, "Unable to delete caching");
         return PAGER_FAIL;
     }
@@ -47,7 +50,7 @@ int pg_delete(){
 
 int pg_close(){
     logger(LL_INFO, __func__, "Closing file");
-    if(ch_close(&pg.ch) == CH_FAIL){
+    if(ch_close(&PAGER.ch) == CH_FAIL){
         logger(LL_ERROR, __func__, "Unable to delete caching");
         return PAGER_FAIL;
     }
@@ -65,15 +68,15 @@ int64_t pg_alloc(){
 
     int64_t del_pag_idx = -1;
 
-    if(pg.deleted_pages != -1){
-        if((pa_pop64(pg.deleted_pages, &del_pag_idx)) == PA_SUCCESS){
+    if(PAGER.deleted_pages != -1){
+        if((pa_pop64(PAGER.deleted_pages, &del_pag_idx)) == PA_SUCCESS){
             page_idx = del_pag_idx;
         }
     }
 
     if(del_pag_idx == -1){
         logger(LL_INFO, __func__, "Unable to pop page from deleted pages, allocating new page");
-        if((page_idx = ch_new_page(&pg.ch)) == CH_FAIL){
+        if((page_idx = ch_new_page(&PAGER.ch)) == CH_FAIL){
             logger(LL_ERROR, __func__, "Unable to load new page");
             return PAGER_FAIL;
         }
@@ -95,7 +98,7 @@ void* pg_alloc_page(){
     }
 
     void* page_ptr = NULL;
-    if((page_ptr = ch_load_page(&pg.ch, page_idx)) == NULL){
+    if((page_ptr = ch_load_page(&PAGER.ch, page_idx)) == NULL){
         logger(LL_ERROR, __func__, "Unable to load page");
         return NULL;
     }
@@ -113,8 +116,8 @@ void* pg_alloc_page(){
 
 int pg_dealloc(int64_t page_index) {
     logger(LL_INFO, __func__, "Deallocating page");
-    pa_push_unique64(pg.deleted_pages, page_index);
-    ch_delete_page(&pg.ch, page_index);
+    pa_push_unique64(PAGER.deleted_pages, page_index);
+    ch_delete_page(&PAGER.ch, page_index);
     return PAGER_SUCCESS;
 }
 
@@ -128,7 +131,7 @@ int pg_dealloc(int64_t page_index) {
 void* pg_load_page(int64_t page_index){
     logger(LL_INFO, __func__, "Loading page");
     void* page_ptr = NULL;
-    if((page_ptr = ch_load_page(&pg.ch, page_index)) == NULL){
+    if((page_ptr = ch_load_page(&PAGER.ch, page_index)) == NULL){
         logger(LL_ERROR, __func__, "Unable to load page");
         return NULL;
     }
@@ -146,7 +149,7 @@ void* pg_load_page(int64_t page_index){
 
 int pg_write(uint64_t page_index, void* src, size_t size, off_t offset){
     logger(LL_INFO, __func__, "Writing to page");
-    if(ch_write(&pg.ch, page_index, src, size, offset) == CH_FAIL){
+    if(ch_write(&PAGER.ch, page_index, src, size, offset) == CH_FAIL){
         logger(LL_ERROR, __func__, "Unable to write to page");
         return PAGER_FAIL;
     }
@@ -164,7 +167,7 @@ int pg_write(uint64_t page_index, void* src, size_t size, off_t offset){
 
 int pg_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset){
     logger(LL_INFO, __func__, "Reading from page");
-    if(ch_copy_read(&pg.ch, page_index, dest, size, offset) == CH_FAIL){
+    if(ch_copy_read(&PAGER.ch, page_index, dest, size, offset) == CH_FAIL){
         logger(LL_ERROR, __func__, "Unable to read from page");
         return PAGER_FAIL;
     }
@@ -177,7 +180,7 @@ int pg_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset){
  */
 
 int64_t pg_max_page_index(){
-    return ch_max_page_index(&pg.ch);
+    return ch_max_page_index(&PAGER.ch);
 }
 
 /**
@@ -186,6 +189,6 @@ int64_t pg_max_page_index(){
  */
 
 off_t pg_file_size(){
-    return ch_file_size(&pg.ch);
+    return ch_file_size(&PAGER.ch);
 }
 

@@ -16,6 +16,8 @@ file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS
         tests/linked_pages.c
         tests/parray.c
         tests/linked_block.c
+        tests/schema.c
+        tests/table.c
 )
 
 foreach(test_source IN LISTS test_sources)

@@ -31,3 +31,4 @@ build
 /build
 src/out
 tester/out
+cmake-*

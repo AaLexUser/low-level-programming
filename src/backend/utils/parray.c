@@ -78,7 +78,7 @@ int pa_write(int64_t page_index, int64_t block_idx, void *src, int64_t size, int
         logger(LL_ERROR, __func__, "Unable to write to PArray");
         return PA_FAIL;
     }
-    off_t offset = block_idx * pa->block_size + src_offset ;
+    off_t offset = (off_t)(block_idx * pa->block_size + src_offset);
     if(lp_write(pa->page_idx, src, size, offset) == LP_FAIL){
         logger(LL_ERROR, __func__, "Unable to write to PArray");
         return PA_FAIL;
@@ -116,7 +116,7 @@ int pa_read(int64_t page_index, int64_t block_idx, void *dest, int64_t size, int
                size, src_offset, pa->block_size);
         return PA_FAIL;
     }
-    off_t offset = block_idx * pa->block_size + src_offset;
+    off_t offset = (off_t)(block_idx * pa->block_size + src_offset);
     if (lp_read_copy(pa->page_idx, dest, size, offset) == LP_FAIL) {
         logger(LL_ERROR, __func__, "Unable to read from PArray");
         return PA_FAIL;
@@ -141,7 +141,7 @@ int pa_read_blocks(int64_t paidx, int64_t stblidx, void *dest, int64_t size, int
         logger(LL_ERROR, __func__, "Unable to load page");
         return PA_FAIL;
     }
-    off_t offset = stblidx * pa->block_size + src_offset;
+    off_t offset = (off_t)(stblidx * pa->block_size + src_offset);
     if (lp_read_copy(pa->page_idx, dest, size, offset) == LP_FAIL) {
         logger(LL_ERROR, __func__, "Unable to read from PArray");
         return PA_FAIL;
@@ -240,7 +240,7 @@ int pa_at(int64_t page_index, int64_t block_idx, void *dest){
         logger(LL_ERROR, __func__, "Unable to read from PArray");
         return PA_FAIL;
     }
-    off_t offset = block_idx * pa->block_size;
+    off_t offset = (off_t)(block_idx * pa->block_size);
     if (lp_read_copy(pa->page_idx, dest, pa->block_size, offset) == LP_FAIL) {
         logger(LL_ERROR, __func__, "Unable to read from PArray");
         return PA_FAIL;

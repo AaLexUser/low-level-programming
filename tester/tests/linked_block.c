@@ -2,7 +2,7 @@
 #include "../src/backend/io/caching.h"
 #include "backend/io/pager.h"
 #include "backend/page_pool/page_pool.h"
-#include "backend/io/linked_blocks.h"
+#include "backend/page_pool/linked_blocks.h"
 
 DEFINE_TEST(write_read){
     assert(pg_init("test.db") == PAGER_SUCCESS);

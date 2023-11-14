@@ -2,8 +2,8 @@
 #define TABLE_MANAGER_H_
 #include "../../utils/linked_list.h"
 #include "../varchar/varchar_manager.h"
-#include "schema.h"
-#include "table.h"
+#include "schema-old.h"
+#include "table-old.h"
 #include <stdlib.h>
 
 typedef struct {

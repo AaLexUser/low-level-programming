@@ -1,89 +1,153 @@
 #include "table.h"
-#include <string.h>
+#include "utils/logger.h"
 
-#define TABLE_CHUNK_SIZE 4096
+/**
+ * @brief       Initialize a table
+ * @param[in]   name: name of the table
+ * @param[in]   schidx: index of the schema
+ * @return      index of the table on success, TABLE_FAIL on failure
+ */
 
-Table* create_table(const char* name, Schema* schema){
-    Table* table = malloc(sizeof(Table));
-    strncpy(schema->name, name, MAX_NAME_LENGTH);
-    table->schema = schema;
-    if(pool_create_by_chunk_size( table->schema->slot_size, table->pool, TABLE_CHUNK_SIZE)){
-        free(table);
-        return NULL;
+int64_t tab_init(const char* name, int64_t schidx){
+    schema_t* schema = sch_load(schidx);
+    int64_t tablix = lb_ppl_init((int64_t)schema->slot_size);
+    if(tablix == LB_FAIL){
+        logger(LL_ERROR, __func__, "Failed to initialize table %s", name);
+        return TABLE_FAIL;
     }
-    table->rows_chblidx = create_linked_list();
-    return table;
-}
-
-void free_table(void* ptr){
-    Table* table = (Table*)ptr;
+    table_t* table = (table_t*)lb_ppl_load(tablix);
     if(table == NULL){
-        return;
+        logger(LL_ERROR, __func__, "Failed to load table %s", name);
+        return TABLE_FAIL;
     }
-    free_schema(table->schema);
-    pool_destroy(table->pool);
-    free_linked_list(table->rows_chblidx);
-    free(table);
+
+    table->schidx = schidx;
+    strncpy(table->name, name, MAX_NAME_LENGTH);
+    return tablix;
 }
 
-void table_insert(Table* table, void* data){
-    void* slot = pool_alloc(table->pool);
-    Chblidx* chblidx = chunk_chblidx_from_addr(table->pool->current_chunk, slot);
-    linked_list_add_node(table->rows_chblidx, chblidx);
-    if(slot == NULL){
-        return;
+/**
+ * @brief       Insert a row
+ * @param       tablix: index of the table
+ * @param       src: source
+ * @return      chblix_t of row on success, CHBLIX_FAIL on failure
+ */
+
+chblix_t tab_insert(int64_t tablix, void* src){
+    table_t* table = tab_load(tablix);
+    if(table == NULL){
+        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
+        return CHBLIX_FAIL;
     }
-    memcpy(slot, data, table->schema->slot_size);
+
+    chblix_t rowix = lb_alloc(tablix);
+
+    if(chblix_cmp(&rowix, &CHBLIX_FAIL) == 0){
+        logger(LL_ERROR, __func__, "Failed to allocate row");
+        return CHBLIX_FAIL;
+    }
+
+    if(lb_write(tablix, &rowix, src, table->ppl_header.block_size, 0) == LB_FAIL){
+        logger(LL_ERROR, __func__, "Failed to write row");
+        return CHBLIX_FAIL;
+    }
+
+    return rowix;
+
 }
 
-void table_select(Table* table){
-    LinkedListIterator* lli = create_linked_list_iterator(table->rows_chblidx);
-    while(iterator_has_next(lli)){
-        Chblidx* chblidx = iterator_next_data(lli);
-        void* slot = pool_addr_from_chblidx(table->pool, chblidx);
-        LinkedListIterator* schfl = create_linked_list_iterator(table->schema->fields);
-        while (iterator_has_next(schfl)){
-            Field* field = iterator_next_data(schfl);
-            switch (field->type) {
-                case INT: {
-                    uint64_t data = 0;
-                    memcpy(&data, slot + field->offset, field->length );
-                    printf("%"PRId64 " ", data);
-                    break;
-                }
-                case FLOAT: {
-                    float data = 0;
-                    memcpy(&data, slot + field->offset, field->length );
-                    printf("%f ", data);
-                    break;
-                }
-                case CHAR: {
-                    char* data = malloc(field->length);
-                    memcpy(data, slot + field->offset, field->length );
-                    printf("%s ", data);
-                    free(data);
-                    break;
-                }
-                case BOOL: {
-                    bool data = 0;
-                    memcpy(&data, slot + field->offset, field->length );
-                    printf("%d ", data);
-                    break;
-                }
-                default:
-                    break;
-            }
+/**
+ * @brief       Select a row
+ * @param[in]   tablix: index of the table
+ * @param[in]   rowix: chblix of the row
+ * @param[out]  dest: destination
+ * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
+ */
+
+int tab_select(int64_t tablix, chblix_t* rowix, void* dest){
+    table_t* table = tab_load(tablix);
+    if(table == NULL){
+        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
+        return TABLE_FAIL;
+    }
+
+    if(lb_read(tablix, rowix, dest, table->ppl_header.block_size, 0) == LB_FAIL){
+        logger(LL_ERROR, __func__, "Failed to read row");
+        return TABLE_FAIL;
+    }
+    return TABLE_SUCCESS;
+}
+
+/**
+ * @brief       Delete a row
+ * @param       tablix: index of the table
+ * @param       rowix: chblix of the row
+ * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
+ */
+
+int tab_delete(int64_t tablix, chblix_t* rowix){
+    table_t* table = tab_load(tablix);
+    if(table == NULL){
+        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
+        return TABLE_FAIL;
+    }
+
+    if(lb_dealloc(tablix, rowix) == LB_FAIL){
+        logger(LL_ERROR, __func__, "Failed to deallocate row");
+        return TABLE_FAIL;
+    }
+    return TABLE_SUCCESS;
+}
+
+/**
+ * @brief       Update a row
+ * @param[in]   tablix: index of the table
+ * @param[in]   rowix: chblix of the row
+ * @param[in]   data: data to be written
+ * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
+ */
+
+int tab_update(int64_t tablix, chblix_t* rowix, void* data){
+    table_t* table = tab_load(tablix);
+    if(table == NULL){
+        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
+        return TABLE_FAIL;
+    }
+
+    if(lb_write(tablix, rowix, data, table->ppl_header.block_size, 0) == LB_FAIL){
+        logger(LL_ERROR, __func__, "Failed to write row");
+        return TABLE_FAIL;
+    }
+    return TABLE_SUCCESS;
+}
+
+chblix_t tab_find_in_column(int64_t tablix, const char* column_name, void* value){
+    table_t* table = tab_load(tablix);
+    if(table == NULL){
+        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
+        return CHBLIX_FAIL;
+    }
+
+    field_t field;
+    sch_get_field(table->schidx, column_name, &field);
+    lb_for_each(chblix, &table->ppl_header){
+        void* row = malloc(table->ppl_header.block_size);
+        if(lb_read(tablix, &chblix, row, table->ppl_header.block_size, 0) == LB_FAIL){
+            logger(LL_ERROR, __func__, "Failed to read row");
+            free(row);
+            return CHBLIX_FAIL;
         }
+
+        if(memcmp(row + field.offset, value, field.size) == 0){
+            free(row);
+            return chblix;
+        }
+        free(row);
     }
+//    void* element = malloc(table->ppl_header.block_size);
+//    for (chblix_t chblix = lb_pool_start(&table->ppl_header);
+//         chblix_cmp(&chblix, &CHBLIX_FAIL) != 0 &&
+//         lb_read(tablix, &chblix, element, (int64_t)field.size, (int64_t)field.offset) != LB_FAIL;
+//         ++chblix.block_idx, chblix = lb_nearest_valid_chblix(&table->ppl_header, chblix))
+    return CHBLIX_FAIL;
 }
-
-void table_delete(Table* table, Chblidx* chblidx){
-    void* slot = pool_addr_from_chblidx(table->pool, chblidx);
-    pool_dealloc(table->pool, slot);
-}
-
-void table_update(Table* table, Chblidx* chblidx, Row* row){
-    void* slot = pool_addr_from_chblidx(table->pool, chblidx);
-    memcpy(slot, row->data, table->schema->slot_size);
-}
-

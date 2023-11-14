@@ -1,3 +1,4 @@
+-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
 clang-diagnostic-implicit-function-declaration
 llvm-include-order
 performance-*

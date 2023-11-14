@@ -12,13 +12,20 @@
 
 #if defined(_WIN32)
 #define PAGE_SIZE 4096
+#include <windows.h>
+typedef struct file {
+	char *filename;
+	HANDLE h_file;
+    HANDLE h_map;
+	void *cur_mmaped_data;
+	off_t cur_page_offset;
+} file_t;
 #endif
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
 #include <unistd.h>
 #ifndef PAGE_SIZE
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
-#endif
 #endif
 
 typedef struct file {
@@ -27,8 +34,9 @@ typedef struct file {
     void *cur_mmaped_data;
     off_t cur_page_offset;
 } file_t;
+#endif
 
-enum file_status {FILE_FAIL=-1, FILE_SUCCESS=0} file_status_t;
+enum {FILE_FAIL=-1, FILE_SUCCESS=0};
 
 off_t fl_cur_page_offset(file_t* file);
 void* fl_cur_mmaped_data(file_t* file);
