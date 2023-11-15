@@ -165,12 +165,28 @@ DEFINE_TEST(foreach){
 DEFINE_TEST(insert_number){
     assert(pg_init("test.db") == PAGER_SUCCESS);
     int64_t num = 123456789;
-    int64_t poop_idx = lb_ppl_init(sizeof(num));
-    chblix_t block = lb_alloc(poop_idx);
-    lb_write(poop_idx, &block, &num, sizeof(num), 0);
+    int64_t pool_idx = lb_ppl_init(sizeof(num));
+    chblix_t block = lb_alloc(pool_idx);
+    lb_write(pool_idx, &block, &num, sizeof(num), 0);
     int64_t read_num;
-    lb_read(poop_idx, &block, &read_num, sizeof(num), 0);
+    lb_read(pool_idx, &block, &read_num, sizeof(num), 0);
     assert(num == read_num);
+    pg_delete();
+}
+
+DEFINE_TEST(big_string){
+    assert(pg_init("test.db") == PAGER_SUCCESS);
+    char* str = "This is a big string\n "
+                "with multiple lines\n "
+                "and it is very long\n"
+                "and it is very long\n";
+    int64_t ppl = lb_ppl_init(30);
+    chblix_t block = lb_alloc(ppl);
+    lb_write(ppl, &block, str, strlen(str) + 1, 0);
+    char* read_str = malloc(strlen(str) + 1);
+    lb_read(ppl, &block, read_str, strlen(str) + 1, 0);
+    assert(strcmp(str, read_str) == 0);
+    free(read_str);
     pg_delete();
 }
 
@@ -184,4 +200,5 @@ int main(){
     RUN_SINGLE_TEST(varchar);
     RUN_SINGLE_TEST(foreach);
     RUN_SINGLE_TEST(insert_number);
+    RUN_SINGLE_TEST(big_string);
 }

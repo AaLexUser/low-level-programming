@@ -275,7 +275,7 @@ int lb_write(int64_t pplidx,
     int64_t blocks_needed = ceil((double)(size + start_offset) / (double) useful_space_size);
     int64_t total_size = size;
     int64_t current_block_idx = 0;
-    int64_t header_offset = sizeof(linked_block_t);
+    int64_t header_offset =  lb->mem_start;
 
     /* Go to start block of write and allocate new blocks if needed */
     chblix_t start_point = chblix_fail();
@@ -284,8 +284,8 @@ int lb_write(int64_t pplidx,
     /* Write to blocks until all data is written */
     while (blocks_needed > 0){
         /* Calculate size to write */
-        int64_t size_to_write = size > useful_space_size - start_offset
-                ? useful_space_size - start_offset : size;
+        int64_t size_to_write = total_size > useful_space_size - start_offset
+                ? useful_space_size - start_offset : total_size;
 
         /* Write to block */
         if (ppl_write_block(pplidx, &start_point, src, size_to_write, header_offset + start_offset) == PPL_FAIL) {
@@ -304,6 +304,7 @@ int lb_write(int64_t pplidx,
 
             /* Go to next block */
             start_point = lb_get_next(pplidx, &lb->chblix);
+            lb_load(pplidx, &start_point, lb);
 
         }
 
@@ -363,8 +364,8 @@ int lb_read(int64_t pplidx,
     /* Write to blocks until all data is written */
     while (blocks_needed > 0){
         /* Calculate size to read */
-        int64_t size_to_read = size > useful_space_size - start_offset
-                                ? useful_space_size - start_offset : size;
+        int64_t size_to_read = total_size > useful_space_size - start_offset
+                                ? useful_space_size - start_offset : total_size;
 
         /* Write to block */
         if (ppl_read_block(pplidx, &start_point, dest, size_to_read, header_offset + start_offset) == PPL_FAIL) {
@@ -377,12 +378,13 @@ int lb_read(int64_t pplidx,
         blocks_needed--;
 
         if(blocks_needed > 0){
-            total_size -= useful_space_size - start_offset;
+            total_size -= (useful_space_size - start_offset);
             dest += useful_space_size - start_offset;
             start_offset = 0;
 
             /* Go to next block */
             start_point = lb_get_next(pplidx, &lb->chblix);
+            lb_load(pplidx, &start_point, lb);
 
         }
 

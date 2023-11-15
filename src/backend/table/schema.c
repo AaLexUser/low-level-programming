@@ -1,6 +1,4 @@
 #include "schema.h"
-#include "backend/page_pool/linked_blocks.h"
-#include "utils/logger.h"
 
 /**
  * @brief       Initialize a schema
@@ -27,7 +25,7 @@ int64_t sch_init(){
  * @return      SCHEMA_SUCCESS on success, SCHEMA_FAIL on failure
  */
 
-int sch_add_field(int64_t schidx, const char* name, DATA_TYPE type, size_t size){
+int sch_add_field(int64_t schidx, const char* name, datatype_t type, size_t size){
     schema_t* sch = sch_load(schidx);
     if(sch == NULL) {
         logger(LL_ERROR, __func__, "Failed to load schema %ld", schidx);
@@ -99,7 +97,7 @@ int sch_delete_field(int64_t schidx, const char* name){
         return SCHEMA_FAIL;
     }
 
-    sch_for_each(sch, field){
+    sch_for_each(sch, field, schidx){
         if(strcmp(field.name, name) == 0){
             if(lb_dealloc(schidx, &field.lb_header.chblix) == LB_FAIL){
                 logger(LL_ERROR, __func__, "Failed to deallocate field %s", name);

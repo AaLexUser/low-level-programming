@@ -26,14 +26,17 @@ set(sources
         backend/io/caching.c
         backend/io/pager.c
         backend/pstack/pstack.c
-#        utils/chunky_pool.c
         backend/page_pool/page_pool.c
         backend/io/linked_pages.c
         backend/utils/parray.c
         backend/page_pool/linked_blocks.c
         backend/utils/parray64.c
         backend/table/schema.c
+        backend/table/table_base.c
         backend/table/table.c
+        backend/journal/metatab.c
+        backend/journal/varchar_mgr.c
+        backend/comporator/comporator.c
 
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)
