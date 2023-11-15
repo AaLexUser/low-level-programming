@@ -162,6 +162,18 @@ DEFINE_TEST(foreach){
     pg_delete();
 }
 
+DEFINE_TEST(insert_number){
+    assert(pg_init("test.db") == PAGER_SUCCESS);
+    int64_t num = 123456789;
+    int64_t poop_idx = lb_ppl_init(sizeof(num));
+    chblix_t block = lb_alloc(poop_idx);
+    lb_write(poop_idx, &block, &num, sizeof(num), 0);
+    int64_t read_num;
+    lb_read(poop_idx, &block, &read_num, sizeof(num), 0);
+    assert(num == read_num);
+    pg_delete();
+}
+
 
 int main(){
     RUN_SINGLE_TEST(write_read);
@@ -171,4 +183,5 @@ int main(){
     RUN_SINGLE_TEST(ultra_wide_page);
     RUN_SINGLE_TEST(varchar);
     RUN_SINGLE_TEST(foreach);
+    RUN_SINGLE_TEST(insert_number);
 }

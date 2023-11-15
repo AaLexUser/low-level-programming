@@ -30,6 +30,7 @@ chblix_t lb_alloc_m(int64_t page_pool_idx, int64_t mem_start){
     lb_load(page_pool_idx, &chblix, lb);
 
     lb->next_block = chblix_fail();
+    lb->prev_block = chblix_fail();
     lb->chblix = chblix;
     lb->flag = LB_USED;
     lb->mem_start = mem_start;
@@ -195,6 +196,11 @@ chblix_t lb_get_next(int64_t page_pool_index,
             free(lb);
             return chblix_fail();
         }
+        linked_block_t* next_lb = malloc(ppl->block_size); /* Don't forget to free it */
+        lb_load(page_pool_index, &next_block_idx, next_lb);
+        next_lb->prev_block = lb->chblix;
+        lb_update(page_pool_index, &next_block_idx, next_lb);
+        free(next_lb);
         lb->next_block = next_block_idx;
         lb_update(page_pool_index, chblix, lb);
     }
@@ -348,7 +354,7 @@ int lb_read(int64_t pplidx,
     int64_t blocks_needed = ceil((double)(size + start_offset) / (double) useful_space_size);
     int64_t total_size = size;
     int64_t current_block_idx = 0;
-    int64_t header_offset = sizeof(linked_block_t);
+    int64_t header_offset = lb->mem_start;
 
     /* Go to start block of write and allocate new blocks if needed */
     chblix_t start_point = chblix_fail();
@@ -447,7 +453,7 @@ static chblix_t lb_nearest_valid_chblix_chunk(page_pool_t* ppl, chunk_t* chunk, 
             free(temp);
             return chblix_fail();
         }
-        if(temp->flag == LB_USED){
+        if(lb_valid(ppl, chblix)){
             free(temp);
             return chblix;
         }
@@ -477,6 +483,27 @@ chblix_t lb_pool_start(page_pool_t* ppl){
         return chblix_fail();
     }
     return lb_nearest_valid_chblix_chunk(ppl, ppl_load_chunk(ppl->head), 0);
+}
+
+bool lb_valid(page_pool_t* ppl, chblix_t chblix){
+    if(chblix_cmp(&chblix, &CHBLIX_FAIL) == 0){
+        return false;
+    }
+    linked_block_t* linked_block = malloc(ppl->block_size);
+    if(lb_load(ppl->lp_header.page_index, &chblix, linked_block) == LB_FAIL){
+        logger(LL_ERROR, __func__, "Unable to load linked block");
+        free(linked_block);
+        return false;
+    }
+    if(linked_block->flag == LB_FREE){
+        free(linked_block);
+        return false;
+    }
+    if(chblix_cmp(&linked_block->prev_block, &CHBLIX_FAIL) != 0){
+        free(linked_block);
+        return false;
+    }
+    return chblix_cmp(&chblix, &CHBLIX_FAIL) != 0;
 }
 
 

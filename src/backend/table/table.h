@@ -36,13 +36,15 @@ typedef enum {TABLE_SUCCESS = 0, TABLE_FAIL = -1} table_status_t;
  */
 
 #define tab_for_each_element(table, element, field) \
-for (chblix_t chblix = lb_pool_start(&table->ppl_header);\
-chblix_cmp(&chblix, &CHBLIX_FAIL) != 0 &&\
+chblix_t chblix = lb_pool_start(&table->ppl_header);\
+lb_read(tablix, &chblix, element, (int64_t)field.size, (int64_t)field.offset);\
+for (chblix;\
+lb_valid(&table->ppl_header, chblix) &&\
 lb_read(tablix, &chblix, element, (int64_t)field.size, (int64_t)field.offset) != LB_FAIL;\
 ++chblix.block_idx, chblix = lb_nearest_valid_chblix(&table->ppl_header, chblix))
 
 #define tab_row(...) \
-    typedef struct { \
+    typedef struct __attribute__((packed)){ \
         __VA_ARGS__ \
     } row_t;         \
 row_t row

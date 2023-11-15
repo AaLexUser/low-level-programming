@@ -39,6 +39,11 @@ chblix_t tab_insert(int64_t tablix, void* src){
         logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
         return CHBLIX_FAIL;
     }
+    schema_t* schema = sch_load(table->schidx);
+    if(schema == NULL){
+        logger(LL_ERROR, __func__, "Failed to load schema %ld", table->schidx);
+        return CHBLIX_FAIL;
+    }
 
     chblix_t rowix = lb_alloc(tablix);
 
@@ -47,7 +52,7 @@ chblix_t tab_insert(int64_t tablix, void* src){
         return CHBLIX_FAIL;
     }
 
-    if(lb_write(tablix, &rowix, src, table->ppl_header.block_size, 0) == LB_FAIL){
+    if(lb_write(tablix, &rowix, src,schema->slot_size , 0) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to write row");
         return CHBLIX_FAIL;
     }
@@ -145,7 +150,9 @@ chblix_t tab_find_in_column(int64_t tablix, const char* column_name, void* value
         free(row);
     }
 //    void* element = malloc(table->ppl_header.block_size);
-//    for (chblix_t chblix = lb_pool_start(&table->ppl_header);
+//    chblix_t chblix = lb_pool_start(&table->ppl_header);
+//    lb_read(tablix, &chblix, element, (int64_t)field.size, (int64_t)field.offset);
+//    for (chblix;
 //         chblix_cmp(&chblix, &CHBLIX_FAIL) != 0 &&
 //         lb_read(tablix, &chblix, element, (int64_t)field.size, (int64_t)field.offset) != LB_FAIL;
 //         ++chblix.block_idx, chblix = lb_nearest_valid_chblix(&table->ppl_header, chblix))

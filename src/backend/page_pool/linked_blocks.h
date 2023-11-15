@@ -1,9 +1,11 @@
 #pragma once
 #include "backend/page_pool/page_pool.h"
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef struct linked_block{
     chblix_t next_block;
+    chblix_t prev_block;
     chblix_t chblix;
     char flag;
     int64_t mem_start;
@@ -14,7 +16,7 @@ typedef enum {LB_FREE = 0, LB_USED = 1} linked_block_flag_t;
 
 #define lb_for_each(chblix, ppl) \
     for(chblix_t chblix = lb_pool_start(ppl); \
-        chblix_cmp(&chblix, &CHBLIX_FAIL) != 0; \
+        lb_valid(ppl, chblix); \
         ++chblix.block_idx,  chblix = lb_nearest_valid_chblix(ppl, chblix))
 
 chblix_t lb_alloc_m(int64_t page_pool_idx, int64_t mem_start);
@@ -43,4 +45,5 @@ page_pool_t* lb_ppl_load(int64_t ppidx);
 chblix_t lb_nearest_valid_chblix(page_pool_t* ppl, chblix_t chblix);
 chblix_t lb_pool_start(page_pool_t* ppl);
 #define lb_ppl_destroy(ppidx) ppl_destroy(ppidx)
+bool lb_valid(page_pool_t* ppl, chblix_t chblix);
 

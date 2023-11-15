@@ -16,7 +16,7 @@ typedef struct field{
 
 typedef struct schema{
     page_pool_t ppl_header;
-    size_t slot_size;
+    int64_t slot_size;
 } schema_t;
 
 typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schema_status_t;
@@ -71,7 +71,7 @@ typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schem
     chblix_t sch_chblix = lb_pool_start((page_pool_t*)sch);\
     sch_field_load(schidx, &sch_chblix, &field);\
     for(sch_chblix;\
-    chblix_cmp(&sch_chblix, &CHBLIX_FAIL) != 0 &&\
+    lb_valid((page_pool_t*)sch, sch_chblix) &&\
     sch_field_load(schidx, &sch_chblix, &field) != LB_FAIL; \
     ++sch_chblix.block_idx,  sch_chblix = lb_nearest_valid_chblix((page_pool_t*)sch, sch_chblix))
 
