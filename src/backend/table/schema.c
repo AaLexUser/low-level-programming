@@ -59,7 +59,7 @@ int sch_add_field(int64_t schidx, const char* name, datatype_t type, size_t size
  * @param[in]   schidx: index of the schema
  * @param[in]   name: name of the field
  * @param[out]  field: pointer to destination field
- * @return
+ * @return      SCHEMA_SUCCESS on success, SCHEMA_FAIL on failure
  */
 
 int sch_get_field(int64_t schidx, const char* name, field_t* field){
@@ -69,15 +69,13 @@ int sch_get_field(int64_t schidx, const char* name, field_t* field){
         return SCHEMA_FAIL;
     }
 
-    lb_for_each(chblix, (page_pool_t*)sch){
-        if(sch_field_load(schidx, &chblix, field) == LB_FAIL){
-            logger(LL_ERROR, __func__, "Failed to read field %s", name);
-            return SCHEMA_FAIL;
-        }
-        if(strcmp(field->name, name) == 0){
+    sch_for_each(sch, fieldi, chblix, schidx){
+        if(strcmp(fieldi.name, name) == 0){
+            *field = fieldi;
             return SCHEMA_SUCCESS;
         }
     }
+
     logger(LL_ERROR, __func__, "Failed to find field %s", name);
     return SCHEMA_NOT_FOUND;
 }
@@ -97,7 +95,7 @@ int sch_delete_field(int64_t schidx, const char* name){
         return SCHEMA_FAIL;
     }
 
-    sch_for_each(sch, field, schidx){
+    sch_for_each(sch, field, chblix, schidx){
         if(strcmp(field.name, name) == 0){
             if(lb_dealloc(schidx, &field.lb_header.chblix) == LB_FAIL){
                 logger(LL_ERROR, __func__, "Failed to deallocate field %s", name);

@@ -108,12 +108,19 @@ void tab_print(int64_t tablix){
  * @param[in]   mtabidx: index of the metatable
  * @param[in]   leftidx: index of the left table
  * @param[in]   rightidx: index of the right table
- * @param[in]   join_field: field to join on
+ * @param[in]   join_field_left: join field of the left table
+ * @param[in]   join_field_right: join field of the right table
  * @param[in]   name: name of the new table
  * @return      index of the new table on success, TABLE_FAIL on failure
  */
 
-int64_t tab_join(int64_t mtabidx, int64_t leftidx, int64_t rightidx, field_t join_field, const char* name){
+int64_t tab_join(
+        int64_t mtabidx,
+        int64_t leftidx,
+        int64_t rightidx,
+        const char* join_field_left,
+        const char* join_field_right,
+        const char* name){
 
     /* Load tables */
     table_t* left = tab_load(leftidx);
@@ -174,11 +181,22 @@ int64_t tab_join(int64_t mtabidx, int64_t leftidx, int64_t rightidx, field_t joi
     void* left_row = malloc(left_schema->slot_size);
     void* right_row = malloc(right_schema->slot_size);
 
+    /* Get join fields */
+    field_t join_field_left_f;
+    sch_get_field(left->schidx, join_field_left, &join_field_left_f);
+    field_t join_field_right_f;
+    sch_get_field(right->schidx, join_field_right, &join_field_right_f);
+
+
 
     /* Join */
+    void* elleft = malloc(join_field_left_f.size);
+    void* elright = malloc(join_field_right_f.size);
     tab_for_each_row(left, leftidx, leftt_chblix, left_row, left_schema){
+        memcpy(elleft, (char*)left_row + join_field_left_f.offset, join_field_left_f.size);
         tab_for_each_row(right, rightidx, rightt_chblix, right_row, right_schema){
-            if(comp_eq(join_field.type, (char*)left_row + join_field.offset, (char*)right_row + join_field.offset)){
+            memcpy(elright, (char*)right_row + join_field_right_f.offset, join_field_right_f.size);
+            if(comp_eq(join_field_left_f.type, elleft, elright)){
                 memcpy(row, left_row, left_schema->slot_size);
                 memcpy((char*)row + left_schema->slot_size, right_row, right_schema->slot_size);
                 chblix_t rowix = tab_insert(tablix, row);
@@ -189,6 +207,8 @@ int64_t tab_join(int64_t mtabidx, int64_t leftidx, int64_t rightidx, field_t joi
             }
         }
     }
+    free(elleft);
+    free(elright);
     free(row);
     free(left_row);
     free(right_row);

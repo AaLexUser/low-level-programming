@@ -48,6 +48,53 @@ int64_t init_schema(){
     return schidx;
 }
 
+int64_t table_bank(int64_t mtabidx, int count){
+    int64_t schidx = init_schema();
+    int64_t tablix = tab_init(mtabidx, "BANK", schidx);
+    insert_data(tablix, schidx, count);
+    return tablix;
+}
+
+int64_t table_student(int64_t mtabidx, int count){
+    int64_t schidx = sch_init();
+    sch_add_int_field(schidx, "ID");
+    sch_add_char_field(schidx, "NAME", 10);
+    sch_add_float_field(schidx, "SCORE");
+    sch_add_bool_field(schidx, "PASS");
+    int64_t tablix = tab_init(mtabidx, "STUDENTS", schidx);
+    tab_row(
+            int64_t ID;
+            char NAME[10];
+            float SCORE;
+            bool PASS;
+    );
+    row.ID = 1;
+    strncpy(row.NAME,"John", 10);
+    row.SCORE = 10.5f;
+    row.PASS = true;
+    chblix_t res = tab_insert(tablix, &row);
+
+    row.ID = 2;
+    strncpy(row.NAME,"Nick", 10);
+    row.SCORE = 20.5f;
+    row.PASS = false;
+    res = tab_insert(tablix, &row);
+
+    row.ID = 3;
+    strncpy(row.NAME,"Alex", 10);
+    row.SCORE = 30.5f;
+    row.PASS = true;
+    res = tab_insert(tablix, &row);
+
+    row.ID = 4;
+    strncpy(row.NAME,"Smith", 10);
+    row.SCORE = 40.5f;
+    row.PASS = false;
+    res = tab_insert(tablix, &row);
+
+    return tablix;
+}
+
 
 DEFINE_TEST(create_add_foreach){
     assert(pg_init("test.db") == PAGER_SUCCESS);
@@ -184,6 +231,18 @@ DEFINE_TEST(print){
     pg_delete();
 }
 
+DEFINE_TEST(join){
+    assert(pg_init("test.db") == PAGER_SUCCESS);
+    int64_t mtabidx = mtab_init();
+    int64_t left = table_bank(mtabidx, 1);
+    tab_print(left);
+    int64_t right = table_student(mtabidx, 1);
+    tab_print(right);
+    int64_t join_tablix = tab_join(mtabidx, left, right, "NAME", "NAME","JOIN");
+    tab_print(join_tablix);
+    pg_delete();
+}
+
 
 
 
@@ -194,4 +253,5 @@ int main(){
     RUN_SINGLE_TEST(varchar);
     RUN_SINGLE_TEST(several_tables);
     RUN_SINGLE_TEST(print);
+    RUN_SINGLE_TEST(join);
 }
