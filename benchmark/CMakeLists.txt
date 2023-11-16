@@ -1,10 +1,12 @@
-file(GLOB_RECURSE bench_sources CONFIGURE_DEPENDS
-        benchs/page_pool_mem.c
-        benchs/linked_blocks_mem.c
-        benchs/linked_blocks_wide_mem.c
-        benchs/linked_blocks_insert.c
-        benchs/linked_blocks_wide_insert.c
+file(GLOB_RECURSE common_sources CONFIGURE_DEPENDS
+        src/*.c
+        src/*.h
 )
+add_library(bench_stubs OBJECT ${common_sources})
+target_include_directories(bench_stubs PUBLIC src)
+target_link_libraries(bench_stubs PUBLIC db m)
+
+file(GLOB_RECURSE bench_sources CONFIGURE_DEPENDS benchs/*.c benchs/*.h)
 
 foreach(bench_source IN LISTS bench_sources)
     string(REPLACE "/" ";" name_components ${bench_source})

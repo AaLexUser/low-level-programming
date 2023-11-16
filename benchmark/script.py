@@ -24,8 +24,8 @@ if __name__ == '__main__':
     # Run the benchmark
     build_dir = '/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/'
     os.chdir(build_dir)
-    subprocess.run(["cmake", "-DCMAKE_BUILD_TYPE=Debug", "-DBUILD_TESTING=OFF", "-DBUILD_BENCHMARK=ON" ".."])
-    subprocess.run(["cmake", "--build", "."])
+    # subprocess.run(["cmake", "-DCMAKE_BUILD_TYPE=Debug", "-DBUILD_TESTING=OFF", "-DBUILD_BENCHMARK=ON" ".."])
+    # subprocess.run(["cmake", "--build", "."])
 
     # # bench_page_pool_mem
     # subprocess.run(["./benchmark/bench_page_pool_mem"])
@@ -59,9 +59,17 @@ if __name__ == '__main__':
     #      'linked_blocks_insert.png')
 
     # bench_linked_blocks_wide_insert
-    subprocess.run(["./benchmark/bench_linked_blocks_wide_insert"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/linked_blocks_wide_insert.csv'
+    # subprocess.run(["./benchmark/bench_linked_blocks_wide_insert"])
+    # df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/linked_blocks_wide_insert.csv'
+    #                  , sep=';')
+    # # Plot the data
+    # plot(df, 'BlocksCount', 'Time', 'Linked Blocks Wide Insertion Time', 'Blocks count', 'Time mcs',
+    #      'linked_blocks_wide_insert.png')
+    #
+    #bench_table_insert
+    # subprocess.run(["./benchmark/bench_table_insert"])
+    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-insert.csv'
                      , sep=';')
     # Plot the data
-    plot(df, 'BlocksCount', 'Time', 'Linked Blocks Wide Insertion Time', 'Blocks count', 'Time mcs',
-         'linked_blocks_wide_insert.png')
+    plot(df, 'Rows', 'Time', 'Table Insertion Time', 'Row count', 'Time mcs',
+         'table_insert.png')

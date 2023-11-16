@@ -1,7 +1,7 @@
 #ifndef VARCHAR_MANAGER_H_
 #define VARCHAR_MANAGER_H_
 
-#include "../../utils/pool.h"
+#include "../../utils/chunky_pool.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>

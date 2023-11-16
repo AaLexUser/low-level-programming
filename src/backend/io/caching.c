@@ -1,5 +1,4 @@
 #include "caching.h"
-#include "../../utils/hashtable.h"
 #include "../../utils/logger.h"
 #include "../../utils/roundup.h"
 #include <inttypes.h>
