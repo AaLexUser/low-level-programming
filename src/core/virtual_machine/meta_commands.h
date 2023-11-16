@@ -1,7 +1,7 @@
 #pragma once
 #include <string.h>
 #include "../../backend/io/input_buffer.h"
-#include "../../backend/table/table.h"
+#include "backend/table/table-old.h"
 #include "../../backend/db/db.h"
 typedef enum {
     META_COMMAND_SUCCESS,

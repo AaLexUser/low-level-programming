@@ -5,10 +5,19 @@ file(GLOB_RECURSE common_sources CONFIGURE_DEPENDS
 
 add_library(test_stubs OBJECT ${common_sources})
 target_include_directories(test_stubs PUBLIC src)
-target_link_libraries(test_stubs PUBLIC db)
+target_link_libraries(test_stubs PUBLIC db m)
 
 file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS
-        tests/*.c
+        tests/file_manager.c
+        tests/caching.c
+        tests/pstack.c
+        tests/pager.c
+        tests/page_pool.c
+        tests/linked_pages.c
+        tests/parray.c
+        tests/linked_block.c
+        tests/schema.c
+        tests/table.c
 )
 
 foreach(test_source IN LISTS test_sources)
@@ -19,6 +28,7 @@ foreach(test_source IN LISTS test_sources)
 
     add_executable(test_${name} ${test_source})
     target_link_libraries(test_${name} PRIVATE test_stubs)
+
     add_test(NAME test_${name} COMMAND test_${name})
 endforeach()
 

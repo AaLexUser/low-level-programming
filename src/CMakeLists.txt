@@ -1,4 +1,3 @@
-
 find_program(CLANG_TIDY clang-tidy)
 message(STATUS "Clang-tidy: ${CLANG_TIDY}")
 if(CLANG_TIDY)
@@ -8,7 +7,6 @@ if(CLANG_TIDY)
             ${CLANG_TIDY}
             -header-filter=${CMAKE_SOURCE_DIR}
             -checks=${clang_tidy_checks_str}
-#            -warnings-as-errors=*
     )
 endif()
 
@@ -23,21 +21,30 @@ endif()
 #        ../src/backend/db/db.c
 #)
 set(sources
-        backend/table/table.c
+        backend/io/file.c
+        utils/logger.c
+        backend/io/caching.c
+        backend/io/pager.c
+        backend/pstack/pstack.c
+        backend/page_pool/page_pool.c
+        backend/io/linked_pages.c
+        backend/utils/parray.c
+        backend/page_pool/linked_blocks.c
+        backend/utils/parray64.c
         backend/table/schema.c
-        utils/pool.c
-        utils/linked_list.c
-        backend/table/table_manager.c
-        backend/io/file_manager.c
-        backend/db/db.c
-        utils/cstring.c
+        backend/table/table_base.c
+        backend/table/table.c
+        backend/journal/metatab.c
+        backend/journal/varchar_mgr.c
+        backend/comporator/comporator.c
+
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)
 #list(FILTER sources EXCLUDE REGEX main.c)
 
 add_library(db STATIC ${sources})
 target_include_directories(db PUBLIC .)
-
+target_link_libraries(db PUBLIC m)
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/main.c)
     add_executable(db_exe main.c)
     target_link_libraries(db_exe PRIVATE db)

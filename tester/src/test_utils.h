@@ -3,7 +3,12 @@
 #define _GNU_SOURCE
 
 #include <stdio.h>
+#if defined(__unix__)|| defined(__linux__)
 #include <sys/mman.h>
+#endif
+#if  defined(__WIN32__)
+#include <windows.h>
+#endif
 #include <assert.h>
 
 #define DEFINE_TEST(_name) static void test_##_name()

@@ -1,22 +1,15 @@
 #pragma once
-#include "../../utils/pool.h"
-#include "schema.h"
-#include <inttypes.h>
-#include <stdio.h>
+#include "backend/comporator/comporator.h"
+#include "backend/journal/metatab.h"
+#include "table_base.h"
 
-
-typedef struct _Row{
-    void* data;
-} Row;
-
-typedef struct{
-    char name[MAX_NAME_LENGTH];
-    Schema* schema;
-    Pool* pool;
-    LinkedList* rows_chblidx;
-} Table;
-
-Table* create_table(const char* name, Schema* schema);
-void free_table(void* ptr);
-void table_insert(Table* table, void* data);
-void table_select(Table* table);
+int64_t tab_init(int64_t mtabidx, const char* name, int64_t schidx);
+chblix_t tab_get_row(int64_t tablix, field_t* field, void* value, datatype_t type);
+void tab_print(int64_t tablix);
+int64_t tab_join(
+        int64_t mtabidx,
+        int64_t leftidx,
+        int64_t rightidx,
+        const char* join_field_left,
+        const char* join_field_right,
+        const char* name);
