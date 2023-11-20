@@ -214,3 +214,97 @@ int64_t tab_join(
     free(right_row);
     return tablix;
 }
+
+/**
+ * @brief       Select row form table on condition
+ * @param[in]   mtabidx: meta table index
+ * @param[in]   sel_tabidx: index of table from which the selection is made
+ * @param[in]   name: name of new table that will be created
+ * @param[in]   select_field: the field by which the selection is performed
+ * @param[in]   condition: comparison condition
+ * @param[in]   value: value to compare with
+ * @param[in]   type: the type of value to compare with
+ * @return
+ */
+
+int64_t tab_select_op(int64_t mtabidx,
+                      int64_t sel_tabidx,
+                      const char* name,
+                      const char* select_field,
+                      condition_t condition,
+                      void* value,
+                      datatype_t type){
+
+   /* Load table */
+    table_t* sel_tab = tab_load(sel_tabidx);
+    if(sel_tab == NULL){
+        logger(LL_ERROR, __func__, "Failed to load table %ld", sel_tabidx);
+        return TABLE_FAIL;
+    }
+
+    /* Load schema */
+    schema_t* sel_schema = sch_load(sel_tab->schidx);
+    if(sel_schema == NULL){
+        logger(LL_ERROR, __func__, "Failed to load schema %ld", sel_tab->schidx);
+        return TABLE_FAIL;
+    }
+
+    /* Load field */
+    field_t select_field_f;
+    if(sch_get_field(sel_tab->schidx, select_field, &select_field_f) == SCHEMA_FAIL){
+        logger(LL_ERROR, __func__, "Failed to get field %s", select_field);
+        return TABLE_FAIL;
+    }
+
+    /* Create new schema */
+    int64_t schidx = sch_init();
+    if(schidx == SCHEMA_FAIL){
+        logger(LL_ERROR, __func__, "Failed to create new schema");
+        return TABLE_FAIL;
+    }
+    sch_for_each(sel_schema, field, chblix, sel_tab->schidx){
+        if(sch_add_field(schidx, field.name, field.type, field.size) == SCHEMA_FAIL){
+            logger(LL_ERROR, __func__, "Failed to add field %s", field.name);
+            return TABLE_FAIL;
+        }
+    }
+
+    /* Create new table */
+    int64_t tablix = tab_init(mtabidx, name, schidx);
+    if(tablix == TABLE_FAIL){
+        logger(LL_ERROR, __func__, "Failed to create new table");
+        return TABLE_FAIL;
+    }
+
+    /* Load new schema */
+    schema_t* schema = sch_load(schidx);
+
+    /* Create new row */
+    void* row = malloc(schema->slot_size);
+
+    /* Check if datatype of field equals datatype of value */
+    if(type != select_field_f.type){
+        return TABLE_FAIL;
+    }
+
+    void* el_row = malloc(sel_schema->slot_size);
+    void* el = malloc(select_field_f.type);
+
+    /* Select */
+    tab_for_each_row(sel_tab, sel_tabidx, sel_chblix, el_row, sel_schema){
+        memcpy(el, (char*)el_row + select_field_f.offset, select_field_f.size);
+        if(comp_compare(type, el,value, condition)){
+            memcpy(row, el_row, schema->slot_size);
+            chblix_t rowix = tab_insert(tablix, row);
+            if(chblix_cmp(&rowix, &CHBLIX_FAIL) == 0){
+                logger(LL_ERROR, __func__, "Failed to insert row");
+                return TABLE_FAIL;
+            }
+        }
+    }
+
+    free(row);
+    free(el_row);
+    free(el);
+    return tablix;
+}

@@ -1,5 +1,5 @@
 #include "../src/test.h"
-#include "../../src/utils/pool.h"
+#include "../../src/utils/chunky_pool.h"
 
 DEFINE_TEST(dealloc){
     Pool *pool = NULL;

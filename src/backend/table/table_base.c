@@ -69,7 +69,7 @@ chblix_t tab_insert(int64_t tablix, void* src){
  * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
  */
 
-int tab_select(int64_t tablix, chblix_t* rowix, void* dest){
+int tab_select_row(int64_t tablix, chblix_t* rowix, void* dest){
     table_t* table = tab_load(tablix);
     if(table == NULL){
         logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);

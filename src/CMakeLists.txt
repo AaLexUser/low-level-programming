@@ -1,13 +1,15 @@
-find_program(CLANG_TIDY clang-tidy)
-message(STATUS "Clang-tidy: ${CLANG_TIDY}")
-if(CLANG_TIDY)
-    file(STRINGS ${PROJECT_SOURCE_DIR}/clang-tidy-checks.txt clang_tidy_checks)
-    list(JOIN clang_tidy_checks "," clang_tidy_checks_str)
-    set(CMAKE_C_CLANG_TIDY
-            ${CLANG_TIDY}
-            -header-filter=${CMAKE_SOURCE_DIR}
-            -checks=${clang_tidy_checks_str}
-    )
+if(NOT CMAKE_CONFIGURATION_TYPES STREQUAL Release)
+    find_program(CLANG_TIDY clang-tidy)
+    message(STATUS "Clang-tidy: ${CLANG_TIDY}")
+    if(CLANG_TIDY)
+        file(STRINGS ${PROJECT_SOURCE_DIR}/clang-tidy-checks.txt clang_tidy_checks)
+        list(JOIN clang_tidy_checks "," clang_tidy_checks_str)
+        set(CMAKE_C_CLANG_TIDY
+                ${CLANG_TIDY}
+                -header-filter=${CMAKE_SOURCE_DIR}
+                -checks=${clang_tidy_checks_str}
+        )
+    endif()
 endif()
 
 #add_executable(${PROJECT_NAME}
@@ -35,6 +37,7 @@ set(sources
         backend/table/table_base.c
         backend/table/table.c
         backend/journal/metatab.c
+        backend/journal/materializer.c
         backend/journal/varchar_mgr.c
         backend/comporator/comporator.c
 

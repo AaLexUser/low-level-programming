@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef LOGGER_LEVEL
+#define LOGGER_LEVEL 2
+#endif
+
 enum LoggerLevel {
     LL_DEBUG = 0,
     LL_INFO = 1,

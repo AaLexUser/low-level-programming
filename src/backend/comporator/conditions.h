@@ -1,0 +1,22 @@
+typedef enum condition{
+    COND_EQ = 0,
+    COND_NEQ = 1,
+    COND_LT = 2,
+    COND_LTE = 3,
+    COND_GT = 4,
+    COND_GTE = 5,
+    COND_LIKE = 6,
+    COND_NLIKE = 7,
+    COND_IN = 8,
+    COND_NIN = 9,
+    COND_BETWEEN = 10,
+    COND_NBETWEEN = 11,
+    COND_ISNULL = 12,
+    COND_NISNULL = 13,
+    COND_AND = 14,
+    COND_OR = 15,
+    COND_NOT = 16,
+    COND_TRUE = 17,
+    COND_FALSE = 18,
+    COND_END = 19
+} condition_t;

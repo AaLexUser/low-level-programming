@@ -74,7 +74,7 @@ int64_t pg_alloc(){
         }
     }
 
-    if(del_pag_idx == -1){
+    if(del_pag_idx == -1 || del_pag_idx > ch_max_page_index(&PAGER.ch)){
         logger(LL_INFO, __func__, "Unable to pop page from deleted pages, allocating new page");
         if((page_idx = ch_new_page(&PAGER.ch)) == CH_FAIL){
             logger(LL_ERROR, __func__, "Unable to load new page");

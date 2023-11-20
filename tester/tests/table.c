@@ -243,15 +243,67 @@ DEFINE_TEST(join){
     pg_delete();
 }
 
+DEFINE_TEST(select){
+    assert(pg_init("test.db") == PAGER_SUCCESS);
+    int64_t mtabidx = mtab_init();
+    int64_t tablix = table_student(mtabidx, 1);
+    float value = 20.0f;
+    int64_t sel_tablix = tab_select_op(mtabidx, tablix, "SELECT", "SCORE", COND_GT, &value, FLOAT);
+    tab_print(sel_tablix);
+    table_t* sel_table_t = tab_load(sel_tablix);
+    field_t* field = malloc(sizeof(field_t));
+    assert(sch_get_field(sel_table_t->schidx,  "SCORE", field) == SCHEMA_SUCCESS);
+    float element;
+    tab_for_each_element(sel_table_t, tablix, chblix, &element, field){
+        assert(element > value);
+    }
+    tab_destroy(sel_tablix);
+
+    sel_tablix = tab_select_op(mtabidx, tablix, "SELECT", "SCORE", COND_GTE, &value, FLOAT);
+    sel_table_t = tab_load(sel_tablix);
+    assert(sch_get_field(sel_table_t->schidx,  "SCORE", field) == SCHEMA_SUCCESS);
+    tab_for_each_element(sel_table_t, tablix, chblix2, &element, field){
+        assert(element >= value);
+    }
+    tab_destroy(sel_tablix);
+
+    sel_tablix = tab_select_op(mtabidx, tablix, "SELECT", "SCORE", COND_LT, &value, FLOAT);
+    sel_table_t = tab_load(sel_tablix);
+    assert(sch_get_field(sel_table_t->schidx,  "SCORE", field) == SCHEMA_SUCCESS);
+    tab_for_each_element(sel_table_t, tablix, chblix3, &element, field){
+        assert(element < value);
+    }
+    tab_destroy(sel_tablix);
+
+    sel_tablix = tab_select_op(mtabidx, tablix, "SELECT", "SCORE", COND_LTE, &value, FLOAT);
+    sel_table_t = tab_load(sel_tablix);
+    assert(sch_get_field(sel_table_t->schidx,  "SCORE", field) == SCHEMA_SUCCESS);
+    tab_for_each_element(sel_table_t, tablix, chblix4, &element, field){
+        assert(element <= value);
+    }
+    tab_destroy(sel_tablix);
+
+    value = 10.5f;
+    sel_tablix = tab_select_op(mtabidx, tablix, "SELECT", "SCORE", COND_NEQ, &value, FLOAT);
+    sel_table_t = tab_load(sel_tablix);
+    assert(sch_get_field(sel_table_t->schidx,  "SCORE", field) == SCHEMA_SUCCESS);
+    tab_for_each_element(sel_table_t, tablix, chblix5, &element, field){
+        assert(element != value);
+    }
+    tab_destroy(sel_tablix);
+    pg_delete();
+}
+
 
 
 
 int main(){
-    RUN_SINGLE_TEST(create_add_foreach);
-    RUN_SINGLE_TEST(update);
-    RUN_SINGLE_TEST(delete);
-    RUN_SINGLE_TEST(varchar);
-    RUN_SINGLE_TEST(several_tables);
-    RUN_SINGLE_TEST(print);
-    RUN_SINGLE_TEST(join);
+//    RUN_SINGLE_TEST(create_add_foreach);
+//    RUN_SINGLE_TEST(update);
+//    RUN_SINGLE_TEST(delete);
+//    RUN_SINGLE_TEST(varchar);
+//    RUN_SINGLE_TEST(several_tables);
+//    RUN_SINGLE_TEST(print);
+//    RUN_SINGLE_TEST(join);
+    RUN_SINGLE_TEST(select);
 }

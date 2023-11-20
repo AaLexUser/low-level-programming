@@ -1,7 +1,6 @@
 #ifndef _POOL_H_
 #define _POOL_H_
 
-#include "hashtable.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -27,7 +26,7 @@ typedef struct _Chunk {
     void* next;
     int32_t next_chunkid;
     int32_t prev_chunkid;
-} Chunk;
+} chunk_t;
 
 typedef struct __attribute__((packed)) {
     uint32_t package_size;
@@ -46,8 +45,8 @@ typedef struct __attribute__((packed)) _PoolHeader {
 typedef struct _Pool {
     PoolHeader poolHeader;
     HT(int32_t, size_t) chunkid_to_index;
-    Chunk* head;
-    Chunk* current_chunk;
+    chunk_t* head;
+    chunk_t* current_chunk;
 } Pool;
 
 typedef struct __attribute__((packed)) {
@@ -62,17 +61,17 @@ typedef struct __attribute__((packed)) {
 
 bool pool_create_by_chunk_size(size_t block_size, Pool* pool, size_t chunk_memory_size);
 bool pool_create(size_t block_size, uint32_t num_of_blocks, Pool* pool);
-void chunk_free(Chunk* chunk);
-void chunks_free(Chunk* chunk);
+void chunk_free(chunk_t* chunk);
+void chunks_free(chunk_t* chunk);
 void pool_destroy(Pool* pool);
-void* chunk_addr_from_index(Chunk* chunk, uint32_t index);
+void* chunk_addr_from_index(chunk_t* chunk, uint32_t index);
 void * pool_addr_from_chblidx(Pool* pool, Chblidx* chblidx);
-uint32_t chunk_index_from_addr(Chunk* chunk, const void* addr);
-Chblidx* chunk_chblidx_from_addr(Chunk* chunk, const void* addr);
+uint32_t chunk_index_from_addr(chunk_t* chunk, const void* addr);
+Chblidx* chunk_chblidx_from_addr(chunk_t* chunk, const void* addr);
 Chblidx* pool_chblidx_from_addr(Pool* pool, const void* addr);
-Chunk* add_new_chunk(Pool* pool);
-Chunk* get_chunk_from_addr(Pool* pool, void* addr);
-uint32_t get_chunk_start_index(Pool* pool, Chunk* chunk);
+chunk_t* add_new_chunk(Pool* pool);
+chunk_t* get_chunk_from_addr(Pool* pool, void* addr);
+uint32_t get_chunk_start_index(Pool* pool, chunk_t* chunk);
 void* pool_alloc(Pool* pool); 
 void pool_dealloc(Pool* pool, void* p);
 bool pool_serialization(Pool* pool, uint8_t* buf);

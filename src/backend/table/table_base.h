@@ -70,7 +70,7 @@ row_t row
 
 int64_t tab_base_init(const char* name, int64_t schidx);
 chblix_t tab_insert(int64_t tablix, void* src);
-int tab_select(int64_t tablix, chblix_t* rowix, void* dest);
+int tab_select_row(int64_t tablix, chblix_t* rowix, void* dest);
 int tab_delete(int64_t tablix, chblix_t* rowix);
 int tab_update_row(int64_t tablix, chblix_t* rowix, void* row);
 int tab_update_element(int64_t tablix, chblix_t* rowix, field_t* field, void* element);

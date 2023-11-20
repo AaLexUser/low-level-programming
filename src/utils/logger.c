@@ -2,12 +2,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 #include <time.h>
-
-#ifndef LOGGER_LEVEL
-#define LOGGER_LEVEL 0
-#endif
 
 static char* get_current_time_str(){
     time_t now;
