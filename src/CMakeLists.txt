@@ -1,4 +1,4 @@
-if(NOT CMAKE_CONFIGURATION_TYPES STREQUAL Release)
+if(NOT CMAKE_CONFIGURATION_TYPES MATCHES Debug)
     find_program(CLANG_TIDY clang-tidy)
     message(STATUS "Clang-tidy: ${CLANG_TIDY}")
     if(CLANG_TIDY)
@@ -12,16 +12,6 @@ if(NOT CMAKE_CONFIGURATION_TYPES STREQUAL Release)
     endif()
 endif()
 
-#add_executable(${PROJECT_NAME}
-#        ../src/main.c
-#        ../src/backend/table/table.c
-#        ../src/backend/table/schema.c
-#        ../src/utils/pool.c
-#        ../src/utils/linked_list.c
-#        ../src/backend/table/table_manager.c
-#        ../src/backend/io/file_manager.c
-#        ../src/backend/db/db.c
-#)
 set(sources
         backend/io/file.c
         utils/logger.c
@@ -40,6 +30,7 @@ set(sources
         backend/journal/materializer.c
         backend/journal/varchar_mgr.c
         backend/comporator/comporator.c
+        generator/table-gen.c
 
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)

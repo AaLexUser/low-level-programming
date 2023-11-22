@@ -97,12 +97,6 @@ int tab_select_row(int64_t tablix, chblix_t* rowix, void* dest){
  */
 
 int tab_delete(int64_t tablix, chblix_t* rowix){
-    table_t* table = tab_load(tablix);
-    if(table == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
-        return TABLE_FAIL;
-    }
-
     if(lb_dealloc(tablix, rowix) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to deallocate row");
         return TABLE_FAIL;
@@ -148,24 +142,13 @@ int tab_update_row(int64_t tablix, chblix_t* rowix, void* row){
  */
 
 int tab_update_element(int64_t tablix, chblix_t* rowix, field_t* field, void* element){
-    table_t* table = tab_load(tablix);
-    if(table == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
-        return TABLE_FAIL;
-    }
-
-    schema_t* schema = sch_load(table->schidx);
-    if(schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %ld", table->schidx);
-        return TABLE_FAIL;
-    }
-
     if(lb_write(tablix, rowix, element, (int64_t)field->size, (int64_t)field->offset) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to write row");
         return TABLE_FAIL;
     }
     return TABLE_SUCCESS;
 }
+
 
 /**
  * @brief       Get an element from row
@@ -195,6 +178,8 @@ int tab_get_element(int64_t tablix, chblix_t* rowix, field_t* field, void* eleme
     }
     return TABLE_SUCCESS;
 }
+
+
 
 
 

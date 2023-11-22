@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define MAX_NAME_LENGTH 32
+#define MAX_NAME_LENGTH 128
 typedef struct field{
     linked_block_t lb_header;
     char name[MAX_NAME_LENGTH];
@@ -85,6 +85,6 @@ typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schem
     ++chblix.block_idx,  chblix = lb_nearest_valid_chblix((page_pool_t*)sch, chblix))
 
 int64_t sch_init();
-int sch_add_field(int64_t schidx, const char* name, datatype_t type, size_t size);
+int sch_add_field(int64_t schidx, const char* name, datatype_t type, int64_t size);
 int sch_get_field(int64_t schidx, const char* name, field_t* field);
 int sch_delete_field(int64_t schidx, const char* name);

@@ -25,7 +25,7 @@ int64_t sch_init(){
  * @return      SCHEMA_SUCCESS on success, SCHEMA_FAIL on failure
  */
 
-int sch_add_field(int64_t schidx, const char* name, datatype_t type, size_t size){
+int sch_add_field(int64_t schidx, const char* name, datatype_t type, int64_t size){
     schema_t* sch = sch_load(schidx);
     if(sch == NULL) {
         logger(LL_ERROR, __func__, "Failed to load schema %ld", schidx);

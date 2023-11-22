@@ -70,3 +70,28 @@ int mtab_add(int64_t mtabidx, const char* name, int64_t index){
     }
     return TABLE_SUCCESS;
 }
+
+/**
+ * @brief       Delete a table from the metatable
+ * @param[in]   mtabidx: index of the metatable
+ * @param[in]   index: index of the table
+ * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
+ */
+
+int mtab_delete(int64_t mtabidx, int64_t index){
+    tab_row(
+            char NAME[MAX_NAME_LENGTH];
+            int64_t INDEX;
+    );
+    table_t* table = tab_load(mtabidx);
+    schema_t* schema = sch_load(table->schidx);
+    tab_for_each_row(table, mtabidx, rowix, &row, schema) {
+        if(row.INDEX == index){
+            if (tab_delete(mtabidx, &rowix) == TABLE_FAIL) {
+                logger(LL_ERROR, __func__, "Failed to delete row ");
+                return TABLE_FAIL;
+            }
+        }
+    }
+    return TABLE_SUCCESS;
+}

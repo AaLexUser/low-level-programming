@@ -12,13 +12,6 @@ typedef struct table {
 typedef enum {TABLE_SUCCESS = 0, TABLE_FAIL = -1} table_status_t;
 
 
-/**
- * @brief       Delete a table
- * @param[in]   tablix: index of the table
- * @return      PPL_SUCCESS on success, PPL_FAIL on failure
- */
-
-#define tab_destroy(tablix) lb_ppl_destroy(tablix)
 
 /**
  * @brief       Load a table
@@ -73,5 +66,6 @@ chblix_t tab_insert(int64_t tablix, void* src);
 int tab_select_row(int64_t tablix, chblix_t* rowix, void* dest);
 int tab_delete(int64_t tablix, chblix_t* rowix);
 int tab_update_row(int64_t tablix, chblix_t* rowix, void* row);
+
 int tab_update_element(int64_t tablix, chblix_t* rowix, field_t* field, void* element);
 int tab_get_element(int64_t tablix, chblix_t* rowix, field_t* field, void* element);

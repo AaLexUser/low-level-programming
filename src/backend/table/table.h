@@ -22,3 +22,21 @@ int64_t tab_select_op(int64_t mtabidx,
                       condition_t condition,
                       void* value,
                       datatype_t type);
+int tab_drop(int64_t mtabidx, int64_t tablix);
+int tab_update_row_op(int64_t tablix,
+                  void* row,
+                  const char* field_name,
+                  condition_t condition,
+                  void* value,
+                  datatype_t type);
+int tab_update_element_op(int64_t tablix,
+                          void* element,
+                          const char* field_name,
+                          const char* field_comp,
+                          condition_t condition,
+                          void* value,
+                          datatype_t type);
+int tab_delete_op(int64_t tablix,
+                  const char* field_comp,
+                  condition_t condition,
+                  void* value);

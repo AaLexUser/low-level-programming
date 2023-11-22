@@ -257,7 +257,7 @@ DEFINE_TEST(select){
     tab_for_each_element(sel_table_t, tablix, chblix, &element, field){
         assert(element > value);
     }
-    tab_destroy(sel_tablix);
+    tab_drop(mtabidx, sel_tablix);
 
     sel_tablix = tab_select_op(mtabidx, tablix, "SELECT", "SCORE", COND_GTE, &value, FLOAT);
     sel_table_t = tab_load(sel_tablix);
@@ -265,7 +265,7 @@ DEFINE_TEST(select){
     tab_for_each_element(sel_table_t, tablix, chblix2, &element, field){
         assert(element >= value);
     }
-    tab_destroy(sel_tablix);
+    tab_drop(mtabidx, sel_tablix);
 
     sel_tablix = tab_select_op(mtabidx, tablix, "SELECT", "SCORE", COND_LT, &value, FLOAT);
     sel_table_t = tab_load(sel_tablix);
@@ -273,7 +273,7 @@ DEFINE_TEST(select){
     tab_for_each_element(sel_table_t, tablix, chblix3, &element, field){
         assert(element < value);
     }
-    tab_destroy(sel_tablix);
+    tab_drop(mtabidx, sel_tablix);
 
     sel_tablix = tab_select_op(mtabidx, tablix, "SELECT", "SCORE", COND_LTE, &value, FLOAT);
     sel_table_t = tab_load(sel_tablix);
@@ -281,7 +281,7 @@ DEFINE_TEST(select){
     tab_for_each_element(sel_table_t, tablix, chblix4, &element, field){
         assert(element <= value);
     }
-    tab_destroy(sel_tablix);
+    tab_drop(mtabidx, sel_tablix);
 
     value = 10.5f;
     sel_tablix = tab_select_op(mtabidx, tablix, "SELECT", "SCORE", COND_NEQ, &value, FLOAT);
@@ -290,7 +290,100 @@ DEFINE_TEST(select){
     tab_for_each_element(sel_table_t, tablix, chblix5, &element, field){
         assert(element != value);
     }
-    tab_destroy(sel_tablix);
+    tab_drop(mtabidx, sel_tablix);
+    pg_delete();
+}
+
+DEFINE_TEST(update_row_op){
+    assert(pg_init("test.db") == PAGER_SUCCESS);
+    int64_t mtabidx = mtab_init();
+    int64_t tablix = table_student(mtabidx, 1);
+    float value = 20.5f;
+    table_t* table = tab_load(tablix);
+    schema_t* schema = sch_load(table->schidx);
+    tab_row(
+            int64_t ID;
+            char NAME[10];
+            float SCORE;
+            bool PASS;
+            );
+    row.ID = 10;
+    strncpy(row.NAME,"Nick", 10);
+    row.SCORE = 10.5f;
+    row.PASS = true;
+    int res = tab_update_row_op(tablix, &row, "SCORE", COND_EQ, &value, FLOAT);
+    assert(res == TABLE_SUCCESS);
+    field_t field;
+    sch_get_field(table->schidx, "SCORE", &field);
+    bool flag = false;
+    tab_for_each_row(table, tablix, chblix, &row, schema){
+        if(row.ID == 10){
+            assert(row.SCORE == 10.5f);
+            flag = true;
+        }
+    }
+    assert(flag);
+    tab_drop(mtabidx, tablix);
+    pg_delete();
+}
+
+DEFINE_TEST(update_element_op){
+    assert(pg_init("test.db") == PAGER_SUCCESS);
+    int64_t mtabidx = mtab_init();
+    int64_t tablix = table_student(mtabidx, 1);
+    char* value = malloc(10);
+    strncpy(value, "Nick", 10);
+    table_t* table = tab_load(tablix);
+    schema_t* schema = sch_load(table->schidx);
+    tab_row(
+            int64_t ID;
+            char NAME[10];
+            float SCORE;
+            bool PASS;
+    );
+    float element = 10.5f;
+    int res = tab_update_element_op(tablix, &element, "SCORE", "NAME", COND_EQ, value, CHAR);
+    assert(res == TABLE_SUCCESS);
+    field_t field;
+    sch_get_field(table->schidx, "SCORE", &field);
+    bool flag = false;
+    tab_for_each_row(table, tablix, chblix, &row, schema){
+        if(strcmp(row.NAME, "Nick") == 0){
+            assert(row.SCORE == 10.5f);
+            flag = true;
+        }
+    }
+    assert(flag);
+    free(value);
+    tab_drop(mtabidx, tablix);
+    pg_delete();
+}
+
+DEFINE_TEST(delete_op){
+    assert(pg_init("test.db") == PAGER_SUCCESS);
+    int64_t mtabidx = mtab_init();
+    int64_t tablix = table_student(mtabidx, 1);
+    char* value = malloc(10);
+    strncpy(value, "Nick", 10);
+    table_t* table = tab_load(tablix);
+    schema_t* schema = sch_load(table->schidx);
+    tab_row(
+            int64_t ID;
+            char NAME[10];
+            float SCORE;
+            bool PASS;
+    );
+    int res = tab_delete_op(tablix, "NAME", COND_EQ, value);
+    assert(res == TABLE_SUCCESS);
+    field_t field;
+    sch_get_field(table->schidx, "SCORE", &field);
+    tab_for_each_row(table, tablix, chblix, &row, schema){
+        if(strcmp(row.NAME, "Nick") == 0){
+            assert(false);
+        }
+    }
+    free(value);
+    tab_drop(mtabidx, tablix);
     pg_delete();
 }
 
@@ -298,12 +391,15 @@ DEFINE_TEST(select){
 
 
 int main(){
-//    RUN_SINGLE_TEST(create_add_foreach);
-//    RUN_SINGLE_TEST(update);
-//    RUN_SINGLE_TEST(delete);
-//    RUN_SINGLE_TEST(varchar);
-//    RUN_SINGLE_TEST(several_tables);
-//    RUN_SINGLE_TEST(print);
-//    RUN_SINGLE_TEST(join);
+    RUN_SINGLE_TEST(create_add_foreach);
+    RUN_SINGLE_TEST(update);
+    RUN_SINGLE_TEST(delete);
+    RUN_SINGLE_TEST(varchar);
+    RUN_SINGLE_TEST(several_tables);
+    RUN_SINGLE_TEST(print);
+    RUN_SINGLE_TEST(join);
     RUN_SINGLE_TEST(select);
+    RUN_SINGLE_TEST(update_row_op);
+    RUN_SINGLE_TEST(update_element_op);
+    RUN_SINGLE_TEST(delete_op);
 }

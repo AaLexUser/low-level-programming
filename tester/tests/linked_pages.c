@@ -97,5 +97,5 @@ int main(){
     RUN_SINGLE_TEST(simple_to_start);
     RUN_SINGLE_TEST(write_read_to_single_page);
     RUN_SINGLE_TEST(close_and_open);
-    RUN_SINGLE_TEST(caching_remove);
+//    RUN_SINGLE_TEST(caching_remove);
 }

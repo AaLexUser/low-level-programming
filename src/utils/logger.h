@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef LOGGER_LEVEL
-#define LOGGER_LEVEL 2
+#define LOGGER_LEVEL 0
 #endif
 
 enum LoggerLevel {

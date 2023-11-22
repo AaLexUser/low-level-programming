@@ -66,10 +66,32 @@ if __name__ == '__main__':
     # plot(df, 'BlocksCount', 'Time', 'Linked Blocks Wide Insertion Time', 'Blocks count', 'Time mcs',
     #      'linked_blocks_wide_insert.png')
     #
-    #bench_table_insert
-    # subprocess.run(["./benchmark/bench_table_insert"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-insert.csv'
+    # #bench_table_insert
+    # # subprocess.run(["./benchmark/bench_table_insert"])
+    # df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-insert.csv'
+    #                  , sep=';')
+    # # Plot the data
+    # plot(df, 'Rows', 'Time', 'Table Insertion Time', 'Row count', 'Time mcs',
+    #      'table_insert.png')
+
+    # #bench_table_mem
+    # # subprocess.run(["./benchmark/bench_table_mem"])
+    # df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-mem.csv'
+    #                  , sep=';')
+    # # Plot the data
+    # plot(df, 'Rows', 'FileSize', 'Table Memory Usage', 'Row count', 'File size',
+    #      'table_mem.png')
+    #bench_table_update
+    # # subprocess.run(["./benchmark/bench_table_update"])
+    # df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-update.csv'
+    #                  , sep=';')
+    # # Plot the data
+    # plot(df, 'Rows', 'Time', 'Table Update Time', 'Row count', 'Time mcs',
+    #      'table_update.png')
+    #bench_table_delete
+    # subprocess.run(["./benchmark/bench_table_delete"])
+    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-delete.csv'
                      , sep=';')
     # Plot the data
-    plot(df, 'Rows', 'Time', 'Table Insertion Time', 'Row count', 'Time mcs',
-         'table_insert.png')
+    plot(df, 'Stage', 'Time', 'Table Delete Time', 'Stage', 'Time mcs',
+         'table_delete.png')
