@@ -153,7 +153,7 @@ DEFINE_TEST(foreach){
         lb_write(poop_idx, &block, str, sizeof(str), 0);
     }
     page_pool_t* ppl = ppl_load(poop_idx);
-    lb_for_each(chblix, ppl){
+    lb_for_each(chunk, chblix, ppl){
         char* read_srt = malloc(sizeof(str));
         lb_read(poop_idx, &chblix, read_srt, sizeof(str), 0);
         assert(strcmp(str, read_srt) == 0);

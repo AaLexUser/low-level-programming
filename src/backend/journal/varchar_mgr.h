@@ -4,11 +4,6 @@
 #include "utils/logger.h"
 #include <string.h>
 
-#ifndef VARCHTAB
-int64_t vch_vachar_mgr_idx;
-#define VARCHTAB vch_vachar_mgr_idx
-#endif
-
 #define VCH_BLOCK_SIZE 30
 
 typedef struct vch_ticket{
@@ -17,5 +12,6 @@ typedef struct vch_ticket{
 }vch_ticket_t;
 
 int64_t vch_init();
-vch_ticket_t vch_add(char* varchar);
-int vch_get(vch_ticket_t* ticket, char* varchar);
+vch_ticket_t vch_add(int64_t vachar_mgr_idx, char* varchar);
+int vch_get(int64_t vachar_mgr_idx, vch_ticket_t* ticket, char* varchar);
+int vch_delete(int64_t vachar_mgr_idx, vch_ticket_t* ticket);

@@ -224,6 +224,8 @@ void* ch_get(caching_t* ch, uint64_t page_index){
  * @return      CH_SUCCESS on success, CH_FAIL otherwise
  */
 
+
+
 int ch_remove(caching_t* ch, uint64_t index){
     logger(LL_INFO, __func__, "Removing page %ld from cache", index);
     void* page = NULL;
@@ -263,29 +265,53 @@ int64_t ch_new_page(caching_t* ch){
  * @brief       Load page from Cache or from File
  * @param[in]   ch: pointer to caching_t
  * @param[in]   page_index: index of page
- * @return      pointer to page or NULL
+ * @param[out]  page: pointer on pointer loaded page or NULL
+ * @return      CH_SUCCESS on success, CH_DELETED if page was deleted, CH_FAIL otherwise
  */
 
-void* ch_load_page(caching_t* ch, uint64_t page_index){
+int ch_load_page(caching_t* ch, uint64_t page_index, void** page){
     logger(LL_INFO, __func__, "Loading page %ld", page_index);
-    void* page = NULL;
-    if((page = ch_get(ch, page_index)) != NULL){
-        return page;
+
+    *page = ch_get(ch, page_index);
+    if(*page != NULL){
+        return CH_SUCCESS;
     }
+
     if(page_index > ch_max_page_index(ch)){
         logger(LL_ERROR, __func__, "chunk_t index is out of file range");
-        return NULL;
+        return CH_FAIL;
     }
-    mmap_page(ch_page_offset(page_index), &ch->file);
+    if(ch->flags != NULL && ch->flags[page_index] == 3){
+        return CH_DELETED;
+    }
+    if(mmap_page(ch_page_offset(page_index), &ch->file) == FILE_FAIL) {
+        logger(LL_ERROR, __func__, "Unable to mmap page_index: %ld", page_index);
+        return CH_FAIL;
+    }
     void* mmaped_page_ptr = fl_cur_mmaped_data(&ch->file);
     ch_put(ch, page_index, mmaped_page_ptr);
+
+    *page = mmaped_page_ptr;
 
     //Increase usage
     ch->usage_count[page_index]++;
     time_t now;
     ch->last_used[page_index] = time(&now);
 
-    return mmaped_page_ptr;
+    return CH_SUCCESS;
+}
+
+/**
+ * @brief   Use deleted page again
+ * @param   ch: pointer to caching_t
+ * @param   page_index: index of page
+ */
+
+void ch_use_again(caching_t* ch, uint64_t page_index){
+    ch->flags[page_index] = 1;
+    ch->usage_count[page_index]++;
+    time_t now;
+    ch->last_used[page_index] = time(&now);
 }
 /**
  * @brief       Write on page
@@ -306,7 +332,7 @@ int ch_write(caching_t* ch, uint64_t page_index, void* src, size_t size, off_t o
         logger(LL_ERROR, __func__, "chunk_t index is out of range");
         return CH_FAIL;
     }
-    if(!(page = ch_load_page(ch, page_index))){
+    if(ch_load_page(ch, page_index, &page) != CH_SUCCESS){
         return CH_FAIL;
     }
 
@@ -337,7 +363,7 @@ int ch_clear_page(caching_t* ch, uint64_t page_index){
         logger(LL_ERROR, __func__, "chunk_t index is out of range");
         return CH_FAIL;
     }
-    if(!(page = ch_load_page(ch, page_index))){
+    if(ch_load_page(ch, page_index, &page) != CH_SUCCESS){
         logger(LL_ERROR, __func__, "Unable to load page %ld", page_index);
         return CH_FAIL;
     }
@@ -359,7 +385,7 @@ int ch_clear_page(caching_t* ch, uint64_t page_index){
 
 int ch_copy_read(caching_t* ch, uint64_t page_index, void* dest, size_t size, off_t offset){
     void* page = NULL;
-    if(!(page = ch_load_page(ch, page_index))){
+    if(ch_load_page(ch, page_index, &page) != CH_SUCCESS){
         return CH_FAIL;
     }
     memcpy(dest, page + offset, size);
@@ -384,7 +410,7 @@ int ch_copy_read(caching_t* ch, uint64_t page_index, void* dest, size_t size, of
 
 void* ch_read(caching_t* ch, uint64_t page_index, off_t offset){
     void* page = NULL;
-    if(!(page = ch_load_page(ch, page_index))){
+    if(ch_load_page(ch, page_index, &page) != CH_SUCCESS){
         return NULL;
     }
 
@@ -557,6 +583,7 @@ int ch_delete_last_page(caching_t* ch){
         return CH_FAIL;
     }
     logger(LL_INFO, __func__, "Deleting page %ld", page_index);
+    ch->flags[page_index] = 0;
     if(delete_last_page(&ch->file) == FILE_FAIL){
         logger(LL_ERROR, __func__, "Unable to delete last page");
         return CH_FAIL;

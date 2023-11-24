@@ -8,19 +8,18 @@
 #define PAGE_POOL_SIZE 100
 #endif
 
-typedef struct {
+typedef struct pager{
     caching_t ch;
     int64_t deleted_pages; // index of parray page with deleted pages
 
-} Pager;
+} pager_t;
 
-enum PagerStatuses{PAGER_SUCCESS = 0, PAGER_FAIL = -1};
+enum PagerStatuses{PAGER_SUCCESS = 0, PAGER_FAIL = -1, PAGER_DELETED=-2};
 
 int pg_init(const char* file_name);
 int pg_delete();
 int pg_close();
 int64_t pg_alloc();
-void* pg_alloc_page();
 int pg_dealloc(int64_t page_index);
 void* pg_load_page(int64_t page_index);
 int pg_write(uint64_t page_index, void* src, size_t size, off_t offset);

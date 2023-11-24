@@ -40,7 +40,7 @@ int64_t mtab_find_tab(int64_t mtabidx, const char* name){
             );
     table_t* table = tab_load(mtabidx);
     schema_t* schema = sch_load(table->schidx);
-    tab_for_each_row(table, mtabidx, chblix, &row, schema){
+    tab_for_each_row(table, chunk, chblix, &row, schema){
         if(strcmp(name,row.NAME) == 0){
             return row.INDEX;
         }
@@ -85,7 +85,7 @@ int mtab_delete(int64_t mtabidx, int64_t index){
     );
     table_t* table = tab_load(mtabidx);
     schema_t* schema = sch_load(table->schidx);
-    tab_for_each_row(table, mtabidx, rowix, &row, schema) {
+    tab_for_each_row(table, chunk, rowix, &row, schema) {
         if(row.INDEX == index){
             if (tab_delete(mtabidx, &rowix) == TABLE_FAIL) {
                 logger(LL_ERROR, __func__, "Failed to delete row ");

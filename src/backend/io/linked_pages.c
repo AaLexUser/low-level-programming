@@ -169,6 +169,22 @@ linked_page_t* lp_load_next(linked_page_t* lp){
     return res;
 }
 
+int lp_go_to_nova(linked_page_t** lp, int64_t start_idx, int64_t stop_idx){
+    if(!(*lp)){
+        logger(LL_ERROR, __func__, "Unable to load linked_page_t");
+        return LP_FAIL;
+    }
+    while (stop_idx > start_idx){
+        *lp = lp_load_next(*lp);
+        if(lp == NULL){
+            logger(LL_ERROR, __func__, "Unable to load linked_page_t");
+            return LP_FAIL;
+        }
+        start_idx++;
+    }
+    return LP_SUCCESS;
+}
+
 
 /**
  * Goes to linked_page_t with given index
@@ -236,8 +252,6 @@ int lp_write(int64_t page_index, void *src, int64_t size, int64_t src_offset) {
         }
 
         // update variables
-        size -= (int64_t)lp_useful_space_size(lp) - starting_offset;
-        src += lp_useful_space_size(lp) - starting_offset;
         starting_offset = 0;
         pages_needed--;
         if(pages_needed != 0){
@@ -272,6 +286,47 @@ int lp_read_copy_page(linked_page_t* lp, void* dest, int64_t size, int64_t src_o
     }
     return LP_SUCCESS;
 }
+
+int lp_read_copy_nova(linked_page_t* lp, void* dest, int64_t size, int64_t src_offset){
+    if(!lp){
+        logger(LL_ERROR, __func__, "Unable to load linked_page_t");
+        return LP_FAIL;
+    }
+
+    logger(LL_INFO, __func__, "Reading from linked_page_t %ld", lp->page_index);
+    int64_t starting_page = floor((double) src_offset / (double) lp_useful_space_size(lp));
+    int64_t starting_offset = src_offset % (int64_t)lp_useful_space_size(lp);
+    int64_t pages_needed = ceil((double)(size + starting_offset) / (double)lp_useful_space_size(lp));
+    int64_t current_page_idx = 0;
+
+    if(lp_go_to_nova(&lp, current_page_idx, starting_page) == LP_FAIL){
+        logger(LL_ERROR, __func__, "Unable to load next linked_page_t");
+        return LP_FAIL;
+    }
+
+    while (pages_needed > 0 ){
+        int64_t size_to_read = size > lp_useful_space_size(lp) - starting_offset
+                               ? (int64_t)lp_useful_space_size(lp) - starting_offset : size;
+        if(size_to_read < 0){
+            logger(LL_ERROR, __func__, "Unable to read from linked_page_t %ld, size %ld + offset %ld is too big",
+                   lp->page_index, size, src_offset);
+            return LP_FAIL;
+        }
+        if(lp_read_copy_page(lp, dest, size_to_read, starting_offset) == CH_FAIL){
+            logger(LL_ERROR, __func__, "Unable to read from linked_page_t %ld", lp->page_index);
+            return LP_FAIL;
+        }
+        starting_offset = 0;
+        pages_needed--;
+        if(pages_needed != 0){
+            size -= size_to_read;
+            dest = (char*)dest + size_to_read;
+            lp = lp_load_next(lp);
+        }
+    }
+    return LP_SUCCESS;
+}
+
 /**
  *  Reads data from linked_page_t
  * @param page_index  linked_page_t index to read from
@@ -304,7 +359,7 @@ int lp_read_copy(int64_t page_index, void* dest, int64_t size, int64_t src_offse
 
     while (pages_needed > 0 ){
         int64_t size_to_read = size > lp_useful_space_size(lp) - starting_offset
-                ? (int64_t)lp_useful_space_size(lp) - starting_offset : size;
+                               ? (int64_t)lp_useful_space_size(lp) - starting_offset : size;
         if(size_to_read < 0){
             logger(LL_ERROR, __func__, "Unable to read from linked_page_t %ld, size %ld + offset %ld is too big",
                    lp->page_index, size, src_offset);

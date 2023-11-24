@@ -6,22 +6,23 @@
  */
 
 int64_t vch_init(){
-    vch_vachar_mgr_idx =  lb_ppl_init(VCH_BLOCK_SIZE);
+    int64_t vch_vachar_mgr_idx =  lb_ppl_init(VCH_BLOCK_SIZE);
     return vch_vachar_mgr_idx;
 }
 
 /**
  * @brief       Add a varchar
+ * @param[in]   vachar_mgr_idx: varchar manager index
  * @param[in]   varchar: string to add
  * @return      vch_ticket_t of varchar on success, CHBLIX_FAIL on failure
  */
 
-vch_ticket_t vch_add(char* varchar){
+vch_ticket_t vch_add(int64_t vachar_mgr_idx, char* varchar){
     vch_ticket_t ticket;
-    ticket.block = lb_alloc(VARCHTAB);
+    ticket.block = lb_alloc(vachar_mgr_idx);
     ticket.size = strlen(varchar)+1;
     lb_write(
-            VARCHTAB,
+            vachar_mgr_idx,
             &ticket.block,
             varchar,
             ticket.size,
@@ -32,14 +33,15 @@ vch_ticket_t vch_add(char* varchar){
 
 /**
  * @brief       Get a varchar
+ * @param[in]   vachar_mgr_idx: varchar manager index
  * @param[in]   ticket: ticket of varchar
  * @param[out]  varchar: string destination
  * @return      LB_SUCCESS on success, LB_FAIL on failure
  */
 
-int vch_get(vch_ticket_t* ticket, char* varchar){
+int vch_get(int64_t vachar_mgr_idx, vch_ticket_t* ticket, char* varchar){
     return lb_read(
-            VARCHTAB,
+            vachar_mgr_idx,
             &ticket->block,
             varchar,
             ticket->size,
@@ -49,12 +51,13 @@ int vch_get(vch_ticket_t* ticket, char* varchar){
 
 /**
  * @brief       Delete a varchar
+ * @param[in]   vachar_mgr_idx: varchar manager index
  * @param[in]   ticket: ticket of varchar
  * @return      LB_SUCCESS on success, LB_FAIL on failure
  */
 
-int vch_delete(vch_ticket_t* ticket){
-    return lb_dealloc(VARCHTAB, &ticket->block);
+int vch_delete(int64_t vachar_mgr_idx, vch_ticket_t* ticket){
+    return lb_dealloc(vachar_mgr_idx, &ticket->block);
 }
 
 

@@ -1,9 +1,14 @@
 #pragma once
+
 #include "file.h"
 
-enum CH_Status {CH_SUCCESS = 0, CH_FAIL = -1};
+#if __linux__
+#include <bits/types/time_t.h>
+#endif
 
-#define CH_MAX_MEMORY_USAGE  ((uint64_t)4 * 1024 * 1024 * 1024) // 4GB
+enum CH_Status {CH_SUCCESS = 0, CH_FAIL = -1, CH_DELETED = -2};
+
+#define CH_MAX_MEMORY_USAGE  ((uint64_t)1*1024*1024) // 1mb
 
 typedef struct caching{
     file_t file;
@@ -30,7 +35,8 @@ int ch_put(caching_t* ch, uint64_t page_index, void* mapped_page_ptr);
 void* ch_get(caching_t* ch, uint64_t page_index);
 int ch_remove(caching_t* ch, uint64_t index);
 int64_t ch_new_page(caching_t* ch);
-void* ch_load_page(caching_t* ch, uint64_t page_index);
+int ch_load_page(caching_t* ch, uint64_t page_index, void** page);
+void ch_use_again(caching_t* ch, uint64_t page_index);
 int ch_write(caching_t* ch, uint64_t page_index, void* src, size_t size, off_t offset);
 int ch_clear_page(caching_t* ch, uint64_t page_index);
 int ch_copy_read(caching_t* ch, uint64_t page_index, void* dest, size_t size, off_t offset);

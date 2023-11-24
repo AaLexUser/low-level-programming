@@ -37,6 +37,7 @@ int sch_add_field(int64_t schidx, const char* name, datatype_t type, int64_t siz
         logger(LL_ERROR, __func__, "Failed to allocate field %s", name);
         return SCHEMA_FAIL;
     }
+    chunk_t* chunk = ppl_load_chunk(fieldix.chunk_idx);
     field_t field;
     if(sch_field_load(schidx, &fieldix, &field) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to load field %s", name);
@@ -69,7 +70,7 @@ int sch_get_field(int64_t schidx, const char* name, field_t* field){
         return SCHEMA_FAIL;
     }
 
-    sch_for_each(sch, fieldi, chblix, schidx){
+    sch_for_each(sch, chunk, fieldi, chblix, schidx){
         if(strcmp(fieldi.name, name) == 0){
             *field = fieldi;
             return SCHEMA_SUCCESS;
@@ -95,7 +96,7 @@ int sch_delete_field(int64_t schidx, const char* name){
         return SCHEMA_FAIL;
     }
 
-    sch_for_each(sch, field, chblix, schidx){
+    sch_for_each(sch, chunk, field, chblix, schidx){
         if(strcmp(field.name, name) == 0){
             if(lb_dealloc(schidx, &field.lb_header.chblix) == LB_FAIL){
                 logger(LL_ERROR, __func__, "Failed to deallocate field %s", name);

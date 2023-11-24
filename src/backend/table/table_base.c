@@ -91,6 +91,29 @@ int tab_select_row(int64_t tablix, chblix_t* rowix, void* dest){
 
 /**
  * @brief       Delete a row
+ * @param       table: pointer to table
+ * @param       chunk: pointer to chunk
+ * @param       rowix: chblix of the row
+ * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
+ */
+
+int tab_delete_nova(table_t* table, chunk_t* chunk, chblix_t* rowix){
+    /* Loading Linked Block */
+    linked_block_t* lb = malloc(table->ppl_header.block_size); /* Don't forget to free it */
+    if (lb_load_nova_pppp(&table->ppl_header,chunk, rowix, lb) == LB_FAIL) {
+        logger(LL_ERROR, __func__, "Unable to read block");
+        free(lb);
+        return TABLE_FAIL;
+    }
+    if(lb_dealloc_nova(&table->ppl_header, lb, rowix) == LB_FAIL){
+        logger(LL_ERROR, __func__, "Failed to deallocate row");
+        return TABLE_FAIL;
+    }
+    return TABLE_SUCCESS;
+}
+
+/**
+ * @brief       Delete a row
  * @param       tablix: index of the table
  * @param       rowix: chblix of the row
  * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure

@@ -2,13 +2,14 @@
 
 /**
  * @brief       Compare two values
- * @param       type: type of the values
- * @param       val1: pointer to the first value
- * @param       val2: pointer to the second value
+ * @param[in]   db: pointer to database
+ * @param[in]   type: type of the values
+ * @param[in]   val1: pointer to the first value
+ * @param[in]   val2: pointer to the second value
  * @return      data_t: the result of the comparison
  */
 
-data_t comp_cmp(datatype_t type, void* val1, void* val2){
+data_t comp_cmp(db_t* db, datatype_t type, void* val1, void* val2){
     data_t data;
     switch (type) {
         case INT: {
@@ -31,9 +32,9 @@ data_t comp_cmp(datatype_t type, void* val1, void* val2){
             vch_ticket_t* vch1 = val1;
             vch_ticket_t* vch2 = val2;
             char* str1 = malloc(vch1->size);
-            vch_get(vch1, str1);
+            vch_get(db->varchar_mgr_idx, vch1, str1);
             char* str2 = malloc(vch2->size);
-            vch_get(vch2, str2);
+            vch_get(db->varchar_mgr_idx, vch2, str2);
             int res = strcmp(str1, str2);
             free(str1);
             free(str2);
@@ -49,14 +50,15 @@ data_t comp_cmp(datatype_t type, void* val1, void* val2){
 
 /**
  * @brief       Compare two values on equality
+ * @param       db: pointer to db
  * @param       type: type of the values
  * @param       val1: pointer to the first value
  * @param       val2: pointer to the second value
  * @return      1 if equal, 0 if not
  */
 
-bool comp_eq(datatype_t type, void* val1, void* val2){
-    data_t data = comp_cmp(type, val1, val2);
+bool comp_eq(db_t* db, datatype_t type, void* val1, void* val2){
+    data_t data = comp_cmp(db, type, val1, val2);
     switch (type) {
         case INT: {
             return data.int_val == 0;
@@ -80,26 +82,28 @@ bool comp_eq(datatype_t type, void* val1, void* val2){
 
 /**
  * @brief       Compare two values on inequality
+ * @param       db: pointer to db
  * @param       type: type of the values
  * @param       val1: pointer to the first value
  * @param       val2: pointer to the second value
  * @return      1 if not equal, 0 if equal
  */
 
-bool comp_neq(datatype_t type, void* val1, void* val2) {
-    return !comp_eq(type, val1, val2);
+bool comp_neq(db_t* db, datatype_t type, void* val1, void* val2) {
+    return !comp_eq(db, type, val1, val2);
 }
 
 /**
  * @brief       Compare two values on less
+ * @param       db: pointer to db
  * @param       type: type of the values
  * @param       val1: pointer to the first value
  * @param       val2: pointer to the second value
  * @return      1 if less, 0 if not
  */
 
-bool comp_lt(datatype_t type, void* val1, void* val2) {
-    data_t data = comp_cmp(type, val1, val2);
+bool comp_lt(db_t* db, datatype_t type, void* val1, void* val2) {
+    data_t data = comp_cmp(db, type, val1, val2);
     switch (type) {
         case INT: {
             return data.int_val < 0;
@@ -123,42 +127,46 @@ bool comp_lt(datatype_t type, void* val1, void* val2) {
 
 /**
  * @brief       Compare two values on less or equal
+ * @param       db: pointer to db
  * @param       type: type of the values
  * @param       val1: pointer to the first value
  * @param       val2: pointer to the second value
  * @return      1 if less or equal, 0 if not
  */
 
-bool comp_le(datatype_t type, void* val1, void* val2) {
-    return comp_lt(type, val1, val2) || comp_eq(type, val1, val2);
+bool comp_le(db_t* db, datatype_t type, void* val1, void* val2) {
+    return comp_lt(db, type, val1, val2) || comp_eq(db, type, val1, val2);
 }
 
 /**
  * @brief       Compare two values on greater
+ * @param       db: pointer to db
  * @param       type: type of the values
  * @param       val1: pointer to the first value
  * @param       val2: pointer to the second value
  * @return      1 if greater, 0 if not
  */
 
-bool comp_gt(datatype_t type, void* val1, void* val2) {
-    return !comp_le(type, val1, val2);
+bool comp_gt(db_t* db, datatype_t type, void* val1, void* val2) {
+    return !comp_le(db, type, val1, val2);
 }
 
 /**
  * @brief       Compare two values on greater or equal
+ * @param       db: pointer to db
  * @param       type: type of the values
  * @param       val1: pointer to the first value
  * @param       val2: pointer to the second value
  * @return      1 if greater or equal, 0 if not
  */
 
-bool comp_ge(datatype_t type, void* val1, void* val2) {
-    return !comp_lt(type, val1, val2);
+bool comp_ge(db_t* db, datatype_t type, void* val1, void* val2) {
+    return !comp_lt(db, type, val1, val2);
 }
 
 /**
  * @brief       Compare two values
+ * @param       db: pointer to db
  * @param[in]   type: type of data
  * @param[in]   val1: value 1
  * @param[in]   val2: value 2
@@ -166,25 +174,25 @@ bool comp_ge(datatype_t type, void* val1, void* val2) {
  * @return      true, or false depends on comparison condition
  */
 
-bool comp_compare(datatype_t type, void* val1, void* val2, condition_t cond) {
+bool comp_compare(db_t* db, datatype_t type, void* val1, void* val2, condition_t cond) {
     switch (cond) {
         case COND_EQ: {
-            return comp_eq(type, val1, val2);
+            return comp_eq(db, type, val1, val2);
         }
         case COND_NEQ: {
-            return comp_neq(type, val1, val2);
+            return comp_neq(db, type, val1, val2);
         }
         case COND_LT: {
-            return comp_lt(type, val1, val2);
+            return comp_lt(db, type, val1, val2);
         }
         case COND_LTE: {
-            return comp_le(type, val1, val2);
+            return comp_le(db, type, val1, val2);
         }
         case COND_GT: {
-            return comp_gt(type, val1, val2);
+            return comp_gt(db, type, val1, val2);
         }
         case COND_GTE: {
-            return comp_ge(type, val1, val2);
+            return comp_ge(db, type, val1, val2);
         }
         default:
             return 0;

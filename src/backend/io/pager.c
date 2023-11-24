@@ -4,7 +4,7 @@
 #include "caching.h"
 
 #ifndef PAGER
-Pager pager;
+pager_t pager;
 #define PAGER pager
 #endif
 
@@ -72,6 +72,9 @@ int64_t pg_alloc(){
         if((pa_pop64(PAGER.deleted_pages, &del_pag_idx)) == PA_SUCCESS){
             page_idx = del_pag_idx;
         }
+        if(del_pag_idx != -1){
+            ch_use_again(&PAGER.ch, del_pag_idx);
+        }
     }
 
     if(del_pag_idx == -1 || del_pag_idx > ch_max_page_index(&PAGER.ch)){
@@ -82,27 +85,6 @@ int64_t pg_alloc(){
         }
     }
     return page_idx;
-}
-
-/**
- * Allocates page
- * @return pointer to page or NULL
- */
-
-void* pg_alloc_page(){
-    logger(LL_INFO, __func__, "Allocating page");
-    int64_t page_idx = -1;
-    if ((page_idx = pg_alloc()) == PAGER_FAIL) {
-        logger(LL_ERROR, __func__, "Unable to allocate page");
-        return NULL;
-    }
-
-    void* page_ptr = NULL;
-    if((page_ptr = ch_load_page(&PAGER.ch, page_idx)) == NULL){
-        logger(LL_ERROR, __func__, "Unable to load page");
-        return NULL;
-    }
-    return page_ptr;
 }
 
 
@@ -122,17 +104,21 @@ int pg_dealloc(int64_t page_index) {
 }
 
 /**
- * Loads page
- * @brief Loads page
- * @param page_index
- * @return pointer to page or NULL
+ * @brief       Loads page
+ * @param[in]   page_index: index of page
+ * @return      pointer to page or NULL
  */
 
-void* pg_load_page(int64_t page_index){
+void* pg_load_page(int64_t page_index) {
     logger(LL_INFO, __func__, "Loading page");
     void* page_ptr = NULL;
-    if((page_ptr = ch_load_page(&PAGER.ch, page_index)) == NULL){
-        logger(LL_ERROR, __func__, "Unable to load page");
+    int res = ch_load_page(&PAGER.ch, page_index, &page_ptr);
+    if (res == CH_FAIL) {
+        logger(LL_ERROR, __func__, "Unable to load page %ld", page_index);
+        return NULL;
+    }
+    if (res == CH_DELETED) {
+        logger(LL_ERROR, __func__, "Requested deleted page: %ld", page_index);
         return NULL;
     }
     return page_ptr;
@@ -149,7 +135,8 @@ void* pg_load_page(int64_t page_index){
 
 int pg_write(uint64_t page_index, void* src, size_t size, off_t offset){
     logger(LL_INFO, __func__, "Writing to page");
-    if(ch_write(&PAGER.ch, page_index, src, size, offset) == CH_FAIL){
+    int res = ch_write(&PAGER.ch, page_index, src, size, offset);
+    if(res == CH_FAIL){
         logger(LL_ERROR, __func__, "Unable to write to page");
         return PAGER_FAIL;
     }

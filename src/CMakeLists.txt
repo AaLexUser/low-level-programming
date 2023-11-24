@@ -30,7 +30,7 @@ set(sources
         backend/journal/materializer.c
         backend/journal/varchar_mgr.c
         backend/comporator/comporator.c
-        generator/table-gen.c
+        backend/db/db.c
 
 )
 #file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.c *.h)

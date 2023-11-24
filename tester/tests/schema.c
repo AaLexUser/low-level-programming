@@ -10,7 +10,7 @@ DEFINE_TEST(create_add_foreach_sch){
     sch_add_float_field(schidx, "DEBIT");
     sch_add_bool_field(schidx, "STUDENT");
     schema_t* sch = sch_load(schidx);
-    sch_for_each(sch, field, chblix, schidx){
+    sch_for_each(sch, chunk, field, chblix, schidx){
         printf("%s\n",field.name);
     }
     pg_delete();

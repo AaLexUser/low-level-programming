@@ -4,8 +4,10 @@
 
 DEFINE_TEST(write_and_read){
     file_t* file = malloc(sizeof(file_t));
-    if(init_file("test.db", file) == -1){
-        exit(EXIT_FAILURE);
+    assert(init_file("test.db", file) == FILE_SUCCESS);
+    if(fl_file_size(file) > 0){
+        assert(delete_file(file) == FILE_SUCCESS);
+        assert(init_file("test.db", file) == FILE_SUCCESS);
     }
     char str[] = "12345678";
     init_page(file);
@@ -21,8 +23,10 @@ DEFINE_TEST(write_and_read){
 
 DEFINE_TEST(two_write){
     file_t* file = malloc(sizeof(file_t));
-    if(init_file("test.db", file) == -1){
-        exit(EXIT_FAILURE);
+    assert(init_file("test.db", file) == FILE_SUCCESS);
+    if(fl_file_size(file) > 0){
+        assert(delete_file(file) == FILE_SUCCESS);
+        assert(init_file("test.db", file) == FILE_SUCCESS);
     }
     char str1[] = "12345678";
     init_page(file);
@@ -40,8 +44,10 @@ DEFINE_TEST(two_write){
 }
 DEFINE_TEST(two_pages){
     file_t* file = malloc(sizeof(file_t));
-    if(init_file("test.db", file) == -1){
-        exit(EXIT_FAILURE);
+    assert(init_file("test.db", file) == FILE_SUCCESS);
+    if(fl_file_size(file) > 0){
+        assert(delete_file(file) == FILE_SUCCESS);
+        assert(init_file("test.db", file) == FILE_SUCCESS);
     }
     char str1[] = "12345678";
     init_page(file);
@@ -66,8 +72,10 @@ DEFINE_TEST(two_pages){
 
 DEFINE_TEST(delete_last_page){
     file_t* file = malloc(sizeof(file_t));
-    if(init_file("test.db", file) == -1){
-        exit(EXIT_FAILURE);
+    assert(init_file("test.db", file) == FILE_SUCCESS);
+    if(fl_file_size(file) > 0){
+        assert(delete_file(file) == FILE_SUCCESS);
+        assert(init_file("test.db", file) == FILE_SUCCESS);
     }
     char str1[] = "12345678";
     init_page(file);

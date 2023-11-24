@@ -35,6 +35,9 @@ int64_t fl_current_page_index(file_t* file){
 #if defined(__linux__) || defined(__APPLE__)
 #include <sys/mman.h>
 #include <unistd.h>
+#if defined(__linux__)
+#include <zconf.h>
+#endif
 
 off_t fl_file_size(file_t* file) {
     struct stat st;
@@ -219,7 +222,7 @@ int delete_last_page(file_t* file){
  */
 
 int write_page(file_t* file, void* src, uint64_t size, off_t offset){
-    logger(LL_INFO, __func__ , "Writing to fd %d with size %"PRIu64 "%"PRIu64 " bytes.",
+    logger(LL_INFO, __func__ , "Writing to fd %d with file size: %"PRIu64 ", src size: %"PRIu64 " bytes.",
            file->fd, fl_file_size(file), size);
     if(file->cur_mmaped_data == NULL){
         logger(LL_ERROR, __func__, "Unable write, mapped file is NULL.");
