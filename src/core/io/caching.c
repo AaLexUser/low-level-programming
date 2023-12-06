@@ -219,21 +219,28 @@ int ch_put(caching_t* ch, uint64_t page_index, void* mapped_page_ptr){
 
 void* ch_get(caching_t* ch, uint64_t page_index){
     if(!ch->size){
-        logger(LL_INFO, __func__ , "Cacher size is 0.");
+        logger(LL_ERROR, __func__ , "Cacher size is 0.");
+        return NULL;
+    }
+    if(page_index > ch_max_page_index(ch)){
+        logger(LL_ERROR, __func__, "Requesting not existing key in file, page_index: %ld", page_index);
         return NULL;
     }
     if(page_index >= ch->capacity){
-        logger(LL_INFO, __func__, "Requesting not existing key");
+        logger(LL_ERROR, __func__, "Requesting not existing key");
         return NULL;
     }
     if(ch->flags[page_index] != 1){
+        logger(LL_ERROR, __func__, "Requesting key that is not in cache");
         return NULL;
     }
     ch->usage_count[page_index]++;
     time_t now;
     ch->last_used[page_index] = time(&now);
-    return ch->cached_page_ptr[page_index];
+    void* page = ch->cached_page_ptr[page_index];
+    return page;
 }
+
 /**
  * @brief       Remove page from cache
  * @param[in]   ch: pointer to caching_t
@@ -241,13 +248,11 @@ void* ch_get(caching_t* ch, uint64_t page_index){
  * @return      CH_SUCCESS on success, CH_FAIL otherwise
  */
 
-
-
 int ch_remove(caching_t* ch, uint64_t index){
     logger(LL_INFO, __func__, "Removing page %ld from cache", index);
     void* page = NULL;
-    if(!(page = ch_get(ch, index) )){
-        logger(LL_ERROR, __func__, "Unable to get a page %ld", index);
+    if(ch_load_page(ch, index, &page) != CH_SUCCESS){
+        logger(LL_ERROR, __func__, "Unable to load a page %ld", index);
         return CH_FAIL;
     }
     if(unmap_page(page, &ch->file) == -1){
@@ -455,7 +460,7 @@ bool ch_cached(caching_t* ch, uint64_t index){
 }
 
 #define ch_for_each_cached(index, ch) for ( \
-size_t index = ch_nearest_cached_index(ch->flags, ch->capacity, ch_begin());\
+size_t index = ch_nearest_cached_index((ch)->flags, ch->capacity, ch_begin());\
 (index) != ch_end(ch) && ch_cached(ch, index);                                  \
 (index)++, (index) = ch_nearest_cached_index(ch->flags, ch->capacity, (index)) \
 )                                \

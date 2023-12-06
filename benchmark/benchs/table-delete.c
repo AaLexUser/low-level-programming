@@ -63,7 +63,7 @@ int main(){
         time_t start = time(NULL);
         for (int64_t j = allocated; j < (allocated + deallocation); ++j) {
             int64_t value = j;
-            if(j == 83){
+            if(j == 84){
                 printf("here");
             }
             int res = tab_delete_op_nova(db, table, schema, &field, COND_EQ, &value);

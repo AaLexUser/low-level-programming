@@ -42,7 +42,7 @@ int chblix_cmp(const chblix_t* chblix1, const chblix_t* chblix2){
  */
 
 int64_t ppl_chunk_init(page_pool_t* ppl){
-    logger(LL_INFO, __func__, "Initializing chunk");
+    logger(LL_DEBUG, __func__, "Initializing chunk");
     int64_t page_index = lp_init_m(sizeof(chunk_t));
     if(page_index == LP_FAIL){
         logger(LL_ERROR, __func__, "Unable to load chunk");
@@ -72,7 +72,7 @@ int64_t ppl_chunk_init(page_pool_t* ppl){
  */
 
 chunk_t* ppl_create_page(page_pool_t* ppl){
-    logger(LL_INFO, __func__, "Creating page");
+    logger(LL_DEBUG, __func__, "Creating page");
 
     // Allocate page
     // Initialize page
@@ -86,23 +86,30 @@ chunk_t* ppl_create_page(page_pool_t* ppl){
     return page;
 }
 
+
 /**
- * @brief Loads page
- * @param chunk_index
- * @return pointer to page or NULL
+ * @brief Loads a chunk based on the chunk index.
+ *
+ * This function loads a chunk from some source based on the given chunk index.
+ * The chunk index indicates the specific chunk to be loaded.
+ *
+ * @param[in]   chunk_index: The index of the chunk to be loaded.
+ * @return chunk_t*     The loaded chunk.
  */
 
 chunk_t* ppl_load_chunk(int64_t chunk_index){
-    logger(LL_INFO, __func__, "Loading page");
+    logger(LL_DEBUG, __func__, "Loading page %ld", chunk_index);
 
     if(chunk_index > pg_max_page_index()){
-        logger(LL_ERROR, __func__, "chunk_t index is out of range");
+        logger(LL_ERROR, __func__,
+               "chunk_t index is out of range %ld, max index: %ld",
+               chunk_index, pg_max_page_index());
         return NULL;
     }
 
     chunk_t* chunk = (chunk_t*) lp_load(chunk_index);
     if(chunk == NULL){
-        logger(LL_ERROR, __func__, "Unable to load page");
+        logger(LL_ERROR, __func__, "Unable to load page %ld", chunk_index);
         return NULL;
     }
 
@@ -116,23 +123,23 @@ chunk_t* ppl_load_chunk(int64_t chunk_index){
  */
 
 int ppl_delete_chunk(chunk_t* chunk){
-    logger(LL_INFO, __func__, "Destroying page %ld", chunk->page_index);
+    logger(LL_DEBUG, __func__, "Destroying page %ld", chunk->page_index);
     if(lp_delete(chunk->page_index) == PAGER_FAIL){
-        logger(LL_ERROR, __func__, "Unable to delete page");
+        logger(LL_ERROR, __func__, "Unable to delete chunk %ld", chunk->page_index);
         return PPL_FAIL;
     }
     return PPL_SUCCESS;
 }
 
 int ppl_write_block_nova(page_pool_t* ppl, const chblix_t* chblix, void* src, int64_t size, int64_t src_offset){
-    logger(LL_INFO, __func__, "Writing to page %ld, block %ld", chblix->chunk_idx, chblix->block_idx);
+    logger(LL_DEBUG, __func__, "Writing to page %ld, block %ld", chblix->chunk_idx, chblix->block_idx);
     if(chblix->block_idx == -1){
-        logger(LL_ERROR, __func__, "Unable to write to block");
+        logger(LL_ERROR, __func__, "Unable to write to block with index -1");
         return PPL_FAIL;
     }
     // Check if size is greater than block size
     if(size + src_offset > ppl->block_size){
-        logger(LL_ERROR, __func__, "Size + Offset is greater than block size");
+        logger(LL_ERROR, __func__, "Size + Offset is greater than block size %ld", ppl->block_size);
         return PPL_FAIL;
     }
 
@@ -141,7 +148,7 @@ int ppl_write_block_nova(page_pool_t* ppl, const chblix_t* chblix, void* src, in
     off_t offset = (off_t)(chblix->block_idx * ppl->block_size + src_offset);
 
     if(lp_write(page_index, src, size, offset) == CH_FAIL){
-        logger(LL_ERROR, __func__, "Unable to write to page");
+        logger(LL_ERROR, __func__, "Unable to write to page %ld", page_index);
         return PPL_FAIL;
     }
     return PPL_SUCCESS;
@@ -158,7 +165,7 @@ int ppl_write_block_nova(page_pool_t* ppl, const chblix_t* chblix, void* src, in
  */
 
 int ppl_write_block(int64_t ppidx, const chblix_t* chblix, void* src, int64_t size, int64_t src_offset){
-    logger(LL_INFO, __func__, "Writing to page %ld, block %ld", chblix->chunk_idx, chblix->block_idx);
+    logger(LL_DEBUG, __func__, "Writing to page %ld, block %ld", chblix->chunk_idx, chblix->block_idx);
 
     page_pool_t* ppl = ppl_load(ppidx);
     if(ppl == NULL){
@@ -180,7 +187,7 @@ int ppl_write_block(int64_t ppidx, const chblix_t* chblix, void* src, int64_t si
  */
 
 int ppl_read_block(int64_t ppidx, const chblix_t* chblix, void* dest,  int64_t size, int64_t src_offset){
-    logger(LL_INFO, __func__, "Reading from page %ld", chblix->chunk_idx);
+    logger(LL_DEBUG, __func__, "Reading from page %ld", chblix->chunk_idx);
 
     page_pool_t *ppl = ppl_load(ppidx);
     if(ppl == NULL){
@@ -236,7 +243,7 @@ int ppl_read_block_nova(page_pool_t* ppl, linked_page_t* lp, const chblix_t* chb
  */
 
 int ppl_pool_expand(page_pool_t* ppl){
-    logger(LL_INFO, __func__, "Expanding page pool");
+    logger(LL_DEBUG, __func__, "Expanding page pool");
 
     // Load current page
     chunk_t* current = ppl_load_chunk(ppl->current_idx);
@@ -271,6 +278,8 @@ int ppl_pool_expand(page_pool_t* ppl){
                 logger(LL_ERROR, __func__, "Unable to create new page");
                 return PPL_FAIL;
             }
+            current->next_page = new_page->page_index;
+            new_page->prev_page = current->page_index;
             break;
         }
         case PA_FAIL: {
@@ -288,8 +297,6 @@ int ppl_pool_expand(page_pool_t* ppl){
         return PPL_FAIL;
     }
 
-    current->next_page = new_page->page_index;
-    new_page->prev_page = current->page_index;
     ppl->current_idx = new_page->page_index;
     return PPL_SUCCESS;
 }
@@ -301,7 +308,7 @@ int ppl_pool_expand(page_pool_t* ppl){
  */
 
 chblix_t ppl_alloc_nova(page_pool_t* ppl){
-    logger(LL_INFO, __func__, "Allocating page");
+    logger(LL_DEBUG, __func__, "Allocating page");
     // Load current page
     chunk_t* current = ppl_load_chunk(ppl->current_idx);
     if(!current){
@@ -355,7 +362,7 @@ chblix_t ppl_alloc_nova(page_pool_t* ppl){
  */
 
 chblix_t ppl_alloc(int64_t ppidx) {
-    logger(LL_INFO, __func__, "Allocating page");
+    logger(LL_DEBUG, __func__, "Allocating page");
 
     /* Load page pool */
     page_pool_t *ppl = ppl_load(ppidx);
@@ -374,7 +381,9 @@ chblix_t ppl_alloc(int64_t ppidx) {
  */
 
 int ppl_pool_reduce(page_pool_t* ppl, chunk_t* page){
-    logger(LL_INFO, __func__, "Reducing page pool");
+    logger(LL_DEBUG, __func__,
+           "Reducing page pool, chunk: %ld, chunk.prev: %ld, chunk.next: %ld",
+           page->page_index, page->prev_page, page->next_page);
 
 
     if(ppl->current_idx == page->page_index){
@@ -388,7 +397,7 @@ int ppl_pool_reduce(page_pool_t* ppl, chunk_t* page){
         prev_page = ppl_load_chunk(page->prev_page);
 
         if(!prev_page){
-            logger(LL_ERROR, __func__, "Unable to load prev page");
+            logger(LL_ERROR, __func__, "Unable to load prev page %ld", page->prev_page);
             return PPL_FAIL;
         }
     }
@@ -397,7 +406,7 @@ int ppl_pool_reduce(page_pool_t* ppl, chunk_t* page){
         next_page = ppl_load_chunk(page->next_page);
 
         if(!next_page){
-            logger(LL_ERROR, __func__, "Unable to load next page");
+            logger(LL_ERROR, __func__, "Unable to load next page %ld", page->next_page);
             return PPL_FAIL;
         }
     }
@@ -412,9 +421,10 @@ int ppl_pool_reduce(page_pool_t* ppl, chunk_t* page){
     else if(next_page){
         next_page->prev_page = -1;
         ppl->head = next_page->page_index;
+        logger(LL_DEBUG, __func__, "PPL head changed from %ld, to %ld", page->page_index, ppl->head);
     }
     else{
-        logger(LL_INFO, __func__, "Pool contains only one page");
+        logger(LL_DEBUG, __func__, "Pool contains only one page");
         return PPL_SUCCESS;
     }
 
@@ -434,7 +444,7 @@ int ppl_pool_reduce(page_pool_t* ppl, chunk_t* page){
 }
 
 int ppl_dealloc_nova(page_pool_t* ppl, chblix_t* chblix){
-    logger(LL_INFO, __func__, "Deallocating page");
+    logger(LL_DEBUG, __func__, "Deallocating page");
     // Load current page
     chunk_t* page = ppl_load_chunk(chblix->chunk_idx);
     if(!page){
@@ -472,7 +482,7 @@ int ppl_dealloc_nova(page_pool_t* ppl, chblix_t* chblix){
  */
 
 int ppl_dealloc(int64_t ppidx, chblix_t* chblix){
-    logger(LL_INFO, __func__, "Deallocating page");
+    logger(LL_DEBUG, __func__, "Deallocating page");
 
     /* Load page pool */
     page_pool_t *ppl = ppl_load(ppidx);
@@ -495,7 +505,7 @@ int ppl_dealloc(int64_t ppidx, chblix_t* chblix){
  */
 
 int64_t ppl_init(int64_t block_size){
-    logger(LL_INFO, __func__, "Initializing page pool");
+    logger(LL_DEBUG, __func__, "Initializing page pool");
 
     int64_t page_index = lp_init();
 
@@ -534,7 +544,7 @@ int64_t ppl_init(int64_t block_size){
  */
 
 page_pool_t* ppl_load(int64_t start_page_index){
-    logger(LL_INFO, __func__, "Loading chunk_t Pool %ld.", start_page_index);
+    logger(LL_DEBUG, __func__, "Loading chunk_t Pool %ld.", start_page_index);
     if(start_page_index > pg_max_page_index()){
         logger(LL_ERROR, __func__, "You need to init page pool before");
         return NULL;
@@ -557,7 +567,7 @@ page_pool_t* ppl_load(int64_t start_page_index){
  */
 
 int ppl_destroy(int64_t pplidx){
-    logger(LL_INFO, __func__, "Destroying page pool");
+    logger(LL_DEBUG, __func__, "Destroying page pool");
     page_pool_t* ppl = ppl_load(pplidx);
     if(!ppl){
         logger(LL_ERROR, __func__, "Unable to load page pool");

@@ -63,7 +63,7 @@ linked_page_t* lp_load(int64_t page_index){
  */
 
 int lp_delete(int64_t page_index) {
-    logger(LL_INFO, __func__, "Deleting linked_page_t");
+    logger(LL_INFO, __func__, "Deleting linked page %ld", page_index);
 
     linked_page_t *current = (linked_page_t *) pg_load_page(page_index);
 

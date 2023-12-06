@@ -652,47 +652,90 @@ page_pool_t* lb_ppl_load(int64_t ppidx){
     return ppl_load(ppidx);
 }
 
-static chblix_t lb_nearest_valid_chblix_chunk(page_pool_t* ppl, chunk_t* chunk, int64_t block_idx){
+/**
+ * @brief Finds the nearest valid block to the given block index within a chunk of a page pool.
+ *
+ * The nearest valid block is determined by searching for the closest block index that is marked as valid
+ * and is within the boundaries of the chunk.
+ *
+ * @param[in]   ppl: The pointer to the page pool.
+ * @param[in]   chunk: The pointer to the chunk.
+ * @param[in]   block_idx: The block index to find the nearest valid block for.
+ * @return The index of the nearest valid block, or -1 if no valid block is found.
+ */
+
+static int64_t lb_nearest_valid_block(page_pool_t* ppl, chunk_t* chunk, int64_t block_idx){
+
     chblix_t chblix = {.block_idx = block_idx, .chunk_idx = chunk->page_index};
     linked_block_t* temp = malloc(ppl->block_size);
     while (chblix.block_idx != chunk->capacity){
         if(lb_valid(ppl, chunk, chblix)){
             free(temp);
-            return chblix;
+            return chblix.block_idx;
         }
         chblix.block_idx++;
     }
 
     free(temp);
-    return chblix_fail();
+    return LB_FAIL;
 }
 
-chblix_t lb_nearest_valid_chblix(page_pool_t* ppl, chblix_t chblix, chunk_t** chunk){
-    if(chunk == NULL){
+/**
+ * @brief       Get nearest valid chblix
+ * @param[in]   ppl: Page pool pointer
+ * @param[in]   chblix: Chunk Block Index
+ * @param[in]   current_chunk: pointer to chunk
+ * @return      chblix_t on success, `chblix_fail()` otherwise
+ */
+
+chblix_t lb_nearest_valid_chblix(page_pool_t* ppl, chblix_t chblix, chunk_t** current_chunk){
+    // If there is no chunk, return fail immediately
+    if(current_chunk == NULL || *current_chunk == NULL){
         return chblix_fail();
     }
-    do{
-        chblix_t chblix_res = lb_nearest_valid_chblix_chunk(ppl, *chunk, chblix.block_idx);
-        if(chblix_cmp(&chblix_res, &CHBLIX_FAIL) != 0){
-            return chblix_res;
+
+    logger(LL_DEBUG, __func__, "Searching for nearest valid chblix\n"
+                            " pool: %ld, chblix block: %ld, chblix chunk: %ld, chunk: %ld",
+        ppl->lp_header.page_index, chblix.block_idx, chblix.chunk_idx,
+        (*current_chunk)->page_index);
+
+    // Attempt to find a valid chblix until there are no more pages in the chunk
+    do {
+        // Try to find a valid block in the current chunk
+        int64_t result_block = lb_nearest_valid_block(ppl, *current_chunk, chblix.block_idx);
+
+        // If a valid block was found, return it
+        if(result_block != LB_FAIL){
+            return (chblix_t){.block_idx = result_block, .chunk_idx = (*current_chunk)->page_index};
         }
-        if((*chunk)->next_page != -1){
-            (*chunk) = ppl_load_chunk((*chunk)->next_page);
+
+        // If there's a next chunk, load it.
+        if((*current_chunk)->next_page != -1){
+            *current_chunk = ppl_load_chunk((*current_chunk)->next_page);
             chblix.block_idx = 0;
         }
-    } while((*chunk)->next_page != -1);
+    } while((*current_chunk)->next_page != -1);
+
+    // If we've examined all pages and found no valid chblix, return fail
     return chblix_fail();
 }
 
-
 chblix_t lb_pool_start(page_pool_t* ppl, chunk_t* chunk){
+    // Check if the pointers are NULL before attempting to access their members.
+    if(ppl == NULL || chunk == NULL ){
+        logger(LL_ERROR, __func__, "Invalid arguments ppl: %p, chunk: %p", ppl, chunk);
+        return chblix_fail();
+    }
+
+    logger(LL_DEBUG, __func__, "Searching for pool start\n"
+                            " pool: %ld, chunk: %ld",
+        ppl->lp_header.page_index, chunk->page_index);
+
     if(ppl->head == -1){
         return chblix_fail();
     }
-    if(chunk == NULL){
-        return chblix_fail();
-    }
-    return lb_nearest_valid_chblix_chunk(ppl, chunk, 0);
+    chblix_t start_chblix = {.block_idx = 0, .chunk_idx = chunk->page_index};
+    return lb_nearest_valid_chblix(ppl, start_chblix, &chunk);
 }
 
 bool lb_valid(page_pool_t* ppl, chunk_t* chunk, chblix_t chblix){

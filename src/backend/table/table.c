@@ -503,7 +503,7 @@ int tab_delete_op_nova(db_t* db,
     /* Delete */
     tab_for_each_row(table, del_chunk, del_chblix, el_row, schema){
         counter++;
-        if(counter == 247){
+        if(counter == 44){
             printf("here");
         }
         memcpy(el, (char*)el_row + field_comp->offset, field_comp->size);

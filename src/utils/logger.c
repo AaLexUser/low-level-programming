@@ -41,7 +41,7 @@ void logger(enum LoggerLevel ll, const char *tag, const char *message, ...){
 
         char* time = get_current_time_str();
 
-        printf("%s - %s [%s]: ", time, get_log_level_name(ll), tag);
+        fprintf(stdout, "%s - %s [%s]: ", time, get_log_level_name(ll), tag);
         vprintf(message, args);
         va_end(args);
         printf("\n");
