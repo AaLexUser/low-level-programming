@@ -291,7 +291,7 @@ int64_t tab_select_op(db_t* db,
     }
 
     void* el_row = malloc(sel_schema->slot_size);
-    void* el = malloc(select_field_f.type);
+    void* el = malloc(select_field_f.size);
     void* comp_val = malloc(select_field_f.size);
     memcpy(comp_val, value, select_field_f.size);
 

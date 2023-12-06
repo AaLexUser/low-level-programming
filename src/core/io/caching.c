@@ -5,6 +5,8 @@
 #include <math.h>
 #include <time.h>
 
+#define CH_SIZE_UPPER_LIMIT SIZE_MAX
+
 // flag = 1 - occupied flag = 2 - removed_from_cache flag = 3 - deleted flag = 0 - unknown
 
 /**
@@ -164,32 +166,47 @@ int ch_reserve(caching_t* ch, size_t new_capacity){
 
 /**
  * @brief       Put page to cacher
- * @param[in]   ch: pointer to caching_t 
+ * @param[in]   ch: pointer to caching_t
  * @param[in]   page_index: index of page
  * @param[in]   mapped_page_ptr: pointer to mmaped page
  * @return      CH_SUCCESS on success, CH_FAIL otherwise
  */
 
 int ch_put(caching_t* ch, uint64_t page_index, void* mapped_page_ptr){
+    if(ch == NULL) { // Null pointer check.
+        logger(LL_ERROR, __func__ , "Input caching structure is NULL.");
+        return CH_FAIL;
+    }
+
     logger(LL_INFO, __func__, "Putting page %ld to cache", page_index);
+
     if(ch_usage_memory_space(ch) >= CH_MAX_MEMORY_USAGE){
         uint64_t count = ch_unmap_some_pages(ch);
         logger(LL_INFO, __func__, "Unmaped %ld pages", count);
     }
     size_t ch_new_size = ch->size ? ch->size : 2;
-    ch_new_size = (page_index <= ch_new_size) ? ch_new_size : page_index + 1;
+    ch_new_size = (page_index < ch_new_size) ? ch_new_size : page_index + 1;
     if(ch_reserve(ch, ch_new_size) == CH_FAIL){
         logger(LL_ERROR, __func__ , "Unable to reserve cacher capacity.");
         return CH_FAIL;
     }
+
+    if(page_index >= ch->capacity){
+        logger(LL_ERROR, __func__ , "Page index is outside the range of the cacher size.");
+        return CH_FAIL;
+    }
+
     if(ch->flags[page_index] == 1){
         return CH_SUCCESS;
     }
-    else{
-        ch->flags[page_index] = 1;
-        ch->cached_page_ptr[page_index] = mapped_page_ptr;
+
+    ch->flags[page_index] = 1;
+    ch->cached_page_ptr[page_index] = mapped_page_ptr;
+
+    if (ch->size < CH_SIZE_UPPER_LIMIT){
         ch->size++;
     }
+
     return CH_SUCCESS;
 }
 
@@ -205,7 +222,7 @@ void* ch_get(caching_t* ch, uint64_t page_index){
         logger(LL_INFO, __func__ , "Cacher size is 0.");
         return NULL;
     }
-    if(page_index > ch->capacity){
+    if(page_index >= ch->capacity){
         logger(LL_INFO, __func__, "Requesting not existing key");
         return NULL;
     }
@@ -281,7 +298,7 @@ int ch_load_page(caching_t* ch, uint64_t page_index, void** page){
         logger(LL_ERROR, __func__, "chunk_t index is out of file range");
         return CH_FAIL;
     }
-    if(ch->flags != NULL && ch->flags[page_index] == 3){
+    if(ch->flags != NULL && page_index < ch->capacity && ch->flags[page_index] == 3){
         return CH_DELETED;
     }
     if(mmap_page(ch_page_offset(page_index), &ch->file) == FILE_FAIL) {
