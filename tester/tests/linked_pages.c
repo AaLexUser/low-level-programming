@@ -1,7 +1,7 @@
 #include "../src/test.h"
-#include "../src/backend/io/caching.h"
-#include "backend/io/pager.h"
-#include "backend/io/linked_pages.h"
+#include "core/io/caching.h"
+#include "core/io/pager.h"
+#include "core/io/linked_pages.h"
 
 DEFINE_TEST(simple_to_start){
     assert(pg_init("test.db") == PAGER_SUCCESS);

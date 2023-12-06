@@ -1,7 +1,6 @@
 #pragma once
 
-#include "backend/io/linked_pages.h"
-#include "backend/pstack/pstack.h"
+#include "core/io/linked_pages.h"
 #include <stdint.h>
 
 #define sizeof_Page_Header (sizeof(int64_t) * 7)

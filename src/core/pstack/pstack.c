@@ -1,6 +1,6 @@
-#include "../../utils/logger.h"
-#include "../io/caching.h"
-#include "backend/io/pager.h"
+#include "utils/logger.h"
+#include "core/io/caching.h"
+#include "core/io/pager.h"
 #include "pstack.h"
 #include <stddef.h>
 #include <stdlib.h>

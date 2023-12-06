@@ -1,8 +1,8 @@
 #pragma once
 #include "../data_type.h"
-#include "../page_pool/page_pool.h"
+#include "core/page_pool/page_pool.h"
 #include "backend/journal/varchar_mgr.h"
-#include "backend/page_pool/linked_blocks.h"
+#include "core/page_pool/linked_blocks.h"
 #include <stdint.h>
 #include <string.h>
 

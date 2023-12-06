@@ -1,13 +1,12 @@
 #include "../src/bench.h"
 #include "backend/table/table.h"
 #include <sys/time.h>
+#include <time.h>
 
 int main(){
-    struct timespec start, end;
 
-    init_db("test.db");
-    int fd = out_file("table-insert.csv");
-    FILE *file = fdopen(fd, "w");
+    db_t* db = db_init("test.db");
+    FILE* file = fopen("table-delete.csv", "w+");
     fprintf(file, "Time;Rows\n");
 
     /* Create table */
@@ -17,7 +16,7 @@ int main(){
     sch_add_float_field(schidx, "SCORE");
     sch_add_int_field(schidx, "AGE");
     sch_add_bool_field(schidx, "PASS");
-    int64_t tablix = tab_init(mtabidx, "STUDENT", schidx);
+    int64_t tablix = tab_init(db, "STUDENT", schidx);
     tab_row(
             char NAME[10];
             float SCORE;
@@ -28,19 +27,20 @@ int main(){
     row.SCORE = 9.9f;
     row.AGE = 20;
     row.PASS = true;
-    for (int64_t i = 0; i < 1000000; ++i) {
-        clock_gettime(CLOCK_UPTIME_RAW, &start);
+    int64_t iteration = 1000;
+    for (int64_t i = 0; i < iteration; ++i) {
+        time_t start = time(NULL);
         chblix_t res = tab_insert(tablix, &row);
-        clock_gettime(CLOCK_UPTIME_RAW, &end);
+        time_t end = time(NULL);
         if(chblix_cmp(&res, &CHBLIX_FAIL) == 0){
             logger(LL_ERROR, __func__, "Failed to insert row ");
             return TABLE_FAIL;
         }
-        uint64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+        uint64_t delta_us = end - start;
         fprintf(file, "%llu;%llu\n", delta_us, i);
         fflush(file);
         logger(LL_WARN, __func__, "File size: %llu, blocks count: %llu", pg_file_size(), i);
     }
-    close(fd);
+    db_close(db);
     pg_delete();
 }

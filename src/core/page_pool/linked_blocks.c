@@ -1,6 +1,6 @@
 #include "linked_blocks.h"
-#include "backend/page_pool/page_pool.h"
-#include "backend/io/file.h"
+#include "page_pool.h"
+#include "core/io/file.h"
 #include "utils/logger.h"
 
 #include <math.h>

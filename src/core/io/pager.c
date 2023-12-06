@@ -1,6 +1,6 @@
 #include "pager.h"
-#include "../../utils/logger.h"
-#include "../utils/parray64.h"
+#include "utils/logger.h"
+#include "backend/utils/parray64.h"
 #include "caching.h"
 
 #ifndef PAGER

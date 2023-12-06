@@ -14,10 +14,10 @@
 
 
 int main(){
-    int64_t allocation = 500;
-    int64_t deallocation = 300;
+    int64_t allocation = 100;
+    int64_t deallocation = 50;
     int64_t stage_num = 20;
-    int64_t test_time = 5 * 60; //10 min
+    int64_t test_time = 2*60; //10 min
 
     db_t* db = db_init("test.db");
     FILE* file = fopen("table-delete.csv", "w+");
@@ -47,8 +47,9 @@ int main(){
     time_t test_start = time(NULL);
     time_t test_end = time(NULL);
     int64_t i = 0;
+    int64_t allocated = 0;
     while(test_end - test_start < test_time) {
-        for (int64_t j = allocation * i; j < allocation*(i+1); ++j) {
+        for (int64_t j = allocated; j < allocated + allocation; ++j) {
             row.ID = j;
             row.SCORE = 9.9f;
             row.AGE = j;
@@ -60,12 +61,10 @@ int main(){
             }
         }
         time_t start = time(NULL);
-        for (int64_t j = allocation * i; j < (allocation * i + deallocation); ++j) {
+        for (int64_t j = allocated; j < (allocated + deallocation); ++j) {
             int64_t value = j;
-            if(j == 512){
-                fclose(file);
-                db_drop(db);
-                return 0;
+            if(j == 83){
+                printf("here");
             }
             int res = tab_delete_op_nova(db, table, schema, &field, COND_EQ, &value);
             if (res == TABLE_FAIL) {
@@ -73,6 +72,7 @@ int main(){
                 return TABLE_FAIL;
             }
         }
+        allocated = allocated + allocation - deallocation;
         time_t end = time(NULL);
         double delta_us = (double)(start - end) / (double)deallocation;
         fprintf(file, "%f;%llu\n", delta_us, i);

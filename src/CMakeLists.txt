@@ -13,15 +13,15 @@ if(NOT CMAKE_CONFIGURATION_TYPES MATCHES Debug)
 endif()
 
 set(sources
-        backend/io/file.c
+        core/io/file.c
         utils/logger.c
-        backend/io/caching.c
-        backend/io/pager.c
-        backend/pstack/pstack.c
-        backend/page_pool/page_pool.c
-        backend/io/linked_pages.c
+        core/io/caching.c
+        core/io/pager.c
+        core/pstack/pstack.c
+        core/page_pool/page_pool.c
+        core/io/linked_pages.c
         backend/utils/parray.c
-        backend/page_pool/linked_blocks.c
+        core/page_pool/linked_blocks.c
         backend/utils/parray64.c
         backend/table/schema.c
         backend/table/table_base.c

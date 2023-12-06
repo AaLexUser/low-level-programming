@@ -1,6 +1,6 @@
 #pragma once
 
-#include "backend/io/pager.h"
+#include "core/io/pager.h"
 #include "backend/journal/metatab.h"
 
 typedef struct db{

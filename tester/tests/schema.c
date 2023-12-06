@@ -1,5 +1,5 @@
 #include "../src/test.h"
-#include "backend/io/pager.h"
+#include "core/io/pager.h"
 #include "backend/table/schema.h"
 
 DEFINE_TEST(create_add_foreach_sch){

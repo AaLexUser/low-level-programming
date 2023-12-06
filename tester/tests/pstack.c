@@ -1,6 +1,6 @@
 #include "../src/test.h"
-#include "../src/backend/io/pager.h"
-#include "../src/backend/pstack/pstack.h"
+#include "core/io/pager.h"
+#include "core/pstack/pstack.h"
 #include "../src/utils/logger.h"
 #include <stdio.h>
 

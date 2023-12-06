@@ -1,5 +1,5 @@
 #include "../src/test.h"
-#include "../src/backend/io/caching.h"
+#include "core/io/caching.h"
 #include <stdio.h>
 
 DEFINE_TEST(write_and_read){

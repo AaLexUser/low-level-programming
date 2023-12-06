@@ -1,6 +1,6 @@
 #include "../src/test.h"
-#include "../src/backend/io/pager.h"
-#include "backend/io/caching.h"
+#include "core/io/pager.h"
+#include "core/io/caching.h"
 #include <stdio.h>
 
 DEFINE_TEST(allocate_deallocate){

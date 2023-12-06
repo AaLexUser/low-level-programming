@@ -1,8 +1,8 @@
 #pragma once
 #include <string.h>
-#include "../../backend/io/input_buffer.h"
+#include "backend/io/input_buffer.h"
 #include "backend/table/table-old.h"
-#include "../../backend/db/db.h"
+#include "backend/db/db.h"
 typedef enum {
     META_COMMAND_SUCCESS,
     META_COMMAND_UNRECOGNIZED_COMMAND

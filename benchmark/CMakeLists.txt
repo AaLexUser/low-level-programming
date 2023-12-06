@@ -6,7 +6,10 @@ add_library(bench_stubs OBJECT ${common_sources})
 target_include_directories(bench_stubs PUBLIC src)
 target_link_libraries(bench_stubs PUBLIC db m)
 
-file(GLOB_RECURSE bench_sources CONFIGURE_DEPENDS benchs/table-delete.c)
+file(GLOB_RECURSE bench_sources CONFIGURE_DEPENDS
+        benchs/table-delete.c
+        benchs/table-insert.c
+)
 
 foreach(bench_source IN LISTS bench_sources)
     string(REPLACE "/" ";" name_components ${bench_source})

@@ -1,7 +1,7 @@
 #include "../src/test.h"
-#include "../src/backend/io/caching.h"
-#include "backend/page_pool/page_pool.h"
-#include "backend/io/pager.h"
+#include "core/io/caching.h"
+#include "core/page_pool/page_pool.h"
+#include "core/io/pager.h"
 #include "utils/logger.h"
 #include <stdio.h>
 

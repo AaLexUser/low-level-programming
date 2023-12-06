@@ -1,5 +1,5 @@
 #include "../src/test.h"
-#include "../src/backend/io/file.h"
+#include "core/io/file.h"
 #include <stdio.h>
 
 DEFINE_TEST(write_and_read){

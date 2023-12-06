@@ -1,4 +1,4 @@
-#include "backend/io/pager.h"
+#include "core/io/pager.h"
 
 void init_db(const char* filename){
     /* Init new db file */

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "backend/page_pool/page_pool.h"
+#include "core/page_pool/page_pool.h"
 #include "schema.h"
 
 typedef struct table {
@@ -35,10 +35,10 @@ typedef enum {TABLE_SUCCESS = 0, TABLE_FAIL = -1} table_status_t;
 #define tab_for_each_element(table, chunk, chblix, element, field) \
 chunk_t* chunk = ppl_load_chunk(table->ppl_header.head);                     \
 chblix_t chblix = lb_pool_start(&table->ppl_header, chunk);\
-lb_read_nova_5(&table->ppl_header, &chblix, element, (int64_t)(field)->size, (int64_t)(field)->offset);\
+lb_read_nova(&table->ppl_header,chunk, &chblix, element, (int64_t)(field)->size, (int64_t)(field)->offset);\
 for (chblix;\
 lb_valid(&table->ppl_header,chunk, chblix) &&\
-lb_read_nova_5(&table->ppl_header, &chblix, element, (int64_t)(field)->size, (int64_t)(field)->offset) != LB_FAIL;\
+lb_read_nova(&table->ppl_header, chunk, &chblix, element, (int64_t)(field)->size, (int64_t)(field)->offset) != LB_FAIL;\
 ++chblix.block_idx, chblix = lb_nearest_valid_chblix(&table->ppl_header, chblix, &chunk))
 
 /**
@@ -53,10 +53,10 @@ lb_read_nova_5(&table->ppl_header, &chblix, element, (int64_t)(field)->size, (in
 #define tab_for_each_row(table, chunk, chblix, row, schema) \
 chunk_t* chunk = ppl_load_chunk(table->ppl_header.head);   \
 chblix_t chblix = lb_pool_start(&table->ppl_header, chunk);\
-lb_read_nova_5(&table->ppl_header, &chblix, row, schema->slot_size, 0);\
+lb_read_nova(&table->ppl_header, chunk, &chblix, row, schema->slot_size, 0);\
 for (chblix;                                         \
 lb_valid(&table->ppl_header, chunk, chblix) &&\
-lb_read_nova_5(&table->ppl_header, &chblix, row, schema->slot_size, 0) != LB_FAIL; \
+lb_read_nova(&table->ppl_header,chunk,  &chblix, row, schema->slot_size, 0) != LB_FAIL; \
 ++chblix.block_idx, chblix = lb_nearest_valid_chblix(&table->ppl_header,\
                                                                       chblix, &chunk))
 

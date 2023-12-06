@@ -1,6 +1,6 @@
 #include "page_pool.h"
-#include "backend/io/caching.h"
-#include "backend/io/pager.h"
+#include "core/io/caching.h"
+#include "core/io/pager.h"
 #include "backend/utils/parray64.h"
 #include "utils/logger.h"
 

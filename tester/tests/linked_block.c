@@ -1,8 +1,9 @@
 #include "../src/test.h"
-#include "../src/backend/io/caching.h"
-#include "backend/io/pager.h"
-#include "backend/page_pool/page_pool.h"
-#include "backend/page_pool/linked_blocks.h"
+#include "core/io/caching.h"
+#include "core/io/pager.h"
+#include "core/page_pool/page_pool.h"
+#include "core/page_pool/linked_blocks.h"
+#include "core/io/linked_pages.h"
 
 DEFINE_TEST(write_read){
     assert(pg_init("test.db") == PAGER_SUCCESS);
