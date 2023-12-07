@@ -49,6 +49,7 @@ DEFINE_TEST(different_type){
         char *read_str = malloc(strlen(str) + 1);
         pst_pop(pstl, read_str);
         assert(strcmp(str,read_str) == 0);
+        free(read_str);
     }
 
     pst_list_destroy(pstl);

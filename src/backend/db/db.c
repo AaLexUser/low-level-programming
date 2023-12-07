@@ -17,8 +17,12 @@ void* db_init(const char* filename){
     return db;
 }
 int db_close(db_t* db){
-    return pg_close() == PAGER_SUCCESS ? DB_SUCCESS : DB_FAIL;
+    int res =  pg_close() == PAGER_SUCCESS ? DB_SUCCESS : DB_FAIL;
+    free(db);
+    return res;
 }
 int db_drop(db_t* db){
-    return pg_delete() == PAGER_SUCCESS ? DB_SUCCESS : DB_FAIL;
+    int res = pg_delete() == PAGER_SUCCESS ? DB_SUCCESS : DB_FAIL;
+    free(db);
+    return res;
 }

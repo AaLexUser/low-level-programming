@@ -281,6 +281,9 @@ DEFINE_TEST(select){
     tab_for_each_element(sel_table_t, chunk5, chblix5, &element, field){
         assert(element != value);
     }
+
+    free(field);
+
     tab_drop(db, sel_tablix);
     db_drop(db);
 }

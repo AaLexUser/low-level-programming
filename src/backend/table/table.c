@@ -103,6 +103,7 @@ void tab_print(db_t* db, int64_t tablix){
         printf("\n");
         fflush(stdout);
     }
+    free(row);
     fflush(stdout);
 }
 
@@ -503,10 +504,9 @@ int tab_delete_op_nova(db_t* db,
     /* Delete */
     tab_for_each_row(table, del_chunk, del_chblix, el_row, schema){
         counter++;
-        if(counter == 44){
-            printf("here");
-        }
         memcpy(el, (char*)el_row + field_comp->offset, field_comp->size);
+//        int64_t* id = el;
+//        printf("c: %lld | b: %lld | id: %lld\n", del_chblix.chunk_idx, del_chblix.block_idx, *id);
         if(comp_compare(db, field_comp->type, el, comp_val, condition)){
             chblix_t temp = del_chblix;
             bool flag = false;
@@ -528,7 +528,7 @@ int tab_delete_op_nova(db_t* db,
     free(comp_val);
     free(el_row);
     free(el);
-    int64_t* val =value;
+    int64_t* val = value;
     printf("value %llu, counter %llu\n", *val, counter);
     fflush(stdout);
 

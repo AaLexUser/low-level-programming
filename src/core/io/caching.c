@@ -146,13 +146,22 @@ int ch_reserve(caching_t* ch, size_t new_capacity){
     memset(ch_new_flags, 0, ch_new_capacity);
     memset(ch_new_usage_count, 0, ch_new_capacity);
     for(size_t ch_i = 0; ch_i < ch->capacity; ch_i++){
-        if(ch->flags[ch_i] != 1) continue;
-        ch_new_flags[ch_i] = 1;
-        ch_new_cached_page_ptr[ch_i] = ch->cached_page_ptr[ch_i];
-        ch_new_usage_count[ch_i] = ch->usage_count[ch_i];
-        ch_new_last_used[ch_i] = ch->last_used[ch_i];
+        if(ch->flags[ch_i] == 1) {
+            ch_new_flags[ch_i] = 1;
+            ch_new_cached_page_ptr[ch_i] = ch->cached_page_ptr[ch_i];
+            ch_new_usage_count[ch_i] = ch->usage_count[ch_i];
+            ch_new_last_used[ch_i] = ch->last_used[ch_i];
+        }
+        if(ch->flags[ch_i] == 3){
+            ch_new_flags[ch_i] = 3;
+            ch_new_cached_page_ptr[ch_i] = ch->cached_page_ptr[ch_i];
+            ch_new_usage_count[ch_i] = ch->usage_count[ch_i];
+            ch_new_last_used[ch_i] = ch->last_used[ch_i];
+        }
     }
+    free(ch->last_used);
     free(ch->flags);
+    free(ch->usage_count);
     free(ch->cached_page_ptr);
     ch->flags = ch_new_flags;
     ch->cached_page_ptr = ch_new_cached_page_ptr;
@@ -219,19 +228,19 @@ int ch_put(caching_t* ch, uint64_t page_index, void* mapped_page_ptr){
 
 void* ch_get(caching_t* ch, uint64_t page_index){
     if(!ch->size){
-        logger(LL_ERROR, __func__ , "Cacher size is 0.");
+        logger(LL_DEBUG, __func__ , "Cacher size is 0.");
         return NULL;
     }
     if(page_index > ch_max_page_index(ch)){
-        logger(LL_ERROR, __func__, "Requesting not existing key in file, page_index: %ld", page_index);
+        logger(LL_DEBUG, __func__, "Requesting not existing key in file, page_index: %ld", page_index);
         return NULL;
     }
     if(page_index >= ch->capacity){
-        logger(LL_ERROR, __func__, "Requesting not existing key");
+        logger(LL_DEBUG, __func__, "Requesting not existing key");
         return NULL;
     }
     if(ch->flags[page_index] != 1){
-        logger(LL_ERROR, __func__, "Requesting key that is not in cache");
+        logger(LL_INFO, __func__, "Requesting key that is not in cache");
         return NULL;
     }
     ch->usage_count[page_index]++;
@@ -495,9 +504,10 @@ int ch_destroy(caching_t* ch){
     ch_for_each_cached(index, ch){
         ch_remove(ch, index);
     }
+    free(ch->last_used);
+    free(ch->flags);
     free(ch->usage_count);
     free(ch->cached_page_ptr);
-    free(ch->flags);
     return CH_SUCCESS;
 }
 

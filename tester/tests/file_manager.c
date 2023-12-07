@@ -17,6 +17,7 @@ DEFINE_TEST(write_and_read){
     char* read_str = malloc(sizeof(str));
     read_page(file, read_str, sizeof(str), 0);
     assert(strcmp(str, read_str) == 0);
+    free(read_str);
     delete_file(file);
     free(file);
 }
@@ -40,6 +41,7 @@ DEFINE_TEST(two_write){
     read_page(file, read_str2,sizeof(str2), sizeof(str1));
     assert(strcmp(str2, read_str2) == 0);
     delete_file(file);
+    free(read_str2);
     free(file);
 }
 DEFINE_TEST(two_pages){
@@ -66,6 +68,10 @@ DEFINE_TEST(two_pages){
     char* read_str2 = malloc(sizeof(str2));
     read_page(file, read_str2,sizeof(str2), 0);
     assert(strcmp(str2, read_str2) == 0);
+
+    free(read_str1);
+    free(read_str2);
+
     delete_file(file);
     free(file);
 }
@@ -99,6 +105,9 @@ DEFINE_TEST(delete_last_page){
     assert(delete_last_page(file) == 0);
     assert(1 * PAGE_SIZE == (int) fl_file_size(file));
     assert(delete_file(file) == 0);
+
+    free(read_str1);
+    free(read_str2);
     free(file);
 }
 

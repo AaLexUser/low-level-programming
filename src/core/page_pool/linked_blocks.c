@@ -504,6 +504,7 @@ int lb_read_nova(page_pool_t* ppl,
         }
 
     }
+    free(lb);
     return LB_SUCCESS;
 
 }
@@ -593,6 +594,7 @@ int lb_read(int64_t pplidx,
         }
 
     }
+    free(lb);
     return LB_SUCCESS;
 }
 
@@ -709,12 +711,16 @@ chblix_t lb_nearest_valid_chblix(page_pool_t* ppl, chblix_t chblix, chunk_t** cu
             return (chblix_t){.block_idx = result_block, .chunk_idx = (*current_chunk)->page_index};
         }
 
+        if((*current_chunk)->next_page == -1){
+            return chblix_fail();
+        }
+
         // If there's a next chunk, load it.
         if((*current_chunk)->next_page != -1){
             *current_chunk = ppl_load_chunk((*current_chunk)->next_page);
             chblix.block_idx = 0;
         }
-    } while((*current_chunk)->next_page != -1);
+    } while(*current_chunk != NULL);
 
     // If we've examined all pages and found no valid chblix, return fail
     return chblix_fail();
@@ -756,6 +762,7 @@ bool lb_valid(page_pool_t* ppl, chunk_t* chunk, chblix_t chblix){
         free(linked_block);
         return false;
     }
+    free(linked_block);
     return chblix_cmp(&chblix, &CHBLIX_FAIL) != 0;
 }
 

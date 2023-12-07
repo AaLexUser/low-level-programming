@@ -25,6 +25,7 @@ typedef struct page_pool {
     linked_page_t lp_header;
     int64_t current_idx;
     int64_t head;
+    int64_t tail;
     int64_t block_size;
     int64_t wait; // parray index
 } page_pool_t;

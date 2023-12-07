@@ -278,8 +278,24 @@ int ppl_pool_expand(page_pool_t* ppl){
                 logger(LL_ERROR, __func__, "Unable to create new page");
                 return PPL_FAIL;
             }
-            current->next_page = new_page->page_index;
-            new_page->prev_page = current->page_index;
+            if(current->next_page == -1){
+                current->next_page = new_page->page_index;
+                new_page->prev_page = current->page_index;
+            }
+            else{
+                chunk_t* tail = ppl_load_chunk(ppl->tail);
+                if(!tail){
+                    logger(LL_ERROR, __func__, "Unable to load tail");
+                    return PPL_FAIL;
+                }
+                if(tail->next_page != -1){
+                    logger(LL_ERROR, __func__, "Tail next page is not -1");
+                    return PPL_FAIL;
+                }
+                tail->next_page = new_page->page_index;
+                new_page->prev_page = tail->page_index;
+            }
+            ppl->tail = new_page->page_index;
             break;
         }
         case PA_FAIL: {
@@ -296,7 +312,6 @@ int ppl_pool_expand(page_pool_t* ppl){
         logger(LL_ERROR, __func__, "Error while expanding page pool, pages have same index");
         return PPL_FAIL;
     }
-
     ppl->current_idx = new_page->page_index;
     return PPL_SUCCESS;
 }
@@ -526,6 +541,7 @@ int64_t ppl_init(int64_t block_size){
     }
     ppl->current_idx = chunk_idx;
     ppl->head = ppl->current_idx;
+    ppl->tail = ppl->head;
 
     // Initialize wait
     ppl->wait  = pa_init64(sizeof(int64_t), -1);

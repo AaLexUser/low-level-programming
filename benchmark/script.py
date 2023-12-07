@@ -93,5 +93,5 @@ if __name__ == '__main__':
     df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-delete.csv'
                      , sep=';')
     # Plot the data
-    plot(df, 'Stage', 'Time', 'Table Delete Time', 'Stage', 'Time mcs',
+    plot(df, 'Allocated', 'Time', 'Table Delete Time', 'Allocated', 'Time s',
          'table_delete.png')

@@ -1,5 +1,6 @@
 #include "table_base.h"
 #include "utils/logger.h"
+#include <stdio.h>
 
 /**
  * @brief       Initialize a table
@@ -46,6 +47,7 @@ chblix_t tab_insert(int64_t tablix, void* src){
     }
 
     chblix_t rowix = lb_alloc(tablix);
+//    printf("c: %lld | b: %lld | ", rowix.chunk_idx, rowix.block_idx);
 
     if(chblix_cmp(&rowix, &CHBLIX_FAIL) == 0){
         logger(LL_ERROR, __func__, "Failed to allocate row");
@@ -109,6 +111,7 @@ int tab_delete_nova(table_t* table, chunk_t* chunk, chblix_t* rowix){
         logger(LL_ERROR, __func__, "Failed to deallocate row");
         return TABLE_FAIL;
     }
+    free(lb);
     return TABLE_SUCCESS;
 }
 
