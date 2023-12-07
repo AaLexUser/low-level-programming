@@ -17,14 +17,14 @@ typedef struct pager{
 enum PagerStatuses{PAGER_SUCCESS = 0, PAGER_FAIL = -1, PAGER_DELETED=-2};
 
 int pg_init(const char* file_name);
-int pg_delete();
-int pg_close();
-int64_t pg_alloc();
+int pg_delete(void);
+int pg_close(void);
+int64_t pg_alloc(void);
 int pg_dealloc(int64_t page_index);
 void* pg_load_page(int64_t page_index);
 int pg_write(uint64_t page_index, void* src, size_t size, off_t offset);
 int pg_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset);
-int64_t pg_max_page_index();
-off_t pg_file_size();
+int64_t pg_max_page_index(void);
+off_t pg_file_size(void);
 
 

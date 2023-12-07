@@ -228,7 +228,7 @@ int write_page(file_t* file, void* src, uint64_t size, off_t offset){
         logger(LL_ERROR, __func__, "Unable write, mapped file is NULL.");
         return FILE_FAIL;
     }
-    memcpy(file->cur_mmaped_data + offset, src, size);
+    memcpy((uint8_t*)file->cur_mmaped_data + offset, src, size);
     sync_page(file->cur_mmaped_data);
     return FILE_SUCCESS;
 }
@@ -249,7 +249,7 @@ int read_page(file_t* file, void* dest, uint64_t size, off_t offset){
         logger(LL_ERROR, __func__, "Unable write, mapped file is NULL.");
         return FILE_FAIL;
     }
-    memcpy(dest, file->cur_mmaped_data + offset, size);
+    memcpy(dest, (uint8_t*)file->cur_mmaped_data + offset, size);
     return FILE_SUCCESS;
 }
 

@@ -118,7 +118,7 @@ int lb_update(int64_t ppidx, const chblix_t* chblix, linked_block_t* lb) {
     return LB_SUCCESS;
 }
 
-int lb_dealloc_nova(page_pool_t* ppl, linked_block_t* lb, const chblix_t* chblix){
+int lb_dealloc_nova(page_pool_t* ppl, linked_block_t* lb){
     chblix_t fail = chblix_fail();
     while (chblix_cmp(&lb->next_block, &fail) != 0) {
         chblix_t next_block_idx = lb->next_block;
@@ -234,7 +234,7 @@ chblix_t lb_get_next_nova(page_pool_t* ppl, const chblix_t* chblix){
     }
     /* Loading Linked Block */
     linked_block_t* lb = malloc(ppl->block_size); /* Don't forget to free it */
-    lb_load_nova_ppp(ppl, chblix, lb);
+    lb_load_nova_ppp(ppl, (chblix_t*)chblix, lb);
 
     chblix_t fail = chblix_fail();
     chblix_t next_block_idx = lb->next_block;
@@ -293,7 +293,7 @@ chblix_t lb_go_to_nova(page_pool_t* ppl,
  * \return      pointer to linked_block_t on success, `NULL` otherwise
  */
 
-chblix_t lb_get_next(int64_t page_pool_index,
+static chblix_t lb_get_next(int64_t page_pool_index,
                      const chblix_t* chblix){
 
     /* Loading Page Pool*/
@@ -339,7 +339,7 @@ chblix_t lb_get_next(int64_t page_pool_index,
  * \return      chblix_t on success, `chblix_fail()` otherwise
  */
 
-chblix_t lb_go_to(int64_t pplidx,
+static chblix_t lb_go_to(int64_t pplidx,
                   chblix_t* chblix,
                   int64_t current_block_idx,
                   int64_t block_idx) {
@@ -421,7 +421,7 @@ int lb_write(int64_t pplidx,
 
         if(blocks_needed > 0){
             total_size -= useful_space_size - start_offset;
-            src += useful_space_size - start_offset;
+            src = (uint8_t*)src + useful_space_size - start_offset;
             start_offset = 0;
 
             /* Go to next block */
@@ -494,7 +494,7 @@ int lb_read_nova(page_pool_t* ppl,
 
         if(blocks_needed > 0){
             total_size -= (useful_space_size - start_offset);
-            dest += useful_space_size - start_offset;
+            dest = (uint8_t*)dest + useful_space_size - start_offset;
             start_offset = 0;
 
             /* Go to next block */
@@ -584,7 +584,7 @@ int lb_read(int64_t pplidx,
 
         if(blocks_needed > 0){
             total_size -= (useful_space_size - start_offset);
-            dest += useful_space_size - start_offset;
+            dest = (uint8_t*) dest + useful_space_size - start_offset;
             start_offset = 0;
 
             /* Go to next block */

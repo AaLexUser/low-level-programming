@@ -387,7 +387,7 @@ int ch_write(caching_t* ch, uint64_t page_index, void* src, size_t size, off_t o
  * @return      CH_SUCCESS on success, CH_FAIL otherwise
  */
 
-int ch_clear_page(caching_t* ch, uint64_t page_index){
+int ch_clear_page(caching_t* ch, int64_t page_index){
     logger(LL_INFO, __func__, "Clearing page %ld", page_index);
     void* page = NULL;
     if(page_index > ch_max_page_index(ch)){
@@ -419,7 +419,7 @@ int ch_copy_read(caching_t* ch, uint64_t page_index, void* dest, size_t size, of
     if(ch_load_page(ch, page_index, &page) != CH_SUCCESS){
         return CH_FAIL;
     }
-    memcpy(dest, page + offset, size);
+    memcpy(dest, (uint8_t*)page + offset, size);
     sync_page(page);
 
     //Increase usage
@@ -450,11 +450,11 @@ void* ch_read(caching_t* ch, uint64_t page_index, off_t offset){
     time_t now;
     ch->last_used[page_index] = time(&now);
 
-    return page + offset;
+    return (uint8_t*)page + offset;
 }
 
 
-uint64_t ch_begin(){return 0;}
+uint64_t ch_begin(void){return 0;}
 uint64_t ch_end(caching_t* ch){return ch->capacity;}
 
 static uint64_t ch_nearest_cached_index(const char *flags, size_t capacity, uint64_t index){
@@ -464,7 +464,7 @@ static uint64_t ch_nearest_cached_index(const char *flags, size_t capacity, uint
     return index;
 }
 
-bool ch_cached(caching_t* ch, uint64_t index){
+static bool ch_cached(caching_t *ch, uint64_t index) {
     return ch->flags[index] == 1;
 }
 
@@ -474,7 +474,7 @@ size_t index = ch_nearest_cached_index((ch)->flags, ch->capacity, ch_begin());\
 (index)++, (index) = ch_nearest_cached_index(ch->flags, ch->capacity, (index)) \
 )                                \
 
-bool ch_valid(caching_t* ch, uint64_t index){
+static bool ch_valid(caching_t* ch, uint64_t index){
     return  ch->flags[index] == 1 || ch->flags[index] == 2;
 }
 
@@ -630,7 +630,7 @@ int ch_delete_last_page(caching_t* ch){
  * @return      CH_SUCCESS on success, CH_FAIL otherwise
  */
 
-int ch_delete_page(caching_t* ch, uint64_t page_index){
+int ch_delete_page(caching_t* ch, int64_t page_index){
     if(ch_file_size(ch) == 0){
         logger(LL_ERROR, __func__, "File is empty");
         return CH_FAIL;

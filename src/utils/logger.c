@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <time.h>
 
-static char* get_current_time_str(){
+static char* get_current_time_str(void){
     time_t now;
     time(&now);
     char *time_str = ctime(&now);

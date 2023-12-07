@@ -5,10 +5,10 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-PStack* pst_init(size_t block_size, int64_t page_index, PStack* pstack){
+static PStack* pst_init(size_t block_size, int64_t page_index, PStack* pstack){
     logger(LL_INFO, __func__, "Initializing pstack");
     pstack->page_index = page_index;
-    if(block_size > PAGE_SIZE){
+    if((long)block_size > PAGE_SIZE){
         logger(LL_ERROR, __func__, "Block size doesn't fit in page");
         pst_destroy(pstack);
         return NULL;
@@ -61,7 +61,7 @@ PStack* pst_load(size_t block_size, int64_t page_index){
  * @return PStack* The current pstack or NULL
  */
 
-PStack* pst_load_current(PStack_List* pstl){
+static PStack* pst_load_current(PStack_List* pstl){
     logger(LL_INFO, __func__, "Loading current pstack");
     PStack* current;
     if(!(current= pg_load_page(pstl->current_idx))){
@@ -71,7 +71,7 @@ PStack* pst_load_current(PStack_List* pstl){
     return current;
 }
 
-PStack* pst_go_to_head(PStack_List* pstl){
+static PStack* pst_go_to_head(PStack_List* pstl){
     logger(LL_INFO, __func__, "Going to head of pstack list");
     PStack* current;
 

@@ -41,6 +41,6 @@ int main(){
         fflush(file);
         logger(LL_WARN, __func__, "File size: %llu, blocks count: %llu", pg_file_size(), i);
     }
-    db_close(db);
+    db_close();
     pg_delete();
 }

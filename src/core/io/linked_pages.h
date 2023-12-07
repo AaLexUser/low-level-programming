@@ -10,7 +10,7 @@ typedef struct linked_page{
 typedef enum {LP_SUCCESS = 0, LP_FAIL = -1} linked_page_status_t;
 
 int64_t lp_init_m(int64_t mem_start);
-int64_t lp_init();
+int64_t lp_init(void);
 int64_t lp_useful_space_size(linked_page_t* linkedPage);
 linked_page_t* lp_load(int64_t page_index);
 int lp_delete(int64_t page_index);

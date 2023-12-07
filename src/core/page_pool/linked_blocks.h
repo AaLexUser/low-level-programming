@@ -37,7 +37,7 @@ chblix_t lb_alloc(int64_t page_pool_idx);
 int lb_load(int64_t page_pool_index, const chblix_t* chblix, linked_block_t* lb);
 int lb_update_nova(page_pool_t* ppl, const chblix_t* chblix, linked_block_t* lb);
 int lb_update(int64_t ppidx, const chblix_t* chblix, linked_block_t* lb);
-int lb_dealloc_nova(page_pool_t* ppl, linked_block_t* lb, const chblix_t* chblix);
+int lb_dealloc_nova(page_pool_t* ppl, linked_block_t* lb);
 int lb_dealloc(int64_t pplidx, const chblix_t* chblix);
 chblix_t lb_get_next_nova(page_pool_t* ppl, const chblix_t* chblix);
 chblix_t lb_go_to_nova(page_pool_t* ppl,

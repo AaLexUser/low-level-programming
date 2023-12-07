@@ -81,12 +81,12 @@ typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schem
     chunk_t* chunk = ppl_load_chunk(sch->ppl_header.head);                  \
     chblix_t chblix = lb_pool_start((page_pool_t*)sch, chunk);\
     sch_field_load(schidx, &chblix, &field);\
-    for(chblix;\
+    for(;\
     lb_valid((page_pool_t*)sch, chunk, chblix) &&\
     sch_field_load(schidx, &chblix, &field) != LB_FAIL; \
     ++chblix.block_idx,  chblix = lb_nearest_valid_chblix((page_pool_t*)sch, chblix, &chunk))
 
-int64_t sch_init();
+int64_t sch_init(void);
 int sch_add_field(int64_t schidx, const char* name, datatype_t type, int64_t size);
 int sch_get_field(int64_t schidx, const char* name, field_t* field);
 int sch_delete_field(int64_t schidx, const char* name);

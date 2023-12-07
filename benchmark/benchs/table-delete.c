@@ -84,5 +84,5 @@ int main(){
     }
     printf("Test time: %ld\n", test_end - test_start);
     fclose(file);
-    db_drop(db);
+    db_drop();
 }

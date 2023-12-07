@@ -7,7 +7,7 @@
 #endif
 #define LOGGER_LEVEL 2
 
-void insert_data(int64_t tablix, int64_t schidx, int64_t count){
+static void insert_data(int64_t tablix, int64_t schidx, int64_t count){
     tab_row(
             char NAME[10];
             char SURNAME[10];
@@ -37,7 +37,7 @@ void insert_data(int64_t tablix, int64_t schidx, int64_t count){
     }
 }
 
-int64_t init_schema(){
+static int64_t init_schema(void){
     int64_t schidx = sch_init();
     const size_t char_count = 10;
     sch_add_char_field(schidx, "NAME", char_count);
@@ -113,7 +113,8 @@ DEFINE_TEST(create_add_foreach){
     assert(ans[0] == 10);
     assert(ans[1] == 20);
     assert(ans[2] == 30);
-    db_drop(db);
+    free(element);
+    db_drop();
 }
 
 DEFINE_TEST(update) {
@@ -131,7 +132,7 @@ DEFINE_TEST(update) {
     int64_t read_element;
     assert(tab_get_element(tablix, &res, &(field), &read_element) == TABLE_SUCCESS);
     assert(read_element == 100);
-    db_drop(db);
+    db_drop();
 }
 
 DEFINE_TEST(delete){
@@ -147,7 +148,18 @@ DEFINE_TEST(delete){
     assert(tab_delete(tablix, &res) == TABLE_SUCCESS);
     res = tab_get_row(db, tablix, &field, &element, INT);
     assert(chblix_cmp(&res, &CHBLIX_FAIL) == 0);
-    db_drop(db);
+    db_drop();
+}
+
+DEFINE_TEST(get_table_after_close){
+    db_t* db = db_init("test.db");
+    int64_t tablix = table_student(db, 1);
+    db_close();
+    db = db_init("test.db");
+    int64_t tabix = mtab_find_tab(db->meta_table_idx, "STUDENTS");
+    table_t* table = tab_load(tabix);
+    assert(table != NULL);
+    db_drop();
 }
 
 DEFINE_TEST(varchar){
@@ -181,7 +193,8 @@ DEFINE_TEST(varchar){
         printf("%s\n", str);
         free(str);
     }
-    db_drop(db);
+    free(element);
+    db_drop();
 }
 
 DEFINE_TEST(several_tables){
@@ -212,7 +225,7 @@ DEFINE_TEST(several_tables){
     int64_t read_tablix2 = mtab_find_tab(db->meta_table_idx, "STUDENTS");
     assert(read_tablix2 == tablix2);
 
-    db_drop(db);
+    db_drop();
 }
 
 DEFINE_TEST(print){
@@ -221,7 +234,7 @@ DEFINE_TEST(print){
     int64_t tablix = tab_init(db, "test", schidx);
     insert_data(tablix, schidx, 2);
     tab_print(db, tablix);
-    db_drop(db);
+    db_drop();
 }
 
 DEFINE_TEST(join){
@@ -232,7 +245,7 @@ DEFINE_TEST(join){
     tab_print(db, right);
     int64_t join_tablix = tab_join(db, left, right, "NAME", "NAME","JOIN");
     tab_print(db, join_tablix);
-    db_drop(db);
+    db_drop();
 }
 
 DEFINE_TEST(select){
@@ -285,7 +298,7 @@ DEFINE_TEST(select){
     free(field);
 
     tab_drop(db, sel_tablix);
-    db_drop(db);
+    db_drop();
 }
 
 DEFINE_TEST(update_row_op){
@@ -319,7 +332,7 @@ DEFINE_TEST(update_row_op){
     }
     assert(flag);
     tab_drop(db, tablix);
-    db_drop(db);
+    db_drop();
 }
 
 DEFINE_TEST(update_element_op){
@@ -351,7 +364,7 @@ DEFINE_TEST(update_element_op){
     assert(flag);
     free(value);
     tab_drop(db, tablix);
-    db_drop(db);
+    db_drop();
 }
 
 DEFINE_TEST(delete_op){
@@ -379,7 +392,7 @@ DEFINE_TEST(delete_op){
     }
     free(value);
     tab_drop(db, tablix);
-    db_drop(db);
+    db_drop();
 }
 
 
@@ -389,6 +402,7 @@ int main(){
     RUN_SINGLE_TEST(create_add_foreach);
     RUN_SINGLE_TEST(update);
     RUN_SINGLE_TEST(delete);
+    RUN_SINGLE_TEST(get_table_after_close);
     RUN_SINGLE_TEST(varchar);
     RUN_SINGLE_TEST(several_tables);
     RUN_SINGLE_TEST(print);

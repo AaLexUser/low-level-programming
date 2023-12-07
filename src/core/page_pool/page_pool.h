@@ -33,7 +33,7 @@ typedef struct page_pool {
 typedef enum {PPL_SUCCESS = 0, PPL_FAIL = -1, PPL_EMPTY = 1} page_pool_status_t;
 
 #define CHBLIX_FAIL (chblix_t){.block_idx = -1, .chunk_idx = -1}
-chblix_t chblix_fail();
+chblix_t chblix_fail(void);
 int chblix_cmp(const chblix_t* chblix1, const chblix_t* chblix2);
 
 int64_t ppl_chunk_init(page_pool_t* ppl);

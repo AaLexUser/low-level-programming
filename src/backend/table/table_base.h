@@ -54,7 +54,7 @@ lb_read_nova(&table->ppl_header, chunk, &chblix, element, (int64_t)(field)->size
 chunk_t* chunk = ppl_load_chunk(table->ppl_header.head);   \
 chblix_t chblix = lb_pool_start(&table->ppl_header, chunk);\
 lb_read_nova(&table->ppl_header, chunk, &chblix, row, schema->slot_size, 0);\
-for (chblix;                                         \
+for (;                                         \
 lb_valid(&table->ppl_header, chunk, chblix) &&\
 lb_read_nova(&table->ppl_header,chunk,  &chblix, row, schema->slot_size, 0) != LB_FAIL; \
 ++chblix.block_idx, chblix = lb_nearest_valid_chblix(&table->ppl_header,\

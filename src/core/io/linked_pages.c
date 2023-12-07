@@ -36,7 +36,7 @@ int64_t lp_init_m(int64_t mem_start){
  * @return page_index or LP_FAIL
  */
 
-int64_t lp_init(){
+int64_t lp_init(void){
    return lp_init_m(sizeof(linked_page_t));
 }
 
@@ -169,14 +169,14 @@ linked_page_t* lp_load_next(linked_page_t* lp){
     return res;
 }
 
-int lp_go_to_nova(linked_page_t** lp, int64_t start_idx, int64_t stop_idx){
+static int lp_go_to_nova(linked_page_t** lp, int64_t start_idx, int64_t stop_idx){
     if(!(*lp)){
         logger(LL_ERROR, __func__, "Unable to load linked_page_t");
         return LP_FAIL;
     }
     while (stop_idx > start_idx){
         *lp = lp_load_next(*lp);
-        if(lp == NULL){
+        if(*lp == NULL){
             logger(LL_ERROR, __func__, "Unable to load linked_page_t");
             return LP_FAIL;
         }

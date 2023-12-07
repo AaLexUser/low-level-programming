@@ -37,7 +37,6 @@ int sch_add_field(int64_t schidx, const char* name, datatype_t type, int64_t siz
         logger(LL_ERROR, __func__, "Failed to allocate field %s", name);
         return SCHEMA_FAIL;
     }
-    chunk_t* chunk = ppl_load_chunk(fieldix.chunk_idx);
     field_t field;
     if(sch_field_load(schidx, &fieldix, &field) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to load field %s", name);
