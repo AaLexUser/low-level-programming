@@ -31,7 +31,12 @@ size_t index = ch_nearest_cached_index((ch)->flags, ch->capacity, ch_begin());\
 )                                \
 
 off_t ch_file_size(caching_t* ch);
-int64_t ch_max_page_index(caching_t* ch);
+/**
+* @brief   Get current max page index
+* @param[in]   ch: pointer to caching_t
+* @return  max page index
+*/
+#define ch_max_page_index(ch)  (ch->file.max_page_index)
 uint64_t ch_number_pages(caching_t* ch);
 uint64_t ch_page_index(off_t page_offset);
 off_t ch_page_offset(uint64_t page_index);

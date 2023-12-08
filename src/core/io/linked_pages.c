@@ -21,6 +21,7 @@ int64_t lp_init_m(int64_t mem_start){
     }
     linked_page_t *lp = (linked_page_t *) pg_load_page(page_index);
     if(lp == NULL){
+        pg_dealloc(page_index);
         logger(LL_ERROR, __func__, "Unable to allocate page");
         return LP_FAIL;
     }

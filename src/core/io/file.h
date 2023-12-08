@@ -33,6 +33,8 @@ typedef struct file {
     int fd;
     void *cur_mmaped_data;
     off_t cur_page_offset;
+    off_t file_size;
+    int64_t max_page_index;
 } file_t;
 #endif
 
@@ -41,7 +43,6 @@ enum {FILE_FAIL=-1, FILE_SUCCESS=0};
 off_t fl_cur_page_offset(file_t* file);
 void* fl_cur_mmaped_data(file_t* file);
 off_t fl_file_size(file_t* file);
-int64_t fl_max_page_index(file_t* file);
 uint64_t fl_number_pages(file_t* file);
 uint64_t fl_page_index(off_t page_offset);
 off_t fl_page_offset(uint64_t page_index);

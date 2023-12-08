@@ -12,9 +12,9 @@
 const char* TEST_DB = "test.db";
 const char* CSV_FILE = "table-delete.csv";
 const char* CSV_HEADER= "Time;Allocated\n";
-const int TEST_TIME = 30; //10 min
-const int ALLOCATION = 100;
-const int DEALLOCATION = 50;
+const int TEST_TIME = 2*60; //10 min
+const int ALLOCATION = 500;
+const int DEALLOCATION = 300;
 
 void insert_rows(int64_t tablix, int64_t start_index, int64_t number_of_rows) {
     tab_row(
@@ -41,10 +41,10 @@ void insert_rows(int64_t tablix, int64_t start_index, int64_t number_of_rows) {
 void delete_rows(db_t* db, table_t* table, schema_t* schema, field_t* field, int64_t start_index, int64_t number_of_rows) {
     for (int64_t index = start_index; index < start_index + number_of_rows; ++index) {
         int64_t value = index;
-        if(value == 724){
-            db_drop();
-            exit(EXIT_SUCCESS);
-        }
+//        if(value == 724){
+//            db_drop();
+//            exit(EXIT_SUCCESS);
+//        }
         int res = tab_delete_op_nova(db, table, schema, field, COND_EQ, &value);
         if (res == TABLE_FAIL) {
             logger(LL_ERROR, __func__, "Failed to delete row ");
@@ -56,7 +56,7 @@ void delete_rows(db_t* db, table_t* table, schema_t* schema, field_t* field, int
 
 int main(){
     db_t* db = db_init(TEST_DB);
-    sleep(30);
+    sleep(5);
     FILE* file = fopen(CSV_FILE, "w+");
     fprintf(file, "%s", CSV_HEADER);
     /* Create table */

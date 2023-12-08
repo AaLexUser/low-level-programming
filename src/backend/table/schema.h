@@ -82,7 +82,7 @@ typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schem
     chblix_t chblix = lb_pool_start((page_pool_t*)sch, chunk);\
     sch_field_load(schidx, &chblix, &field);\
     for(;\
-    lb_valid((page_pool_t*)sch, chunk, chblix) &&\
+    chblix_cmp(&chblix, &CHBLIX_FAIL) != 0 &&\
     sch_field_load(schidx, &chblix, &field) != LB_FAIL; \
     ++chblix.block_idx,  chblix = lb_nearest_valid_chblix((page_pool_t*)sch, chblix, &chunk))
 

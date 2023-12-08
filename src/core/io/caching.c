@@ -16,18 +16,9 @@
  */
 
 off_t ch_file_size(caching_t* ch){
-    return fl_file_size(&ch->file);
+    return ch->file.file_size;
 }
 
-/**
- * @brief   Get current max page index
- * @param[in]   ch: pointer to caching_t
- * @return  max page index
- */
-
-int64_t ch_max_page_index(caching_t* ch){
-    return fl_max_page_index(&ch->file);
-}
 
 /**
  * @brief   Get number of pages in file
@@ -369,9 +360,6 @@ int ch_write(caching_t* ch, uint64_t page_index, void* src, size_t size, off_t o
     }
 
     memcpy((uint8_t*)page + offset, src, size);
-    if(sync_page(page) == -1){
-        return CH_FAIL;
-    };
 
     //Increase usage
     ch->usage_count[page_index]++;
@@ -421,7 +409,6 @@ int ch_copy_read(caching_t* ch, uint64_t page_index, void* dest, size_t size, of
         return CH_FAIL;
     }
     memcpy(dest, (uint8_t*)page + offset, size);
-    sync_page(page);
 
     //Increase usage
     ch->usage_count[page_index]++;

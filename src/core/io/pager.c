@@ -36,7 +36,7 @@ int pg_init(const char* file_name){
         logger(LL_ERROR, __func__, "Unable to initialize caching");
         return PAGER_FAIL;
     }
-    if(ch_max_page_index(&PAGER->ch) == -1){
+    if(pg_max_page_index()){
         pg_create();
     }
     else{
@@ -96,7 +96,7 @@ int64_t pg_alloc(void){
         }
     }
 
-    if(del_pag_idx == -1 || del_pag_idx > ch_max_page_index(&PAGER->ch)){
+    if(del_pag_idx == -1 || del_pag_idx > pg_max_page_index()){
         logger(LL_DEBUG, __func__, "Unable to pop page from deleted pages, allocating new page");
         if((page_idx = ch_new_page(&PAGER->ch)) == CH_FAIL){
             logger(LL_ERROR, __func__, "Unable to load new page");
@@ -185,15 +185,6 @@ int pg_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset){
 }
 
 /**
- * @brief   Get current max page index
- * @return  max page index
- */
-
-int64_t pg_max_page_index(void){
-    return ch_max_page_index(&PAGER->ch);
-}
-
-/**
  * @brief   Get current file size
  * @return  file size
  */
@@ -201,4 +192,15 @@ int64_t pg_max_page_index(void){
 off_t pg_file_size(void){
     return ch_file_size(&PAGER->ch);
 }
+
+#define $pg_max_page_index() (PAGER->ch.file.max_page_index)
+
+/**
+ * @brief   Get current max page index
+ * @return  max page index
+ */
+ int64_t pg_max_page_index(void){
+     return $pg_max_page_index();
+ }
+
 

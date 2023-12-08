@@ -36,8 +36,8 @@ typedef enum {TABLE_SUCCESS = 0, TABLE_FAIL = -1} table_status_t;
 chunk_t* chunk = ppl_load_chunk(table->ppl_header.head);                     \
 chblix_t chblix = lb_pool_start(&table->ppl_header, chunk);\
 lb_read_nova(&table->ppl_header,chunk, &chblix, element, (int64_t)(field)->size, (int64_t)(field)->offset);\
-for (chblix;\
-lb_valid(&table->ppl_header,chunk, chblix) &&\
+for (;\
+chblix_cmp(&chblix, &CHBLIX_FAIL) != 0 &&\
 lb_read_nova(&table->ppl_header, chunk, &chblix, element, (int64_t)(field)->size, (int64_t)(field)->offset) != LB_FAIL;\
 ++chblix.block_idx, chblix = lb_nearest_valid_chblix(&table->ppl_header, chblix, &chunk))
 
@@ -55,7 +55,7 @@ chunk_t* chunk = ppl_load_chunk(table->ppl_header.head);   \
 chblix_t chblix = lb_pool_start(&table->ppl_header, chunk);\
 lb_read_nova(&table->ppl_header, chunk, &chblix, row, schema->slot_size, 0);\
 for (;                                         \
-lb_valid(&table->ppl_header, chunk, chblix) &&\
+chblix_cmp(&chblix, &CHBLIX_FAIL) != 0 &&\
 lb_read_nova(&table->ppl_header,chunk,  &chblix, row, schema->slot_size, 0) != LB_FAIL; \
 ++chblix.block_idx, chblix = lb_nearest_valid_chblix(&table->ppl_header,\
                                                                       chblix, &chunk))
