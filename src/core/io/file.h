@@ -52,6 +52,7 @@ int init_file(const char* file_name, file_t* file);
 int close_file(file_t* file);
 int delete_file(file_t* file);
 int mmap_page(off_t offset, file_t* file);
+int map_page_on_addr(off_t offset, file_t* file, void* addr);
 int sync_page(void* mmaped_data);
 int unmap_page(void* mmaped_data, file_t* file);
 int init_page(file_t* file);

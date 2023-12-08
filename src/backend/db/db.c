@@ -1,8 +1,8 @@
 #include "db.h"
 
 static void* db_create(void){
-    int64_t dbidx = pg_alloc();
-    db_t* db = pg_load_page(dbidx);
+    pg_alloc();
+    db_t* db = pg_load_page(1);
     if(!db){
         return NULL;
     }
@@ -32,11 +32,11 @@ void* db_init(const char* filename){
     return db;
 }
 
-int db_close(){
+int db_close(void){
     int res =  pg_close() == PAGER_SUCCESS ? DB_SUCCESS : DB_FAIL;
     return res;
 }
-int db_drop(){
+int db_drop(void){
     int res = pg_delete() == PAGER_SUCCESS ? DB_SUCCESS : DB_FAIL;
     return res;
 }

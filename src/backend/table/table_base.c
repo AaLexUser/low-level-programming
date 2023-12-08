@@ -107,7 +107,7 @@ int tab_delete_nova(table_t* table, chunk_t* chunk, chblix_t* rowix){
         free(lb);
         return TABLE_FAIL;
     }
-    if(lb_dealloc_nova(&table->ppl_header, lb, rowix) == LB_FAIL){
+    if(lb_dealloc_nova(&table->ppl_header, lb) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to deallocate row");
         return TABLE_FAIL;
     }
@@ -123,11 +123,7 @@ int tab_delete_nova(table_t* table, chunk_t* chunk, chblix_t* rowix){
  */
 
 int tab_delete(int64_t tablix, chblix_t* rowix){
-    if(lb_dealloc(tablix, rowix) == LB_FAIL){
-        logger(LL_ERROR, __func__, "Failed to deallocate row");
-        return TABLE_FAIL;
-    }
-    return TABLE_SUCCESS;
+    return lb_dealloc(tablix, rowix) == LB_FAIL ? TABLE_FAIL : TABLE_SUCCESS;
 }
 
 /**

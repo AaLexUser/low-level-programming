@@ -37,6 +37,9 @@ int64_t fl_current_page_index(file_t* file){
 #include <unistd.h>
 #if defined(__linux__)
 #include <zconf.h>
+#include <sched.h>
+int ftruncate(int fd, off_t i);
+
 #endif
 
 off_t fl_file_size(file_t* file) {
@@ -67,12 +70,12 @@ int init_file(const char* file_name, file_t* file){
         return FILE_FAIL;
     }
     file->cur_page_offset = 0;
-    if(fl_file_size(file) != 0){
-        if(mmap_page(file->cur_page_offset, file) == FILE_FAIL){
-            logger(LL_ERROR, __func__, "Unable map file");
-            return FILE_FAIL;
-        }
-    }
+//    if(fl_file_size(file) != 0){
+//        if(mmap_page(file->cur_page_offset, file) == FILE_FAIL){
+//            logger(LL_ERROR, __func__, "Unable map file");
+//            return FILE_FAIL;
+//        }
+//    }
     return FILE_SUCCESS;
 }
 
@@ -83,19 +86,37 @@ int init_file(const char* file_name, file_t* file){
  * @param[in]   file: pointer to file_t
  * @return      FILE_SUCCESS on success, FILE_FAIL otherwise
  */
-
 int mmap_page(off_t offset, file_t* file){
     logger(LL_INFO, __func__,
            "Mapping page from file with descriptor %d and file size %" PRIu64, file->fd, fl_file_size(file));
     if(fl_file_size(file) == 0){
         return FILE_FAIL;
     }
-
     if((file->cur_mmaped_data = mmap(NULL, PAGE_SIZE,
                                             PROT_WRITE |
                                             PROT_READ,
                            MAP_SHARED, file->fd, offset)) == MAP_FAILED){
         logger(LL_ERROR, __func__ , "Unable to map file: %s %d.", strerror(errno), errno);
+        printf("Filesize: %f mb\n", (double)fl_file_size(file) / (1024*1024));
+        return FILE_FAIL;
+    }
+    file->cur_page_offset = offset;
+    logger(LL_INFO, __func__, "page %ld mapped on address %p", fl_current_page_index(file), file->cur_mmaped_data);
+    return FILE_SUCCESS;
+}
+
+int map_page_on_addr(off_t offset, file_t* file, void* addr){
+    logger(LL_INFO, __func__,
+           "Mapping page from file with descriptor %d and file size %" PRIu64, file->fd, fl_file_size(file));
+    if(fl_file_size(file) == 0){
+        return FILE_FAIL;
+    }
+    if((file->cur_mmaped_data = mmap(addr, PAGE_SIZE,
+                                     PROT_WRITE |
+                                     PROT_READ,
+                                      MAP_FIXED | MAP_SHARED, file->fd, offset)) == MAP_FAILED){
+        logger(LL_ERROR, __func__ , "Unable to map file: %s %d.", strerror(errno), errno);
+        printf("Filesize: %f mb\n", (double)fl_file_size(file) / (1024*1024));
         return FILE_FAIL;
     }
     file->cur_page_offset = offset;
@@ -181,11 +202,23 @@ int delete_file(file_t* file){
  */
 
 int init_page(file_t* file){
+
+    if(!file)
+        return FILE_FAIL;
+
     logger(LL_INFO, __func__ , "Init new page");
+
+    off_t file_size = fl_file_size(file);
+    if(file_size == -1){
+        logger(LL_ERROR, __func__, "Unable to get file size: %s %d", strerror(errno), errno);
+        return FILE_FAIL;
+    }
+
     if(ftruncate(file->fd,  (off_t) (fl_file_size(file) + PAGE_SIZE)) == -1){
         logger(LL_ERROR, __func__, "Unable change file size: %s %d", strerror(errno), errno);
         return FILE_FAIL;
     }
+
     file->cur_page_offset = fl_file_size(file) - PAGE_SIZE;
     if(mmap_page(file->cur_page_offset, file) == FILE_FAIL){
         logger(LL_ERROR, __func__, "Unable to mmap file.");

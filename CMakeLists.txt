@@ -17,7 +17,14 @@ if(CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE IN_LIST CMAKE_CONFIGURATION_TYPES)
 endif()
 
 if(CMAKE_C_COMPILER_ID STREQUAL GNU OR CMAKE_C_COMPILER_ID MATCHES Clang)
-    set(CMAKE_C_FLAGS       "-std=c17 -ggdb -lm")
+    set(CMAKE_C_FLAGS       "-std=c17 -ggdb")
+    if(CMAKE_C_COMPILER_ID MATCHES Clang)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fcolor-diagnostics")
+    endif()
+    if(UNIX AND NOT APPLE)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -lm -D_XOPEN_SOURSE=500")
+    endif()
+
     set(CMAKE_C_FLAGS_ASAN  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-optimize-sibling-calls -fno-omit-frame-pointer")
     set(CMAKE_C_FLAGS_LSAN  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=leak")
     set(CMAKE_C_FLAGS_MSAN  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=memory -fno-optimize-sibling-calls -fno-omit-frame-pointer")
@@ -42,10 +49,7 @@ if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(tester)
 endif()
-option(BUILD_BENCHMARK "Enable benchmarks" ON)
+option(BUILD_BENCHMARK "Enable benchmarks" OFF)
 if(BUILD_BENCHMARK)
     add_subdirectory(benchmark)
 endif()
-
-
-

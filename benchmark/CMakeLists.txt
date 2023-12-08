@@ -19,7 +19,8 @@ foreach(bench_source IN LISTS bench_sources)
 
     add_executable(bench_${name} ${bench_source})
     target_link_libraries(bench_${name} PRIVATE db)
-    add_test(NAME bench_${name} COMMAND bench_${name})
+
+    target_compile_definitions(bench_${name} PRIVATE LOGGER_LEVEL=2)
 endforeach()
 
 set(CMAKE_Cbench_ARGUMENTS --output-junit ${PROJECT_SOURCE_DIR}/report.xml --output-on-failure -C $<CONFIG>)

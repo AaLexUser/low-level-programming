@@ -7,8 +7,11 @@
 #endif
 
 enum CH_Status {CH_SUCCESS = 0, CH_FAIL = -1, CH_DELETED = -2};
+#define KB (1024u)
+#define MB (1024u * KB)
+#define GB (1024u * MB)
 
-#define CH_MAX_MEMORY_USAGE  ((uint64_t)1*1024*1024*1024) // 1GB
+#define CH_MAX_MEMORY_USAGE  (1u * GB) // 1GB
 
 typedef struct caching{
     file_t file;
@@ -18,6 +21,14 @@ typedef struct caching{
     void** cached_page_ptr;
     char* flags;
 } caching_t;
+
+
+
+#define ch_for_each_cached(index, ch) for ( \
+size_t index = ch_nearest_cached_index((ch)->flags, ch->capacity, ch_begin());\
+(index) != ch_end(ch) && ch_cached(ch, index);                                  \
+(index)++, (index) = ch_nearest_cached_index(ch->flags, ch->capacity, (index)) \
+)                                \
 
 off_t ch_file_size(caching_t* ch);
 int64_t ch_max_page_index(caching_t* ch);
@@ -31,11 +42,11 @@ void* ch_cached_page(caching_t* ch, size_t index);
 size_t ch_usage_memory_space(caching_t* ch);
 int ch_page_status(caching_t* ch, size_t index);
 int ch_reserve(caching_t* ch, size_t new_capacity);
-int ch_put(caching_t* ch, uint64_t page_index, void* mapped_page_ptr);
-void* ch_get(caching_t* ch, uint64_t page_index);
-int ch_remove(caching_t* ch, uint64_t index);
+int ch_put(caching_t* ch, int64_t page_index, void* mapped_page_ptr);
+void* ch_get(caching_t* ch, int64_t page_index);
+int ch_remove(caching_t* ch, int64_t index);
 int64_t ch_new_page(caching_t* ch);
-int ch_load_page(caching_t* ch, uint64_t page_index, void** page);
+int ch_load_page(caching_t* ch, int64_t page_index, void** page);
 void ch_use_again(caching_t* ch, uint64_t page_index);
 int ch_write(caching_t* ch, uint64_t page_index, void* src, size_t size, off_t offset);
 int ch_clear_page(caching_t* ch, int64_t page_index);
@@ -51,3 +62,5 @@ time_t ch_find_least_used_time(caching_t* ch);
 uint64_t ch_unmap_some_pages(caching_t* ch);
 int ch_delete_last_page(caching_t* ch);
 int ch_delete_page(caching_t* ch, int64_t page_index);
+bool ch_cached(caching_t *ch, uint64_t index);
+uint64_t ch_nearest_cached_index(const char *flags, size_t capacity, uint64_t index);

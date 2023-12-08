@@ -71,7 +71,7 @@ void tab_print(db_t* db, int64_t tablix){
         sch_for_each(schema,chunk2, field, sch_chblix, table->schidx){
             switch(field.type){
                 case INT: {
-                    printf("%lld\t", *(int64_t*)((char*)row + field.offset));
+                    printf("%"PRId64"\t", *(int64_t*)((char*)row + field.offset));
                     break;
                 }
                 case FLOAT: {

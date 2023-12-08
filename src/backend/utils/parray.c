@@ -60,7 +60,7 @@ int pa_destroy(int64_t page_index) {
 
 /**
  * @brief       Write to parray
- * @param[in]   page_index: page index of PArray
+ * @param[in]   pa: pointer to parray
  * @param[in]   block_idx: block index to write to
  * @param[in]   src: source
  * @param[in]   size: size to write
@@ -68,8 +68,7 @@ int pa_destroy(int64_t page_index) {
  * @return      PA_SUCCESS on success, PA_FAIL otherwise
  */
 
-int pa_write(int64_t page_index, int64_t block_idx, void *src, int64_t size, int64_t src_offset){
-    parray_t *pa = (parray_t *) lp_load(page_index);
+int pa_write(parray_t *pa, int64_t block_idx, void *src, int64_t size, int64_t src_offset){
     if(!pa){
         logger(LL_ERROR, __func__, "Unable to load page");
         return PA_FAIL;
@@ -89,7 +88,7 @@ int pa_write(int64_t page_index, int64_t block_idx, void *src, int64_t size, int
 
 /**
  * @brief       Read from PArray
- * @param[in]   page_index: page index of PArray
+ * @param[in]   parray: parray to read from
  * @param[in]   block_idx: block index to read from
  * @param[out]  dest: destination
  * @param[in]   size: size to read
@@ -97,27 +96,27 @@ int pa_write(int64_t page_index, int64_t block_idx, void *src, int64_t size, int
  * @return      PA_SUCCESS on success, PA_EMPTY if parray empty, PA_FAIL otherwise
  */
 
-int pa_read(int64_t page_index, int64_t block_idx, void *dest, int64_t size, int64_t src_offset) {
-    parray_t *pa = (parray_t *) lp_load(page_index);
 
-    if (!pa) {
-        logger(LL_ERROR, __func__, "Unable to load page %ld", page_index);
+int pa_read(parray_t *parray, int64_t block_idx, void *dest, int64_t size, int64_t src_offset) {
+
+    if (!parray) {
+        logger(LL_ERROR, __func__, "Parray is NULL");
         return PA_FAIL;
     }
 
-    if (pa->size == 0) {
+    if (parray->size == 0) {
         logger(LL_INFO, __func__, "Unable to read from empty parray");
         return PA_EMPTY;
     }
 
-    if (pa->block_size < src_offset + size) {
+    if (parray->block_size < src_offset + size) {
         logger(LL_ERROR, __func__,
                "Unable to read from parray src_size = %ld, src_offset = %ld, block_size = %ld",
-               size, src_offset, pa->block_size);
+               size, src_offset, parray->block_size);
         return PA_FAIL;
     }
-    off_t offset = (off_t)(block_idx * pa->block_size + src_offset);
-    if (lp_read_copy(pa->page_idx, dest, size, offset) == LP_FAIL) {
+    off_t offset = (off_t)(block_idx * parray->block_size + src_offset);
+    if (lp_read_copy(parray->page_idx, dest, size, offset) == LP_FAIL) {
         logger(LL_ERROR, __func__, "Unable to read from PArray");
         return PA_FAIL;
     }
@@ -164,7 +163,7 @@ int pa_append(int64_t paidx, void *src, int64_t size) {
         logger(LL_ERROR, __func__, "Unable to load page");
         return PA_FAIL;
     }
-    if(pa_write(paidx, pa->size, src, size, 0) == PA_FAIL){
+    if(pa_write(pa, pa->size, src, size, 0) == PA_FAIL){
         logger(LL_ERROR, __func__, "Unable to append to parray %ld, pa.size = %ld", paidx
                , pa->size);
         return PA_FAIL;
@@ -184,7 +183,7 @@ int pa_append(int64_t paidx, void *src, int64_t size) {
 
 int pa_pop(int64_t pa_index, void *dest, int64_t size) {
     parray_t *pa = (parray_t *) lp_load(pa_index);
-    int res = pa_read(pa_index, pa->size - 1, dest, size, 0);
+    int res = pa_read(pa, pa->size - 1, dest, size, 0);
     if(res == PA_SUCCESS){
         pa->size--;
     }

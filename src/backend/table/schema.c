@@ -5,7 +5,7 @@
  * @return      index of the schema on success, SCHEMA_FAIL on failure
  */
 
-int64_t sch_init(){
+int64_t sch_init(void){
     int64_t schidx = lb_ppl_init(sizeof(field_t) - sizeof(linked_block_t));
     schema_t* sch = (schema_t*)lb_ppl_load(schidx);
     if(sch == NULL) {

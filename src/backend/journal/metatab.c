@@ -7,7 +7,7 @@
  * @return      index of the metatable on success, TABLE_FAIL on failure
  */
 
-int64_t mtab_init(){
+int64_t mtab_init(void){
     int64_t schidx = sch_init();
     sch_add_char_field(schidx, "NAME", MAX_NAME_LENGTH);
     sch_add_int_field(schidx, "INDEX");

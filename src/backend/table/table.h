@@ -3,6 +3,7 @@
 #include "backend/journal/metatab.h"
 #include "table_base.h"
 #include "backend/db/db.h"
+#include <inttypes.h>
 
 
 int64_t tab_init(db_t* db, const char* name, int64_t schidx);

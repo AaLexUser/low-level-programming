@@ -66,12 +66,8 @@ bool comp_eq(db_t* db, datatype_t type, void* val1, void* val2){
         case FLOAT: {
             return data.float_val == 0;
         }
-        case CHAR : {
-            return data.int_val == 0;
-        }
-        case BOOL: {
-            return data.int_val == 0;
-        }
+        case CHAR :
+        case BOOL:
         case VARCHAR: {
             return data.int_val == 0;
         }
@@ -111,12 +107,8 @@ bool comp_lt(db_t* db, datatype_t type, void* val1, void* val2) {
         case FLOAT: {
             return data.float_val < 0;
         }
-        case CHAR : {
-            return data.int_val < 0;
-        }
-        case BOOL: {
-            return data.int_val < 0;
-        }
+        case CHAR:
+        case BOOL:
         case VARCHAR: {
             return data.int_val < 0;
         }

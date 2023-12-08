@@ -24,26 +24,26 @@ int64_t pa_init64(int64_t block_size, int64_t inval){
 
 /**
  * @brief       Write to parray64
- * @param[in]   paidx: page index of PArray
+ * @param[in]   parray: parray64 to write to
  * @param[in]   block_idx: block index to write to
  * @param[in]   value: value to write
  * @return      PA_SUCCESS on success, PA_FAIL otherwise
  */
 
-int pa_write64(int64_t paidx, int64_t block_idx, int64_t value){
-    return pa_write(paidx, block_idx, &value, sizeof(int64_t), 0);
+int pa_write64(parray64_t* parray, int64_t block_idx, int64_t value){
+    return pa_write((parray_t*)parray, block_idx, &value, sizeof(int64_t), 0);
 }
 
 /**
  * @brief       Read from parray64
- * @param[in]   paidx: page index of PArray
+ * @param[in]   parray64: parray64 to read from
  * @param[in]   block_idx: block index to read from
  * @param[in]   dest: destination
  * @return      PA_SUCCESS on success, PA_FAIL otherwise
  */
 
-int pa_read64(int64_t paidx, int64_t block_idx, int64_t* dest){
-    return pa_read(paidx, block_idx, dest, sizeof(int64_t), 0);
+int pa_read64(parray64_t* parray64, int64_t block_idx, int64_t* dest){
+    return pa_read((parray_t*)parray64, block_idx, dest, sizeof(int64_t), 0);
 }
 
 /**
@@ -66,7 +66,7 @@ int pa_delete64(int64_t page_index, int64_t block_idx){
         return PA_FAIL;
     }
 
-    if (pa_write64(page_index, block_idx, pa->inval) == PA_FAIL){
+    if (pa_write64(pa, block_idx, pa->inval) == PA_FAIL){
         logger(LL_ERROR, __func__, "Unable to delete from PArray");
         return PA_FAIL;
     }

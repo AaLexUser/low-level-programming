@@ -5,7 +5,7 @@
  * @return      index of the varchar manager index on success, TABLE_FAIL on failure
  */
 
-int64_t vch_init(){
+int64_t vch_init(void){
     int64_t vch_vachar_mgr_idx =  lb_ppl_init(VCH_BLOCK_SIZE);
     return vch_vachar_mgr_idx;
 }

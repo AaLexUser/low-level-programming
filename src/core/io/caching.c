@@ -170,6 +170,7 @@ int ch_reserve(caching_t* ch, size_t new_capacity){
     ch->usage_count = ch_new_usage_count;
     ch->last_used = ch_new_last_used;
     ch->used = ch->size;
+    logger(LL_ERROR, __func__, "Reserved new cacher capacity: %ld.", ch->capacity);
     return CH_SUCCESS;
 }
 
@@ -181,7 +182,7 @@ int ch_reserve(caching_t* ch, size_t new_capacity){
  * @return      CH_SUCCESS on success, CH_FAIL otherwise
  */
 
-int ch_put(caching_t* ch, uint64_t page_index, void* mapped_page_ptr){
+int ch_put(caching_t* ch, int64_t page_index, void* mapped_page_ptr){
     if(ch == NULL) { // Null pointer check.
         logger(LL_ERROR, __func__ , "Input caching structure is NULL.");
         return CH_FAIL;
@@ -194,13 +195,13 @@ int ch_put(caching_t* ch, uint64_t page_index, void* mapped_page_ptr){
         logger(LL_INFO, __func__, "Unmaped %ld pages", count);
     }
     size_t ch_new_size = ch->size ? ch->size : 2;
-    ch_new_size = (page_index < ch_new_size) ? ch_new_size : page_index + 1;
+    ch_new_size = ((size_t)page_index < ch_new_size) ? ch_new_size : (size_t)page_index + 1;
     if(ch_reserve(ch, ch_new_size) == CH_FAIL){
         logger(LL_ERROR, __func__ , "Unable to reserve cacher capacity.");
         return CH_FAIL;
     }
 
-    if(page_index >= ch->capacity){
+    if((size_t)page_index >= ch->capacity){
         logger(LL_ERROR, __func__ , "Page index is outside the range of the cacher size.");
         return CH_FAIL;
     }
@@ -226,7 +227,7 @@ int ch_put(caching_t* ch, uint64_t page_index, void* mapped_page_ptr){
  * @return      pointer to page or NULL
  */
 
-void* ch_get(caching_t* ch, uint64_t page_index){
+void* ch_get(caching_t* ch, int64_t page_index){
     if(!ch->size){
         logger(LL_DEBUG, __func__ , "Cacher size is 0.");
         return NULL;
@@ -235,7 +236,7 @@ void* ch_get(caching_t* ch, uint64_t page_index){
         logger(LL_DEBUG, __func__, "Requesting not existing key in file, page_index: %ld", page_index);
         return NULL;
     }
-    if(page_index >= ch->capacity){
+    if((size_t)page_index >= ch->capacity){
         logger(LL_DEBUG, __func__, "Requesting not existing key");
         return NULL;
     }
@@ -257,7 +258,7 @@ void* ch_get(caching_t* ch, uint64_t page_index){
  * @return      CH_SUCCESS on success, CH_FAIL otherwise
  */
 
-int ch_remove(caching_t* ch, uint64_t index){
+int ch_remove(caching_t* ch, int64_t index){
     logger(LL_INFO, __func__, "Removing page %ld from cache", index);
     void* page = NULL;
     if(ch_load_page(ch, index, &page) != CH_SUCCESS){
@@ -300,7 +301,7 @@ int64_t ch_new_page(caching_t* ch){
  * @return      CH_SUCCESS on success, CH_DELETED if page was deleted, CH_FAIL otherwise
  */
 
-int ch_load_page(caching_t* ch, uint64_t page_index, void** page){
+int ch_load_page(caching_t* ch, int64_t page_index, void** page){
     logger(LL_INFO, __func__, "Loading page %ld", page_index);
 
     *page = ch_get(ch, page_index);
@@ -308,7 +309,7 @@ int ch_load_page(caching_t* ch, uint64_t page_index, void** page){
         return CH_SUCCESS;
     }
 
-    if(page_index > ch_max_page_index(ch)){
+    if((int64_t)page_index > ch_max_page_index(ch)){
         logger(LL_ERROR, __func__, "chunk_t index is out of file range");
         return CH_FAIL;
     }
@@ -367,7 +368,7 @@ int ch_write(caching_t* ch, uint64_t page_index, void* src, size_t size, off_t o
         return CH_FAIL;
     }
 
-    memcpy(page + offset, src, size);
+    memcpy((uint8_t*)page + offset, src, size);
     if(sync_page(page) == -1){
         return CH_FAIL;
     };
@@ -457,22 +458,17 @@ void* ch_read(caching_t* ch, uint64_t page_index, off_t offset){
 uint64_t ch_begin(void){return 0;}
 uint64_t ch_end(caching_t* ch){return ch->capacity;}
 
-static uint64_t ch_nearest_cached_index(const char *flags, size_t capacity, uint64_t index){
+uint64_t ch_nearest_cached_index(const char *flags, size_t capacity, uint64_t index){
     while (index < capacity && flags[index] != 1) {
         index++;
     }
     return index;
 }
 
-static bool ch_cached(caching_t *ch, uint64_t index) {
+bool ch_cached(caching_t *ch, uint64_t index) {
     return ch->flags[index] == 1;
 }
 
-#define ch_for_each_cached(index, ch) for ( \
-size_t index = ch_nearest_cached_index((ch)->flags, ch->capacity, ch_begin());\
-(index) != ch_end(ch) && ch_cached(ch, index);                                  \
-(index)++, (index) = ch_nearest_cached_index(ch->flags, ch->capacity, (index)) \
-)                                \
 
 static bool ch_valid(caching_t* ch, uint64_t index){
     return  ch->flags[index] == 1 || ch->flags[index] == 2;
