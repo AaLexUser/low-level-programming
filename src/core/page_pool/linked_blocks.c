@@ -2,6 +2,7 @@
 #include "page_pool.h"
 #include "core/io/file.h"
 #include "utils/logger.h"
+#include "core/io/pager.h"
 
 #include <math.h>
 
@@ -20,7 +21,7 @@ chblix_t lb_alloc_m(int64_t page_pool_idx, int64_t mem_start){
         return chblix_fail();
     }
 
-    chblix_t chblix = ppl_alloc(page_pool_idx);
+    chblix_t chblix = ppl_alloc_nova(ppl);
     if (chblix.block_idx == -1) {
         logger(LL_ERROR, __func__, "Unable to allocate block");
         return chblix_fail();
@@ -455,6 +456,11 @@ int lb_read_nova(page_pool_t* ppl,
                  int64_t src_offset){
     logger(LL_INFO, __func__, "Reading Linked Block %ld %ld size: %ld, offset: %ld"
             , chblix->block_idx, chblix->chunk_idx, size, src_offset);
+    if(!ppl || !chunk->capacity || !chblix){
+        logger(LL_ERROR, __func__, "Invalid arguments");
+        return LB_FAIL;
+    }
+
     /* Loading Linked Block */
     linked_block_t* lb = malloc(ppl->block_size); /* Don't forget to free it */
     if (lb_load_nova_pppp(ppl, chunk, chblix, lb) == LB_FAIL) {
@@ -712,22 +718,30 @@ chblix_t lb_nearest_valid_chblix(page_pool_t* ppl, chblix_t chblix, chunk_t** cu
             return (chblix_t){.block_idx = result_block, .chunk_idx = (*current_chunk)->page_index};
         }
 
+        // If we've examined all pages and found no valid chblix, return fail
         if((*current_chunk)->next_page == -1){
             return chblix_fail();
         }
 
         // If there's a next chunk, load it.
         if((*current_chunk)->next_page != -1){
+            int64_t chunkid = (*current_chunk)->page_index;
             *current_chunk = ppl_load_chunk((*current_chunk)->next_page);
             chblix.block_idx = 0;
+            pg_rm_cached(chunkid);
+        }
+        if(!(*current_chunk)->capacity){
+            logger(LL_ERROR, __func__, "Invalid arguments");
+            return chblix_fail();
         }
     } while(*current_chunk != NULL);
 
-    // If we've examined all pages and found no valid chblix, return fail
+    // if error
+    logger(LL_ERROR, __func__, "Current chunk is NULL.");
     return chblix_fail();
 }
 
-chblix_t lb_pool_start(page_pool_t* ppl, chunk_t* chunk){
+chblix_t lb_pool_start(page_pool_t* ppl, chunk_t** chunk){
     // Check if the pointers are NULL before attempting to access their members.
     if(ppl == NULL || chunk == NULL ){
         logger(LL_ERROR, __func__, "Invalid arguments ppl: %p, chunk: %p", ppl, chunk);
@@ -736,13 +750,13 @@ chblix_t lb_pool_start(page_pool_t* ppl, chunk_t* chunk){
 
     logger(LL_DEBUG, __func__, "Searching for pool start\n"
                             " pool: %ld, chunk: %ld",
-        ppl->lp_header.page_index, chunk->page_index);
+        ppl->lp_header.page_index, (*chunk)->page_index);
 
     if(ppl->head == -1){
         return chblix_fail();
     }
-    chblix_t start_chblix = {.block_idx = 0, .chunk_idx = chunk->page_index};
-    return lb_nearest_valid_chblix(ppl, start_chblix, &chunk);
+    chblix_t start_chblix = {.block_idx = 0, .chunk_idx = (*chunk)->page_index};
+    return lb_nearest_valid_chblix(ppl, start_chblix, chunk);
 }
 
 bool lb_valid(page_pool_t* ppl, chunk_t* chunk, chblix_t chblix){

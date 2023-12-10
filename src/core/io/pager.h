@@ -22,6 +22,7 @@ int pg_delete(void);
 int pg_close(void);
 int64_t pg_alloc(void);
 int pg_dealloc(int64_t page_index);
+int pg_rm_cached(int64_t page_index);
 void* pg_load_page(int64_t page_index);
 int pg_write(uint64_t page_index, void* src, size_t size, off_t offset);
 int pg_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset);

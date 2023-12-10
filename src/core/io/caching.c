@@ -91,7 +91,7 @@ int ch_reserve(caching_t* ch, size_t new_capacity){
     if((new_capacity) <= ch->max_used) {
        return CH_SUCCESS;
     }
-    logger(LL_INFO, __func__, "Reserving new cacher capacity: %ld -> %ld.", ch->capacity, new_capacity);
+    logger(LL_ERROR, __func__, "Reserving new cacher capacity: %ld -> %ld.", ch->capacity, new_capacity);
     size_t ch_new_capacity = new_capacity;
     roundupsize(ch_new_capacity);
     if(ch_new_capacity < new_capacity){
@@ -185,9 +185,9 @@ int ch_put(caching_t* ch, int64_t page_index, void* mapped_page_ptr){
         uint64_t count = ch_unmap_some_pages(ch);
         logger(LL_INFO, __func__, "Unmaped %ld pages", count);
     }
-    size_t ch_new_size = ch->size ? ch->size : 2;
-    ch_new_size = ((size_t)page_index < ch_new_size) ? ch_new_size : (size_t)page_index + 1;
-    if(ch_reserve(ch, ch_new_size) == CH_FAIL){
+    size_t ch_new_capacity = ch->capacity ? ch->capacity : 2;
+    ch_new_capacity = ((size_t)page_index < ch_new_capacity) ? ch_new_capacity : (size_t)page_index + 1;
+    if(ch_new_capacity > ch->capacity && ch_reserve(ch, ch_new_capacity) == CH_FAIL){
         logger(LL_ERROR, __func__ , "Unable to reserve cacher capacity.");
         return CH_FAIL;
     }
@@ -204,9 +204,19 @@ int ch_put(caching_t* ch, int64_t page_index, void* mapped_page_ptr){
     ch->flags[page_index] = 1;
     ch->cached_page_ptr[page_index] = mapped_page_ptr;
 
-    if (ch->size < CH_SIZE_UPPER_LIMIT){
-        ch->size++;
+    if (ch->size >= CH_SIZE_UPPER_LIMIT){
+        logger(LL_ERROR, __func__, "Integer overflow while updating size: %ld.", ch->size);
+        return CH_FAIL;
     }
+
+    ch->size++;
+//    printf("Cacher size: %ld\n", ch->size);
+//
+//    int counter = ch_print_cached_pages(ch);
+//    if(counter != ch->size){
+//        logger(LL_ERROR, __func__, "Cacher size is not equal to number of cached pages");
+//        return CH_FAIL;
+//    }
 
     return CH_SUCCESS;
 }
@@ -260,11 +270,24 @@ int ch_remove(caching_t* ch, int64_t index){
         logger(LL_ERROR, __func__, "Unable to unmap page %ld", index);
         return CH_FAIL;
     }
+    if (ch->size <= 0){
+        logger(LL_ERROR, __func__, "Integer overflow while updating size: %ld.", ch->size);
+        return CH_FAIL;
+    }
     ch->size--;
     ch->flags[index] = 2;
     ch->cached_page_ptr[index] = NULL;
+//    printf("Cacher size after remove: %ld\n", ch->size);
+//    int counter = ch_print_cached_pages(ch);
+//    if(counter != ch->size){
+//        logger(LL_ERROR, __func__, "Cacher size is not equal to number of cached pages");
+//        return CH_FAIL;
+//    }
+
     return CH_SUCCESS;
 }
+
+
 
 /**
  * @brief       Mapping new page and caching it.
@@ -335,6 +358,7 @@ void ch_use_again(caching_t* ch, uint64_t page_index){
     ch->usage_count[page_index]++;
     time_t now;
     ch->last_used[page_index] = time(&now);
+    ch->size++;
 }
 /**
  * @brief       Write on page
@@ -461,7 +485,7 @@ static bool ch_valid(caching_t* ch, uint64_t index){
     return  ch->flags[index] == 1 || ch->flags[index] == 2;
 }
 
-static uint64_t ch_nearest_valid_index(caching_t* ch, const char *flags, size_t capacity, uint64_t index){
+static uint64_t ch_nearest_valid_index(caching_t* ch, size_t capacity, uint64_t index){
     while (index < capacity && !ch_valid(ch, index)){
         index++;
     }
@@ -469,11 +493,40 @@ static uint64_t ch_nearest_valid_index(caching_t* ch, const char *flags, size_t 
 }
 
 #define ch_for_each_valid(index, ch) for ( \
-size_t index = ch_nearest_cached_valid(ch->flags, ch->capacity, ch_begin());\
+uint64_t index = ch_nearest_valid_index(ch, ch->capacity, ch_begin());\
 (index) != ch_end(ch) && ch_valid(ch, index);                                  \
-(index)++, (index) = ch_nearest_valid_index(ch->flags, ch->capacity, (index)) \
-)                                \
+(index)++, (index) = ch_nearest_valid_index(ch, ch->capacity, (index)) \
+)                                          \
 
+int ch_print_valid_pages(caching_t* ch){
+    int counter = 0;
+    ch_for_each_valid(index, ch){
+        counter++;
+        printf("%"PRIu64"\t", index);
+        if(counter % 10 == 0){
+            printf("\n");
+        }
+    }
+    if(counter % 10 != 0){
+        printf("\n");
+    }
+    return counter;
+}
+
+int ch_print_cached_pages(caching_t* ch){
+    int counter = 0;
+    ch_for_each_cached(index, ch){
+        counter++;
+        printf("%"PRIu64"\t", index);
+        if(counter % 10 == 0){
+            printf("\n");
+        }
+    }
+    if(counter % 10 != 0){
+        printf("\n");
+    }
+    return counter;
+}
 
 /**
  * @brief       caching destroy
@@ -552,6 +605,8 @@ time_t ch_find_least_used_time(caching_t* ch){
 }
 
 
+#define CH_MIN_CACHED_SIZE ((CH_MAX_MEMORY_USAGE >> 1) + (CH_MAX_MEMORY_USAGE >> 2))
+
 /**
  * @brief       Unmapping pages with smallest usage count
  * @param[in]   ch: pointer to caching_t
@@ -559,7 +614,7 @@ time_t ch_find_least_used_time(caching_t* ch){
  */
 
 uint64_t ch_unmap_some_pages(caching_t* ch){
-    logger(LL_INFO, __func__, "chunk_t unmapping start");
+    logger(LL_ERROR, __func__, "chunk_t unmapping start");
     uint64_t unmap_count = 0;
     uint64_t usage_c = 0;
     uint64_t min_time = ch_find_least_used_time(ch);
@@ -574,10 +629,14 @@ uint64_t ch_unmap_some_pages(caching_t* ch){
                     unmap_count++;
                 }
             }
+            if(ch->size < CH_MIN_CACHED_SIZE){
+                break;
+            }
         }
         time_threshold = time_threshold + pow(2, execute_count);
     }
-    logger(LL_INFO, __func__, "Unmapped %ld pages with usage %ld", unmap_count, usage_c);
+    ch_print_cached_pages(ch);
+    logger(LL_ERROR, __func__, "Unmapped %ld pages with usage %ld", unmap_count, usage_c);
     return unmap_count;
 }
 

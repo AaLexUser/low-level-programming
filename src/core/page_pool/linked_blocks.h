@@ -69,7 +69,7 @@ int64_t lb_useful_space_size(int64_t ppidx, chblix_t* chblix);
 int64_t lb_ppl_init(int64_t block_size);
 page_pool_t* lb_ppl_load(int64_t ppidx);
 chblix_t lb_nearest_valid_chblix(page_pool_t* ppl, chblix_t chblix, chunk_t** chunk);
-chblix_t lb_pool_start(page_pool_t* ppl, chunk_t* chunk);
+chblix_t lb_pool_start(page_pool_t* ppl, chunk_t** chunk);
 #define lb_ppl_destroy(ppidx) ppl_destroy(ppidx)
 bool lb_valid(page_pool_t* ppl, chunk_t* chunk, chblix_t chblix);
 

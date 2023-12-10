@@ -79,7 +79,7 @@ typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schem
 #define sch_for_each(sch,chunk, field, chblix, schidx) \
     field_t field;                               \
     chunk_t* chunk = ppl_load_chunk(sch->ppl_header.head);                  \
-    chblix_t chblix = lb_pool_start((page_pool_t*)sch, chunk);\
+    chblix_t chblix = lb_pool_start((page_pool_t*)sch, &chunk);\
     sch_field_load(schidx, &chblix, &field);\
     for(;\
     chblix_cmp(&chblix, &CHBLIX_FAIL) != 0 &&\

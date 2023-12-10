@@ -524,6 +524,9 @@ int tab_delete_op_nova(db_t* db,
                 del_chunk = ppl_load_chunk(del_chblix.chunk_idx);
             }
         }
+        if(del_chunk->capacity == NULL){
+            logger(LL_ERROR, __func__, "Chunk is NULL");
+        }
     }
     free(comp_val);
     free(el_row);

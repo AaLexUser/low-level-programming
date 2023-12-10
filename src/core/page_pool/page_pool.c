@@ -312,6 +312,7 @@ int ppl_pool_expand(page_pool_t* ppl){
         logger(LL_ERROR, __func__, "Error while expanding page pool, pages have same index");
         return PPL_FAIL;
     }
+    pg_rm_cached(ppl->current_idx);
     ppl->current_idx = new_page->page_index;
     return PPL_SUCCESS;
 }
@@ -337,6 +338,14 @@ chblix_t ppl_alloc_nova(page_pool_t* ppl){
         ppl_write_block_nova(ppl, &chblix, &current->num_of_used_blocks,
                         sizeof(int64_t), 0);
     }
+    if (current->num_of_free_blocks == 0){
+        current->next = -1;
+        if(ppl_pool_expand(ppl) == PPL_FAIL){
+            logger(LL_ERROR, __func__, "Unable to expand page pool");
+            return chblix_fail();
+        }
+        current = ppl_load_chunk(ppl->current_idx);
+    }
 
     chblix_t chblixres;
 
@@ -349,20 +358,6 @@ chblix_t ppl_alloc_nova(page_pool_t* ppl){
         int64_t next = -1;
         ppl_read_block_nova(ppl, (linked_page_t*)current, &templix, &next, sizeof(int64_t), 0);
         if(next != -1) current->next = next;
-    }
-    else if (current->num_of_free_blocks == 0){
-        current->next = -1;
-        if(ppl_pool_expand(ppl) == PPL_FAIL){
-            logger(LL_ERROR, __func__, "Unable to expand page pool");
-            return chblix_fail();
-        }
-        if(current->page_index == ppl->current_idx){
-            logger(LL_ERROR, __func__, "Unable to allocate page");
-        }
-    }
-    else {
-        logger(LL_ERROR, __func__, "Number of free blocks is less than 0");
-        return chblix_fail();
     }
 
     return chblixres;

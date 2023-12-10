@@ -122,6 +122,10 @@ int pg_dealloc(int64_t page_index) {
     return PAGER_SUCCESS;
 }
 
+int pg_rm_cached(int64_t page_index){
+    ch_remove(&PAGER->ch, page_index);
+}
+
 /**
  * @brief       Loads page
  * @param[in]   page_index: index of page

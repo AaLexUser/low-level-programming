@@ -34,7 +34,7 @@ typedef enum {TABLE_SUCCESS = 0, TABLE_FAIL = -1} table_status_t;
 
 #define tab_for_each_element(table, chunk, chblix, element, field) \
 chunk_t* chunk = ppl_load_chunk(table->ppl_header.head);                     \
-chblix_t chblix = lb_pool_start(&table->ppl_header, chunk);\
+chblix_t chblix = lb_pool_start(&table->ppl_header, &chunk);\
 lb_read_nova(&table->ppl_header,chunk, &chblix, element, (int64_t)(field)->size, (int64_t)(field)->offset);\
 for (;\
 chblix_cmp(&chblix, &CHBLIX_FAIL) != 0 &&\
@@ -52,7 +52,7 @@ lb_read_nova(&table->ppl_header, chunk, &chblix, element, (int64_t)(field)->size
 
 #define tab_for_each_row(table, chunk, chblix, row, schema) \
 chunk_t* chunk = ppl_load_chunk(table->ppl_header.head);   \
-chblix_t chblix = lb_pool_start(&table->ppl_header, chunk);\
+chblix_t chblix = lb_pool_start(&table->ppl_header, &chunk);\
 lb_read_nova(&table->ppl_header, chunk, &chblix, row, schema->slot_size, 0);\
 for (;                                         \
 chblix_cmp(&chblix, &CHBLIX_FAIL) != 0 &&\

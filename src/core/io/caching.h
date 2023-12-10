@@ -11,7 +11,7 @@ enum CH_Status {CH_SUCCESS = 0, CH_FAIL = -1, CH_DELETED = -2};
 #define MB (1024u * KB)
 #define GB (1024u * MB)
 
-#define CH_MAX_MEMORY_USAGE  (1u * GB) // 1GB
+#define CH_MAX_MEMORY_USAGE  (50*PAGE_SIZE)
 
 typedef struct caching{
     file_t file;
@@ -25,7 +25,7 @@ typedef struct caching{
 
 
 #define ch_for_each_cached(index, ch) for ( \
-size_t index = ch_nearest_cached_index((ch)->flags, ch->capacity, ch_begin());\
+uint64_t index = ch_nearest_cached_index((ch)->flags, ch->capacity, ch_begin());\
 (index) != ch_end(ch) && ch_cached(ch, index);                                  \
 (index)++, (index) = ch_nearest_cached_index(ch->flags, ch->capacity, (index)) \
 )                                \
@@ -69,3 +69,7 @@ int ch_delete_last_page(caching_t* ch);
 int ch_delete_page(caching_t* ch, int64_t page_index);
 bool ch_cached(caching_t *ch, uint64_t index);
 uint64_t ch_nearest_cached_index(const char *flags, size_t capacity, uint64_t index);
+int ch_print_cached_pages(caching_t* ch);
+int ch_print_valid_pages(caching_t* ch);
+
+
