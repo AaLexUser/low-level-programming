@@ -25,7 +25,7 @@ typedef struct caching{
 
 
 #define ch_for_each_cached(index, ch) for ( \
-uint64_t index = ch_nearest_cached_index((ch)->flags, ch->capacity, ch_begin());\
+int64_t index = ch_nearest_cached_index((ch)->flags, ch->capacity, ch_begin());\
 (index) != ch_end(ch) && ch_cached(ch, index);                                  \
 (index)++, (index) = ch_nearest_cached_index(ch->flags, ch->capacity, (index)) \
 )                                \
@@ -52,11 +52,11 @@ void* ch_get(caching_t* ch, int64_t page_index);
 int ch_remove(caching_t* ch, int64_t index);
 int64_t ch_new_page(caching_t* ch);
 int ch_load_page(caching_t* ch, int64_t page_index, void** page);
-void ch_use_again(caching_t* ch, uint64_t page_index);
-int ch_write(caching_t* ch, uint64_t page_index, void* src, size_t size, off_t offset);
+void ch_use_again(caching_t* ch, int64_t page_index);
+int ch_write(caching_t* ch, int64_t page_index, void* src, size_t size, off_t offset);
 int ch_clear_page(caching_t* ch, int64_t page_index);
-int ch_copy_read(caching_t* ch, uint64_t page_index, void* dest, size_t size, off_t offset);
-void* ch_read(caching_t* ch, uint64_t page_index, off_t offset);
+int ch_copy_read(caching_t* ch, int64_t page_index, void* dest, size_t size, off_t offset);
+void* ch_read(caching_t* ch, int64_t page_index, off_t offset);
 uint64_t ch_begin(void);
 uint64_t ch_end(caching_t* ch);
 int ch_destroy(caching_t* ch);
@@ -67,8 +67,8 @@ time_t ch_find_least_used_time(caching_t* ch);
 uint64_t ch_unmap_some_pages(caching_t* ch);
 int ch_delete_last_page(caching_t* ch);
 int ch_delete_page(caching_t* ch, int64_t page_index);
-bool ch_cached(caching_t *ch, uint64_t index);
-uint64_t ch_nearest_cached_index(const char *flags, size_t capacity, uint64_t index);
+bool ch_cached(caching_t *ch, int64_t index);
+int64_t ch_nearest_cached_index(const char *flags, size_t capacity, int64_t index);
 int ch_print_cached_pages(caching_t* ch);
 int ch_print_valid_pages(caching_t* ch);
 

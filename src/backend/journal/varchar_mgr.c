@@ -20,7 +20,7 @@ int64_t vch_init(void){
 vch_ticket_t vch_add(int64_t vachar_mgr_idx, char* varchar){
     vch_ticket_t ticket;
     ticket.block = lb_alloc(vachar_mgr_idx);
-    ticket.size = strlen(varchar)+1;
+    ticket.size = (int64_t)strlen(varchar)+1;
     lb_write(
             vachar_mgr_idx,
             &ticket.block,

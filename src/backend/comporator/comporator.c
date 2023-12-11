@@ -12,23 +12,23 @@
 data_t comp_cmp(db_t* db, datatype_t type, void* val1, void* val2){
     data_t data;
     switch (type) {
-        case INT: {
+        case DT_INT: {
             data.int_val = (*(int64_t *) val1 - *(int64_t *) val2);
             break;
         }
-        case FLOAT: {
+        case DT_FLOAT: {
             data.float_val = *(float *) val1 - *(float *) val2;
             break;
         }
-        case CHAR: {
+        case DT_CHAR: {
             data.int_val = strcmp((char*)val1, (char*)val2);
             break;
         }
-        case BOOL: {
+        case DT_BOOL: {
             data.int_val =  *(bool *) val1 - *(bool *) val2;
             break;
         }
-        case VARCHAR: {
+        case DT_VARCHAR: {
             vch_ticket_t* vch1 = val1;
             vch_ticket_t* vch2 = val2;
             char* str1 = malloc(vch1->size);
@@ -41,7 +41,7 @@ data_t comp_cmp(db_t* db, datatype_t type, void* val1, void* val2){
             data.int_val = res;
             break;
         }
-        case DATA_TYPE_UNKNOWN:
+        case DT_UNKNOWN:
             data.int_val = 0;
             break;
     }
@@ -60,18 +60,18 @@ data_t comp_cmp(db_t* db, datatype_t type, void* val1, void* val2){
 bool comp_eq(db_t* db, datatype_t type, void* val1, void* val2){
     data_t data = comp_cmp(db, type, val1, val2);
     switch (type) {
-        case INT: {
+        case DT_INT: {
             return data.int_val == 0;
         }
-        case FLOAT: {
+        case DT_FLOAT: {
             return data.float_val == 0;
         }
-        case CHAR :
-        case BOOL:
-        case VARCHAR: {
+        case DT_CHAR :
+        case DT_BOOL:
+        case DT_VARCHAR: {
             return data.int_val == 0;
         }
-        case DATA_TYPE_UNKNOWN:
+        case DT_UNKNOWN:
             return 0;
     }
 }
@@ -101,18 +101,18 @@ bool comp_neq(db_t* db, datatype_t type, void* val1, void* val2) {
 bool comp_lt(db_t* db, datatype_t type, void* val1, void* val2) {
     data_t data = comp_cmp(db, type, val1, val2);
     switch (type) {
-        case INT: {
+        case DT_INT: {
             return data.int_val < 0;
         }
-        case FLOAT: {
+        case DT_FLOAT: {
             return data.float_val < 0;
         }
-        case CHAR:
-        case BOOL:
-        case VARCHAR: {
+        case DT_CHAR:
+        case DT_BOOL:
+        case DT_VARCHAR: {
             return data.int_val < 0;
         }
-        case DATA_TYPE_UNKNOWN:
+        case DT_UNKNOWN:
             return 0;
     }
 }

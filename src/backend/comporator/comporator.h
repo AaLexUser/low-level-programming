@@ -1,8 +1,8 @@
 #pragma once
 #include "backend/data_type.h"
+#include "backend/db/db.h"
 #include "backend/journal/varchar_mgr.h"
 #include "conditions.h"
-#include "backend/db/db.h"
 #include <stdbool.h>
 #include <string.h>
 

@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 
 #if defined(_WIN32)
-#define PAGE_SIZE 4096
+#define PAGE_SIZE 65536
 #include <windows.h>
 typedef struct file {
 	char *filename;
@@ -19,6 +19,8 @@ typedef struct file {
     HANDLE h_map;
 	void *cur_mmaped_data;
 	off_t cur_page_offset;
+    off_t file_size;
+    int64_t max_page_index;
 } file_t;
 #endif
 
@@ -55,7 +57,7 @@ int delete_file(file_t* file);
 int mmap_page(off_t offset, file_t* file);
 int map_page_on_addr(off_t offset, file_t* file, void* addr);
 int sync_page(void* mmaped_data);
-int unmap_page(void* mmaped_data, file_t* file);
+int unmap_page(void** mmaped_data, file_t* file);
 int init_page(file_t* file);
 int delete_last_page(file_t* file);
 int write_page(file_t* file, void* src, uint64_t size, off_t offset);

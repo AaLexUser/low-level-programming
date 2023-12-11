@@ -3,7 +3,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef enum datatype {DATA_TYPE_UNKNOWN = -1, INT = 0, FLOAT = 1, VARCHAR = 2, CHAR = 3, BOOL = 4} datatype_t;
+typedef enum datatype {DT_UNKNOWN = -1,
+                       DT_INT = 0,
+                       DT_FLOAT = 1,
+                       DT_VARCHAR = 2,
+                       DT_CHAR = 3,
+                       DT_BOOL = 4} datatype_t;
 
 typedef union data {
     int64_t int_val;

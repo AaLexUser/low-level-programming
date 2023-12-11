@@ -1,8 +1,8 @@
 #pragma once
 #include "../data_type.h"
-#include "core/page_pool/page_pool.h"
 #include "backend/journal/varchar_mgr.h"
 #include "core/page_pool/linked_blocks.h"
+#include "core/page_pool/page_pool.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -60,11 +60,11 @@ typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schem
 
 
 
-#define sch_add_int_field(schidx, name) sch_add_field(schidx, name, INT, sizeof(int64_t))
-#define sch_add_char_field(schidx, name, size) sch_add_field(schidx, name, CHAR, size)
-#define sch_add_varchar_field(schidx, name) sch_add_field(schidx, name, VARCHAR, sizeof(vch_ticket_t))
-#define sch_add_float_field(schidx, name) sch_add_field(schidx, name, FLOAT, sizeof(float))
-#define sch_add_bool_field(schidx, name) sch_add_field(schidx, name, BOOL, sizeof(bool))
+#define sch_add_int_field(schidx, name) sch_add_field(schidx, name, DT_INT, sizeof(int64_t))
+#define sch_add_char_field(schidx, name, size) sch_add_field(schidx, name, DT_CHAR, size)
+#define sch_add_varchar_field(schidx, name) sch_add_field(schidx, name, DT_VARCHAR, sizeof(vch_ticket_t))
+#define sch_add_float_field(schidx, name) sch_add_field(schidx, name, DT_FLOAT, sizeof(float))
+#define sch_add_bool_field(schidx, name) sch_add_field(schidx, name, DT_BOOL, sizeof(bool))
 
 
 /**

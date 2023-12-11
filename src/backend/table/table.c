@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include "table.h"
+#include <stdio.h>
 
 /**
  * @brief       Initialize table and add it to the metatable
@@ -70,23 +70,23 @@ void tab_print(db_t* db, int64_t tablix){
     tab_for_each_row(table, chunk, chblix,  row, schema){
         sch_for_each(schema,chunk2, field, sch_chblix, table->schidx){
             switch(field.type){
-                case INT: {
+                case DT_INT: {
                     printf("%"PRId64"\t", *(int64_t*)((char*)row + field.offset));
                     break;
                 }
-                case FLOAT: {
+                case DT_FLOAT: {
                     printf("%f\t", *(float *) ((char *) row + field.offset));
                     break;
                 }
-                case CHAR: {
+                case DT_CHAR: {
                     printf("%s\t", (char*)((char*)row + field.offset));
                     break;
                 }
-                case BOOL: {
+                case DT_BOOL: {
                     printf("%d\t", *(bool*)((char*)row + field.offset));
                     break;
                 }
-                case VARCHAR: {
+                case DT_VARCHAR: {
                     vch_ticket_t* vch = (vch_ticket_t*)((char*)row + field.offset);
                     char* str = malloc(vch->size);
                     vch_get(db->varchar_mgr_idx, vch, str);
@@ -157,13 +157,13 @@ int64_t tab_join(
         return TABLE_FAIL;
     }
     sch_for_each(left_schema, chunk, left_field, left_chblix, left->schidx){
-        if(sch_add_field(schidx, left_field.name, left_field.type, left_field.size) == SCHEMA_FAIL){
+        if(sch_add_field(schidx, left_field.name, left_field.type, (int64_t)left_field.size) == SCHEMA_FAIL){
             logger(LL_ERROR, __func__, "Failed to add field %s", left_field.name);
             return TABLE_FAIL;
         }
     }
     sch_for_each(right_schema,chunk2, right_field, right_chblix, right->schidx){
-        if(sch_add_field(schidx, right_field.name, right_field.type, right_field.size) == SCHEMA_FAIL){
+        if(sch_add_field(schidx, right_field.name, right_field.type, (int64_t)right_field.size) == SCHEMA_FAIL){
             logger(LL_ERROR, __func__, "Failed to add field %s", right_field.name);
             return TABLE_FAIL;
         }
@@ -267,7 +267,7 @@ int64_t tab_select_op(db_t* db,
         return TABLE_FAIL;
     }
     sch_for_each(sel_schema, sch_chunk, field, chblix, sel_tab->schidx){
-        if(sch_add_field(schidx, field.name, field.type, field.size) == SCHEMA_FAIL){
+        if(sch_add_field(schidx, field.name, field.type, (int64_t)field.size) == SCHEMA_FAIL){
             logger(LL_ERROR, __func__, "Failed to add field %s", field.name);
             return TABLE_FAIL;
         }
@@ -288,6 +288,7 @@ int64_t tab_select_op(db_t* db,
 
     /* Check if datatype of field equals datatype of value */
     if(type != select_field_f.type){
+        free(row);
         return TABLE_FAIL;
     }
 
@@ -523,9 +524,6 @@ int tab_delete_op_nova(db_t* db,
                 del_chblix = temp;
                 del_chunk = ppl_load_chunk(del_chblix.chunk_idx);
             }
-        }
-        if(del_chunk->capacity == NULL){
-            logger(LL_ERROR, __func__, "Chunk is NULL");
         }
     }
     free(comp_val);

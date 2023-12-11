@@ -125,7 +125,7 @@ DEFINE_TEST(update) {
     field_t field;
     sch_get_field(schidx, "CREDIT", &field);
     int64_t element = 30;
-    chblix_t res = tab_get_row(db, tablix, &field, &element, INT);
+    chblix_t res = tab_get_row(db, tablix, &field, &element, DT_INT);
     assert(chblix_cmp(&res, &CHBLIX_FAIL) != 0);
     int64_t new_element = 100;
     assert(tab_update_element(tablix, &res, &(field), &new_element) == TABLE_SUCCESS);
@@ -143,10 +143,10 @@ DEFINE_TEST(delete){
     field_t field;
     sch_get_field(schidx, "CREDIT", &field);
     int64_t element = 30;
-    chblix_t res = tab_get_row(db, tablix, &field, &element, INT);
+    chblix_t res = tab_get_row(db, tablix, &field, &element, DT_INT);
     assert(chblix_cmp(&res, &CHBLIX_FAIL) != 0);
     assert(tab_delete(tablix, &res) == TABLE_SUCCESS);
-    res = tab_get_row(db, tablix, &field, &element, INT);
+    res = tab_get_row(db, tablix, &field, &element, DT_INT);
     assert(chblix_cmp(&res, &CHBLIX_FAIL) == 0);
     db_drop();
 }
@@ -252,7 +252,7 @@ DEFINE_TEST(select){
     db_t* db = db_init("test.db");
     int64_t tablix = table_student(db, 1);
     float value = 20.0f;
-    int64_t sel_tablix = tab_select_op(db, tablix, "SELECT", "SCORE", COND_GT, &value, FLOAT);
+    int64_t sel_tablix = tab_select_op(db, tablix, "SELECT", "SCORE", COND_GT, &value, DT_FLOAT);
     tab_print(db, sel_tablix);
     table_t* sel_table_t = tab_load(sel_tablix);
     field_t* field = malloc(sizeof(field_t));
@@ -263,7 +263,7 @@ DEFINE_TEST(select){
     }
     tab_drop(db, sel_tablix);
 
-    sel_tablix = tab_select_op(db, tablix, "SELECT", "SCORE", COND_GTE, &value, FLOAT);
+    sel_tablix = tab_select_op(db, tablix, "SELECT", "SCORE", COND_GTE, &value, DT_FLOAT);
     sel_table_t = tab_load(sel_tablix);
     assert(sch_get_field(sel_table_t->schidx,  "SCORE", field) == SCHEMA_SUCCESS);
     tab_for_each_element(sel_table_t, chunk2, chblix2, &element, field){
@@ -271,7 +271,7 @@ DEFINE_TEST(select){
     }
     tab_drop(db, sel_tablix);
 
-    sel_tablix = tab_select_op(db, tablix, "SELECT", "SCORE", COND_LT, &value, FLOAT);
+    sel_tablix = tab_select_op(db, tablix, "SELECT", "SCORE", COND_LT, &value, DT_FLOAT);
     sel_table_t = tab_load(sel_tablix);
     assert(sch_get_field(sel_table_t->schidx,  "SCORE", field) == SCHEMA_SUCCESS);
     tab_for_each_element(sel_table_t, chunk3, chblix3, &element, field){
@@ -279,7 +279,7 @@ DEFINE_TEST(select){
     }
     tab_drop(db, sel_tablix);
 
-    sel_tablix = tab_select_op(db, tablix, "SELECT", "SCORE", COND_LTE, &value, FLOAT);
+    sel_tablix = tab_select_op(db, tablix, "SELECT", "SCORE", COND_LTE, &value, DT_FLOAT);
     sel_table_t = tab_load(sel_tablix);
     assert(sch_get_field(sel_table_t->schidx,  "SCORE", field) == SCHEMA_SUCCESS);
     tab_for_each_element(sel_table_t, chunk4, chblix4, &element, field){
@@ -288,7 +288,7 @@ DEFINE_TEST(select){
     tab_drop(db, sel_tablix);
 
     value = 10.5f;
-    sel_tablix = tab_select_op(db, tablix, "SELECT", "SCORE", COND_NEQ, &value, FLOAT);
+    sel_tablix = tab_select_op(db, tablix, "SELECT", "SCORE", COND_NEQ, &value, DT_FLOAT);
     sel_table_t = tab_load(sel_tablix);
     assert(sch_get_field(sel_table_t->schidx,  "SCORE", field) == SCHEMA_SUCCESS);
     tab_for_each_element(sel_table_t, chunk5, chblix5, &element, field){
@@ -319,7 +319,7 @@ DEFINE_TEST(update_row_op){
     strncpy(row.NAME,"Nick", 10);
     row.SCORE = 10.5f;
     row.PASS = true;
-    int res = tab_update_row_op(db, tablix, &row, "SCORE", COND_EQ, &value, FLOAT);
+    int res = tab_update_row_op(db, tablix, &row, "SCORE", COND_EQ, &value, DT_FLOAT);
     assert(res == TABLE_SUCCESS);
     field_t field;
     sch_get_field(table->schidx, "SCORE", &field);
@@ -350,7 +350,7 @@ DEFINE_TEST(update_element_op){
             bool PASS;
     );
     float element = 10.5f;
-    int res = tab_update_element_op(db, tablix, &element, "SCORE", "NAME", COND_EQ, value, CHAR);
+    int res = tab_update_element_op(db, tablix, &element, "SCORE", "NAME", COND_EQ, value, DT_CHAR);
     assert(res == TABLE_SUCCESS);
     field_t field;
     sch_get_field(table->schidx, "SCORE", &field);

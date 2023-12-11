@@ -16,7 +16,7 @@ typedef enum {LB_FREE = 0, LB_USED = 1} linked_block_flag_t;
 
 #define lb_for_each(chunk, chblix, ppl) \
     chunk_t* chunk = ppl_load_chunk(ppl->head); \
-    for(chblix_t chblix = lb_pool_start(ppl, chunk); \
+    for(chblix_t chblix = lb_pool_start(ppl, &chunk); \
         lb_valid(ppl,chunk, chblix); \
         ++chblix.block_idx,  chblix = lb_nearest_valid_chblix(ppl, chblix, &chunk))
 

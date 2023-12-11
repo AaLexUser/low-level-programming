@@ -1,6 +1,6 @@
 #pragma once
-#include "core/pstack/pstack.h"
 #include "caching.h"
+#include "core/pstack/pstack.h"
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -24,8 +24,8 @@ int64_t pg_alloc(void);
 int pg_dealloc(int64_t page_index);
 int pg_rm_cached(int64_t page_index);
 void* pg_load_page(int64_t page_index);
-int pg_write(uint64_t page_index, void* src, size_t size, off_t offset);
-int pg_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset);
+int pg_write(int64_t page_index, void* src, size_t size, off_t offset);
+int pg_copy_read(int64_t page_index, void* dest, size_t size, off_t offset);
 off_t pg_file_size(void);
 int64_t pg_max_page_index(void);
 

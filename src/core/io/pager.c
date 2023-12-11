@@ -1,7 +1,7 @@
 #include "pager.h"
-#include "utils/logger.h"
 #include "backend/utils/parray64.h"
 #include "caching.h"
+#include "utils/logger.h"
 
 #ifndef PAGER
 pager_t* pg_pager;
@@ -124,6 +124,7 @@ int pg_dealloc(int64_t page_index) {
 
 int pg_rm_cached(int64_t page_index){
     ch_remove(&PAGER->ch, page_index);
+    return PAGER_SUCCESS;
 }
 
 /**
@@ -156,7 +157,7 @@ void* pg_load_page(int64_t page_index) {
  * @return      PAGER_SUCCESS on success, PAGER_FAIL otherwise
  */
 
-int pg_write(uint64_t page_index, void* src, size_t size, off_t offset){
+int pg_write(int64_t page_index, void* src, size_t size, off_t offset){
     logger(LL_DEBUG, __func__,
            "Writing to page, page index: %ld, src: %p, size: %ld, offset: %ld",
            page_index, src, size, offset);
@@ -179,7 +180,7 @@ int pg_write(uint64_t page_index, void* src, size_t size, off_t offset){
  * @return      PAGER_SUCCESS on success, PAGER_FAIL otherwise
  */
 
-int pg_copy_read(uint64_t page_index, void* dest, size_t size, off_t offset){
+int pg_copy_read(int64_t page_index, void* dest, size_t size, off_t offset){
     logger(LL_DEBUG, __func__, "Reading from page");
     if(ch_copy_read(&PAGER->ch, page_index, dest, size, offset) == CH_FAIL){
         logger(LL_ERROR, __func__, "Unable to read from page");

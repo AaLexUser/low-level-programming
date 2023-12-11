@@ -1,8 +1,8 @@
 #pragma once
 #include "backend/comporator/comporator.h"
+#include "backend/db/db.h"
 #include "backend/journal/metatab.h"
 #include "table_base.h"
-#include "backend/db/db.h"
 #include <inttypes.h>
 
 

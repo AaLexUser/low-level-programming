@@ -6,7 +6,7 @@ DEFINE_TEST(write_and_read){
     caching_t* caching = malloc(sizeof(caching_t));
     assert(ch_init("test.db", caching) == CH_SUCCESS);
     char str[] = "12345678";
-    uint64_t page1 = ch_new_page(caching);
+    int64_t page1 = ch_new_page(caching);
     ch_write(caching, page1, str, sizeof(str), 0);
     ch_new_page(caching);
     ch_new_page(caching);
@@ -23,7 +23,7 @@ DEFINE_TEST(two_write){
     caching_t* caching = malloc(sizeof(caching_t));
     assert(ch_init("test.db", caching) == CH_SUCCESS) ;
     char str1[] = "12345678";
-    uint64_t page1 = ch_new_page(caching);
+    int64_t page1 = ch_new_page(caching);
     ch_write(caching, page1, str1, sizeof(str1), 0);
     ch_new_page(caching);
     ch_new_page(caching);
@@ -49,7 +49,7 @@ DEFINE_TEST(two_pages){
     assert(ch_init("test.db", caching) == CH_SUCCESS) ;
     char str1[] = "12345678";
     
-    uint64_t page1 = ch_new_page(caching);
+    int64_t page1 = ch_new_page(caching);
     if(ch_write(caching, page1, str1, sizeof(str1), 0) == -1){
         ch_delete(caching);
         free(caching);
@@ -59,7 +59,7 @@ DEFINE_TEST(two_pages){
     ch_new_page(caching);
     ch_new_page(caching);
     char str2[] = "abcdefg";
-    uint64_t page2 = ch_new_page(caching);
+    int64_t page2 = ch_new_page(caching);
     if(ch_write(caching, page2, str2, sizeof(str2), 0) == -1){
         ch_delete(caching);
         exit(EXIT_FAILURE);
@@ -84,7 +84,7 @@ DEFINE_TEST(read_after_closing){
     assert(ch_init("test.db", caching) == CH_SUCCESS);
     char str1[] = "12345678";
     
-    uint64_t page1 = ch_new_page(caching);
+    int64_t page1 = ch_new_page(caching);
     if(ch_write(caching, page1, str1, sizeof(str1), 0) == -1){
         ch_delete(caching);
         free(caching);
@@ -94,7 +94,7 @@ DEFINE_TEST(read_after_closing){
     ch_new_page(caching);
     ch_new_page(caching);
     char str2[] = "abcdefg";
-    uint64_t page2 = ch_new_page(caching);
+    int64_t page2 = ch_new_page(caching);
     if(ch_write(caching, page2, str2, sizeof(str2), 0) == -1){
         ch_delete(caching);
         free(caching);
@@ -122,7 +122,7 @@ DEFINE_TEST(write_after_closing){
     caching_t* caching = malloc(sizeof(caching_t));
     assert(ch_init("test.db", caching) == CH_SUCCESS);
     char str1[] = "12345678";
-    uint64_t page1 = ch_new_page(caching);
+    int64_t page1 = ch_new_page(caching);
     if(ch_write(caching, page1, str1, sizeof(str1), 0) == -1){
         ch_delete(caching);
         free(caching);
@@ -132,7 +132,7 @@ DEFINE_TEST(write_after_closing){
     ch_new_page(caching);
     ch_new_page(caching);
     char str2[] = "abcdefg";
-    uint64_t page2 = ch_new_page(caching);
+    int64_t page2 = ch_new_page(caching);
     if(ch_write(caching, page2, str2, sizeof(str2), 0) == -1){
         ch_delete(caching);
         free(caching);
@@ -172,7 +172,7 @@ DEFINE_TEST(delete_last_page){
     }
 
     char str1[] = "12345678";
-    uint64_t page1 = ch_new_page(caching);
+    int64_t page1 = ch_new_page(caching);
     if(ch_write(caching, page1, str1, sizeof(str1), 0) == -1){
         ch_delete(caching);
         exit(EXIT_FAILURE);
@@ -181,7 +181,7 @@ DEFINE_TEST(delete_last_page){
     ch_new_page(caching);
     ch_new_page(caching);
     char str2[] = "abcdefg";
-    uint64_t page2 = ch_new_page(caching);
+    int64_t page2 = ch_new_page(caching);
     if(ch_write(caching, page2, str2, sizeof(str2), 0) == -1){
         ch_delete(caching);
         exit(EXIT_FAILURE);
@@ -221,7 +221,7 @@ DEFINE_TEST(cache_memory_save){
     size_t bignumber = 2097152;
     assert(ch_init("test.db", caching) == CH_SUCCESS);
     char str1[] = "12345678";
-    uint64_t page1 = ch_new_page(caching);
+    int64_t page1 = ch_new_page(caching);
     if(ch_write(caching, page1, str1, sizeof(str1), 0) == -1){
         ch_delete(caching);
         free(caching);
@@ -229,7 +229,7 @@ DEFINE_TEST(cache_memory_save){
     }
     char str[] = "111111111";
     for(size_t i = 0; i < bignumber; i++){
-        uint64_t page = ch_new_page(caching);
+        int64_t page = ch_new_page(caching);
         if(ch_write(caching, page, str, sizeof(str), 0) == -1){
             ch_delete(caching);
             free(caching);
@@ -237,14 +237,14 @@ DEFINE_TEST(cache_memory_save){
         }
     }
     char str2[] = "abcdefg";
-    uint64_t page2 = ch_new_page(caching);
+    int64_t page2 = ch_new_page(caching);
     if(ch_write(caching,page2, str2, sizeof(str2), 0) == -1){
         ch_delete(caching);
         free(caching);
         exit(EXIT_FAILURE);
     }
     for(size_t i = 0; i < bignumber; i++){
-        uint64_t page = ch_new_page(caching);
+        int64_t page = ch_new_page(caching);
         if(ch_write(caching, page, str, sizeof(str), 0) == -1){
             ch_delete(caching);
             free(caching);
@@ -265,7 +265,7 @@ DEFINE_TEST(unsafe_read){
     caching_t* caching = malloc(sizeof(caching_t));
     assert(ch_init("test.db", caching) == CH_SUCCESS);
     char str1[] = "12345678";
-    uint64_t page1 = ch_new_page(caching);
+    int64_t page1 = ch_new_page(caching);
     ch_write(caching, page1, str1, sizeof(str1), 0);
     ch_new_page(caching);
     ch_new_page(caching);

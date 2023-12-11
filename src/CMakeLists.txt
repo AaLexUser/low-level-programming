@@ -1,4 +1,4 @@
-if(NOT CMAKE_CONFIGURATION_TYPES MATCHES Debug)
+if(CMAKE_CONFIGURATION_TYPES MATCHES Debug)
     find_program(CLANG_TIDY clang-tidy)
     message(STATUS "Clang-tidy: ${CLANG_TIDY}")
     if(CLANG_TIDY)
@@ -8,6 +8,7 @@ if(NOT CMAKE_CONFIGURATION_TYPES MATCHES Debug)
                 ${CLANG_TIDY}
                 -header-filter=${CMAKE_SOURCE_DIR}
                 -checks=${clang_tidy_checks_str}
+                -warnings-as-errors=*
         )
     endif()
 endif()

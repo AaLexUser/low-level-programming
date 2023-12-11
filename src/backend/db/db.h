@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/io/pager.h"
 #include "backend/journal/metatab.h"
+#include "core/io/pager.h"
 
 typedef struct db{
     int64_t meta_table_idx;
