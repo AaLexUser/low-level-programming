@@ -48,7 +48,7 @@ int64_t ppl_chunk_init(page_pool_t* ppl){
         logger(LL_ERROR, __func__, "Unable to load chunk");
         return PPL_FAIL;
     }
-    chunk_t* chunk = (chunk_t*) lp_load(page_index);
+    chunk_t* chunk = ppl_load_chunk(page_index);
     chunk->page_index = page_index;
     if(ppl->block_size > lp_useful_space_size((linked_page_t*)chunk)){
         chunk->capacity = 1;
@@ -232,6 +232,7 @@ int ppl_read_block_nova(page_pool_t* ppl, linked_page_t* lp, const chblix_t* chb
         logger(LL_ERROR, __func__, "Unable to read from page");
         return PPL_FAIL;
     }
+
     return PPL_SUCCESS;
 }
 
@@ -397,7 +398,10 @@ int ppl_pool_reduce(page_pool_t* ppl, chunk_t* page){
 
 
     if(ppl->current_idx == page->page_index){
+        int64_t prev_page_idx = page->page_index;
         ppl_pool_expand(ppl);
+        page = ppl_load_chunk(prev_page_idx);
+
     }
 
     chunk_t* prev_page = NULL;

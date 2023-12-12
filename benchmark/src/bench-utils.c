@@ -1,8 +1,8 @@
-#include "core/io/pager.h"
+#include "backend/db/db.h"
 
 void init_db(const char* filename){
     /* Init new db file */
-    if(pg_init(filename) != FILE_SUCCESS){
+    if(db_init(filename) != 0){
         printf("Failed to init file\n");
         exit(EXIT_FAILURE);
     }
@@ -11,7 +11,7 @@ void init_db(const char* filename){
             printf("Failed to delete file\n");
             exit(EXIT_FAILURE);
         }
-        if(pg_init("test.db") != 0){
+        if(db_init(filename) != 0){
             printf("Failed to init file\n");
             exit(EXIT_FAILURE);
         }

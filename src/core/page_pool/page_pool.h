@@ -36,6 +36,8 @@ typedef enum {PPL_SUCCESS = 0, PPL_FAIL = -1, PPL_EMPTY = 1} page_pool_status_t;
 chblix_t chblix_fail(void);
 int chblix_cmp(const chblix_t* chblix1, const chblix_t* chblix2);
 
+#define page_pool_index(ppl) (ppl->lp_header.page_index)
+
 int64_t ppl_chunk_init(page_pool_t* ppl);
 chunk_t* ppl_create_page(page_pool_t* ppl);
 chunk_t* ppl_load_chunk(int64_t chunk_index);

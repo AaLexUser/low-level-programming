@@ -19,7 +19,8 @@ int64_t vch_init(void){
 
 vch_ticket_t vch_add(int64_t vachar_mgr_idx, char* varchar){
     vch_ticket_t ticket;
-    ticket.block = lb_alloc(vachar_mgr_idx);
+    page_pool_t* vch = lb_ppl_load(vachar_mgr_idx);
+    ticket.block = lb_alloc(vch);
     ticket.size = (int64_t)strlen(varchar)+1;
     lb_write(
             vachar_mgr_idx,

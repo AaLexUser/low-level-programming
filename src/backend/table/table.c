@@ -5,14 +5,18 @@
  * @brief       Initialize table and add it to the metatable
  * @param[in]   db: pointer to db
  * @param[in]   name: name of the table
- * @param[in]   schidx: index of the schema
+ * @param[in]   schema: pointer to schema
  * @return      index of the table on success, TABLE_FAIL on failure
  */
 
-int64_t tab_init(db_t* db, const char* name, int64_t schidx){
-    int64_t tablix = tab_base_init(name, schidx);
-    mtab_add(db->meta_table_idx, name, tablix);
-    return tablix;
+table_t* tab_init(db_t* db, const char* name, schema_t* schema){
+    table_t* table = NULL;
+    if((table = tab_base_init(name, schema)) == NULL){
+        logger(LL_ERROR, __func__, "Unable to init table");
+        return NULL;
+    }
+    mtab_add(db->meta_table_idx, name,table_index(table));
+    return table;
 }
 
 /**
@@ -151,45 +155,42 @@ int64_t tab_join(
     }
 
     /* Create new schema */
-    int64_t schidx = sch_init();
-    if(schidx == SCHEMA_FAIL){
+    schema_t* new_schema = sch_init();
+    if(new_schema == NULL){
         logger(LL_ERROR, __func__, "Failed to create new schema");
         return TABLE_FAIL;
     }
     sch_for_each(left_schema, chunk, left_field, left_chblix, left->schidx){
-        if(sch_add_field(schidx, left_field.name, left_field.type, (int64_t)left_field.size) == SCHEMA_FAIL){
+        if(sch_add_field(new_schema, left_field.name, left_field.type, (int64_t)left_field.size) == SCHEMA_FAIL){
             logger(LL_ERROR, __func__, "Failed to add field %s", left_field.name);
             return TABLE_FAIL;
         }
     }
     sch_for_each(right_schema,chunk2, right_field, right_chblix, right->schidx){
-        if(sch_add_field(schidx, right_field.name, right_field.type, (int64_t)right_field.size) == SCHEMA_FAIL){
+        if(sch_add_field(new_schema, right_field.name, right_field.type, (int64_t)right_field.size) == SCHEMA_FAIL){
             logger(LL_ERROR, __func__, "Failed to add field %s", right_field.name);
             return TABLE_FAIL;
         }
     }
 
     /* Create new table */
-    int64_t tablix = tab_init(db, name, schidx);
-    if(tablix == TABLE_FAIL){
+    table_t* table = tab_init(db, name, new_schema);
+    if(table == NULL){
         logger(LL_ERROR, __func__, "Failed to create new table");
         return TABLE_FAIL;
     }
 
-    /* Load new schema */
-    schema_t* schema = sch_load(schidx);
-
     /* Create new row */
-    void* row = malloc(schema->slot_size);
+    void* row = malloc(new_schema->slot_size);
 
     void* left_row = malloc(left_schema->slot_size);
     void* right_row = malloc(right_schema->slot_size);
 
     /* Get join fields */
     field_t join_field_left_f;
-    sch_get_field(left->schidx, join_field_left, &join_field_left_f);
+    sch_get_field(left_schema, join_field_left, &join_field_left_f);
     field_t join_field_right_f;
-    sch_get_field(right->schidx, join_field_right, &join_field_right_f);
+    sch_get_field(right_schema, join_field_right, &join_field_right_f);
 
 
 
@@ -203,7 +204,7 @@ int64_t tab_join(
             if(comp_eq(db, join_field_left_f.type, elleft, elright)){
                 memcpy(row, left_row, left_schema->slot_size);
                 memcpy((char*)row + left_schema->slot_size, right_row, right_schema->slot_size);
-                chblix_t rowix = tab_insert(tablix, row);
+                chblix_t rowix = tab_insert(table, new_schema, row);
                 if(chblix_cmp(&rowix, &CHBLIX_FAIL) == 0){
                     logger(LL_ERROR, __func__, "Failed to insert row");
                     return TABLE_FAIL;
@@ -216,7 +217,7 @@ int64_t tab_join(
     free(row);
     free(left_row);
     free(right_row);
-    return tablix;
+    return table_index(table);
 }
 
 /**
@@ -255,33 +256,30 @@ int64_t tab_select_op(db_t* db,
 
     /* Load field */
     field_t select_field_f;
-    if(sch_get_field(sel_tab->schidx, select_field, &select_field_f) == SCHEMA_FAIL){
+    if(sch_get_field(sel_schema, select_field, &select_field_f) == SCHEMA_FAIL){
         logger(LL_ERROR, __func__, "Failed to get field %s", select_field);
         return TABLE_FAIL;
     }
 
     /* Create new schema */
-    int64_t schidx = sch_init();
-    if(schidx == SCHEMA_FAIL){
+    schema_t* schema = sch_init();
+    if(schema == NULL){
         logger(LL_ERROR, __func__, "Failed to create new schema");
         return TABLE_FAIL;
     }
     sch_for_each(sel_schema, sch_chunk, field, chblix, sel_tab->schidx){
-        if(sch_add_field(schidx, field.name, field.type, (int64_t)field.size) == SCHEMA_FAIL){
+        if(sch_add_field(schema, field.name, field.type, (int64_t)field.size) == SCHEMA_FAIL){
             logger(LL_ERROR, __func__, "Failed to add field %s", field.name);
             return TABLE_FAIL;
         }
     }
 
     /* Create new table */
-    int64_t tablix = tab_init(db, name, schidx);
-    if(tablix == TABLE_FAIL){
+    table_t* table = tab_init(db, name, schema);
+    if(table == NULL){
         logger(LL_ERROR, __func__, "Failed to create new table");
         return TABLE_FAIL;
     }
-
-    /* Load new schema */
-    schema_t* schema = sch_load(schidx);
 
     /* Create new row */
     void* row = malloc(schema->slot_size);
@@ -302,7 +300,7 @@ int64_t tab_select_op(db_t* db,
         memcpy(el, (char*)el_row + select_field_f.offset, select_field_f.size);
         if(comp_compare(db, type, el,comp_val, condition)){
             memcpy(row, el_row, schema->slot_size);
-            chblix_t rowix = tab_insert(tablix, row);
+            chblix_t rowix = tab_insert(table, schema, row);
             if(chblix_cmp(&rowix, &CHBLIX_FAIL) == 0){
                 logger(LL_ERROR, __func__, "Failed to insert row");
                 return TABLE_FAIL;
@@ -313,7 +311,7 @@ int64_t tab_select_op(db_t* db,
     free(row);
     free(el_row);
     free(el);
-    return tablix;
+    return table_index(table);
 }
 
 /**
@@ -330,6 +328,38 @@ int tab_drop(db_t* db, int64_t tablix){
     }
     return lb_ppl_destroy(tablix);
 }
+
+int tab_update_row_op_nova(db_t* db,
+                    table_t* table,
+                    schema_t* schema,
+                    field_t* field,
+                    condition_t condition,
+                    void* value,
+                    datatype_t type,
+                    void* row){
+
+    void* el_row = malloc(schema->slot_size);
+    void* el = malloc(field->size);
+    void* comp_val = malloc(field->size);
+    memcpy(comp_val, value, field->size);
+
+    /* Update */
+    tab_for_each_row(table, upd_chunk,upd_chblix, el_row, schema){
+        memcpy(el, (char*)el_row + field->offset, field->size);
+        if(comp_compare(db, type, el, comp_val, condition)){
+            memcpy(el_row, row, schema->slot_size);
+            if(tab_update_row(table_index(table), &upd_chblix, el_row) == TABLE_FAIL){
+                logger(LL_ERROR, __func__, "Failed to update row");
+                return TABLE_FAIL;
+            }
+        }
+    }
+    free(comp_val);
+    free(el_row);
+    free(el);
+    return TABLE_SUCCESS;
+}
+
 
 /**
  * @brief       Delete row from table
@@ -367,7 +397,7 @@ int tab_update_row_op(db_t* db,
 
     /* Load field */
     field_t upd_field;
-    if(sch_get_field(upd_tab->schidx, field_name, &upd_field) == SCHEMA_FAIL){
+    if(sch_get_field(upd_schema, field_name, &upd_field) == SCHEMA_FAIL){
         logger(LL_ERROR, __func__, "Failed to get field %s", field_name);
         return TABLE_FAIL;
     }
@@ -436,14 +466,14 @@ int tab_update_element_op(db_t* db,
 
     /* Load compare field */
     field_t comp_field;
-    if(sch_get_field(upd_tab->schidx, field_comp, &comp_field) == SCHEMA_FAIL){
+    if(sch_get_field(upd_schema, field_comp, &comp_field) == SCHEMA_FAIL){
         logger(LL_ERROR, __func__, "Failed to get field %s", field_comp);
         return TABLE_FAIL;
     }
 
     /* Load update field */
     field_t upd_field;
-    if(sch_get_field(upd_tab->schidx, field_name, &upd_field) == SCHEMA_FAIL){
+    if(sch_get_field(upd_schema, field_name, &upd_field) == SCHEMA_FAIL){
         logger(LL_ERROR, __func__, "Failed to get field %s", field_comp);
         return TABLE_FAIL;
     }
@@ -570,7 +600,7 @@ int tab_delete_op(db_t* db,
 
     /* Load compare field */
     field_t comp_field;
-    if(sch_get_field(del_tab->schidx, field_comp, &comp_field) == SCHEMA_FAIL){
+    if(sch_get_field(del_schema, field_comp, &comp_field) == SCHEMA_FAIL){
         logger(LL_ERROR, __func__, "Failed to get field %s", field_comp);
         return TABLE_FAIL;
     }

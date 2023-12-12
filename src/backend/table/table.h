@@ -6,7 +6,7 @@
 #include <inttypes.h>
 
 
-int64_t tab_init(db_t* db, const char* name, int64_t schidx);
+table_t* tab_init(db_t* db, const char* name, schema_t* schema);
 chblix_t tab_get_row(db_t* db, int64_t tablix, field_t* field, void* value, datatype_t type);
 void tab_print(db_t* db, int64_t tablix);
 int64_t tab_join(
@@ -25,6 +25,14 @@ int64_t tab_select_op(db_t* db,
                       void* value,
                       datatype_t type);
 int tab_drop(db_t* db, int64_t tablix);
+int tab_update_row_op_nova(db_t* db,
+                           table_t* table,
+                           schema_t* schema,
+                           field_t* field,
+                           condition_t condition,
+                           void* value,
+                           datatype_t type,
+                           void* row);
 int tab_update_row_op(db_t* db,
                       int64_t tablix,
                       void* row,

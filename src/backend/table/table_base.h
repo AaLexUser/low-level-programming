@@ -24,6 +24,13 @@ typedef enum {TABLE_SUCCESS = 0, TABLE_FAIL = -1} table_status_t;
 #define tab_load(tablix) (table_t*)lb_ppl_load(tablix)
 
 /**
+ * @brief       Get table index
+ * @param[in]   table: pointer to the table
+ * @return      index of the table
+ */
+#define table_index(table) (table->ppl_header.lp_header.page_index)
+
+/**
  * @brief       For each element specific column in a table
  * @param[in]   table: pointer to the table
  * @param[in]   chunk: chunk
@@ -66,8 +73,8 @@ lb_read_nova(&table->ppl_header,chunk,  &chblix, row, schema->slot_size, 0) != L
     } row_t;         \
 row_t row
 
-int64_t tab_base_init(const char* name, int64_t schidx);
-chblix_t tab_insert(int64_t tablix, void* src);
+table_t* tab_base_init(const char* name, schema_t* schema);
+chblix_t tab_insert(table_t* table, schema_t* schema, void* src);
 int tab_select_row(int64_t tablix, chblix_t* rowix, void* dest);
 int tab_delete_nova(table_t* table, chunk_t* chunk, chblix_t* rowix);
 int tab_delete(int64_t tablix, chblix_t* rowix);

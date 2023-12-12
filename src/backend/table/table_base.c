@@ -5,48 +5,46 @@
 /**
  * @brief       Initialize a table
  * @param[in]   name: name of the table
- * @param[in]   schidx: index of the schema
+ * @param[in]   schema: pointer to schema
+ * @param[out]  table: pointer to allocated table
  * @return      index of the table on success, TABLE_FAIL on failure
  */
 
-int64_t tab_base_init(const char* name, int64_t schidx){
-    schema_t* schema = sch_load(schidx);
+table_t* tab_base_init(const char* name, schema_t* schema){
+    if(schema == NULL){
+        logger(LL_ERROR, __func__, "Invalid argument, schema is NULL");
+        return NULL;
+    }
     int64_t tablix = lb_ppl_init((int64_t)schema->slot_size);
     if(tablix == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to initialize table %s", name);
-        return TABLE_FAIL;
+        return NULL;
     }
     table_t* table = (table_t*)lb_ppl_load(tablix);
     if(table == NULL){
         logger(LL_ERROR, __func__, "Failed to load table %s", name);
-        return TABLE_FAIL;
+        return NULL;
     }
-
-    table->schidx = schidx;
+    table->schidx = schema_index(schema);
     strncpy(table->name, name, MAX_NAME_LENGTH);
-    return tablix;
+    return table;
 }
 
 /**
  * @brief       Insert a row
- * @param       tablix: index of the table
- * @param       src: source
+ * @param[in]   table: pointer to table
+ * @param[in]   schema: pointer to schema
+ * @param[in]   src: source
  * @return      chblix_t of row on success, CHBLIX_FAIL on failure
  */
 
-chblix_t tab_insert(int64_t tablix, void* src){
-    table_t* table = tab_load(tablix);
+chblix_t tab_insert(table_t* table, schema_t* schema, void* src){
     if(table == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
-        return CHBLIX_FAIL;
-    }
-    schema_t* schema = sch_load(table->schidx);
-    if(schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %ld", table->schidx);
+        logger(LL_ERROR, __func__, "Invalid argument: table is NULL");
         return CHBLIX_FAIL;
     }
 
-    chblix_t rowix = lb_alloc(tablix);
+    chblix_t rowix = lb_alloc(&table->ppl_header);
 //    printf("c: %lld | b: %lld | ", rowix.chunk_idx, rowix.block_idx);
 
     if(chblix_cmp(&rowix, &CHBLIX_FAIL) == 0){
@@ -54,7 +52,7 @@ chblix_t tab_insert(int64_t tablix, void* src){
         return CHBLIX_FAIL;
     }
 
-    if(lb_write(tablix, &rowix, src,schema->slot_size , 0) == LB_FAIL){
+    if(lb_write(table_index(table), &rowix, src,schema->slot_size , 0) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to write row");
         return CHBLIX_FAIL;
     }
@@ -113,17 +111,6 @@ int tab_delete_nova(table_t* table, chunk_t* chunk, chblix_t* rowix){
     }
     free(lb);
     return TABLE_SUCCESS;
-}
-
-/**
- * @brief       Delete a row
- * @param       tablix: index of the table
- * @param       rowix: chblix of the row
- * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
- */
-
-int tab_delete(int64_t tablix, chblix_t* rowix){
-    return lb_dealloc(tablix, rowix) == LB_FAIL ? TABLE_FAIL : TABLE_SUCCESS;
 }
 
 /**

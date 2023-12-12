@@ -11,6 +11,11 @@ typedef struct linked_block{
     int64_t mem_start;
 } linked_block_t;
 
+typedef struct ptr_chblix{
+    chunk_t* chunk;
+    int64_t block_idx;
+} ptr_chblix_t;
+
 typedef enum {LB_SUCCESS = 0, LB_FAIL = -1} linked_block_status_t;
 typedef enum {LB_FREE = 0, LB_USED = 1} linked_block_flag_t;
 
@@ -32,13 +37,13 @@ typedef enum {LB_FREE = 0, LB_USED = 1} linked_block_flag_t;
 int lb_load_nova_pppp(page_pool_t* ppl, chunk_t* chunk, chblix_t* chblix, linked_block_t* linked_block);
 int lb_load_nova_ppp(page_pool_t* ppl, chblix_t* chblix, linked_block_t* linked_block);
 
-chblix_t lb_alloc_m(int64_t page_pool_idx, int64_t mem_start);
-chblix_t lb_alloc(int64_t page_pool_idx);
+chblix_t lb_alloc_m(page_pool_t* page_pool, int64_t mem_start);
+chblix_t lb_alloc(page_pool_t* page_pool);
 int lb_load(int64_t page_pool_index, const chblix_t* chblix, linked_block_t* lb);
 int lb_update_nova(page_pool_t* ppl, const chblix_t* chblix, linked_block_t* lb);
 int lb_update(int64_t ppidx, const chblix_t* chblix, linked_block_t* lb);
 int lb_dealloc_nova(page_pool_t* ppl, linked_block_t* lb);
-int lb_dealloc(int64_t pplidx, const chblix_t* chblix);
+int lb_dealloc(int64_t ppidx, chblix_t* chblix);
 chblix_t lb_get_next_nova(page_pool_t* ppl, const chblix_t* chblix);
 chblix_t lb_go_to_nova(page_pool_t* ppl,
                        chblix_t* chblix,

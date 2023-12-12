@@ -8,27 +8,28 @@
 
 /**
  * \brief       Allocates new linked block, with custom memory start
- * \param[in]   page_pool_idx
+ * \param[in]   page_pool: pointer to page pool
+ * \param[in]   mem_start: memory start
  * \return      chblix or chblix_fail
  */
 
-chblix_t lb_alloc_m(int64_t page_pool_idx, int64_t mem_start){
+chblix_t lb_alloc_m(page_pool_t* page_pool, int64_t mem_start){
     logger(LL_INFO, __func__, "Linked_block allocating start.");
-
-    page_pool_t *ppl = ppl_load(page_pool_idx);
-    if (ppl == NULL) {
-        logger(LL_ERROR, __func__, "Unable to load page pool");
+    if(page_pool == NULL){
+        logger(LL_ERROR, __func__, "Invalid argument: page_pool is NULL");
         return chblix_fail();
     }
 
-    chblix_t chblix = ppl_alloc_nova(ppl);
+    chblix_t chblix = ppl_alloc_nova(page_pool);
     if (chblix.block_idx == -1) {
         logger(LL_ERROR, __func__, "Unable to allocate block");
         return chblix_fail();
     }
 
-    linked_block_t* lb = malloc(ppl->block_size); /* Don't forget to free it */
-    lb_load(page_pool_idx, &chblix, lb);
+    chunk_t* chunk = ppl_load_chunk(chblix.chunk_idx);
+
+    linked_block_t* lb = malloc(page_pool->block_size); /* Don't forget to free it */
+    lb_load_nova_pppp(page_pool, chunk,  &chblix, lb);
 
     lb->next_block = chblix_fail();
     lb->prev_block = chblix_fail();
@@ -36,7 +37,7 @@ chblix_t lb_alloc_m(int64_t page_pool_idx, int64_t mem_start){
     lb->flag = LB_USED;
     lb->mem_start = mem_start;
 
-    lb_update(page_pool_idx, &chblix, lb);
+    lb_update_nova(page_pool, &chblix, lb);
 
     logger(LL_INFO, __func__,
            "Linked_block allocating finished. Linked_block chunk_index: %ld, block_index: %ld",
@@ -48,13 +49,13 @@ chblix_t lb_alloc_m(int64_t page_pool_idx, int64_t mem_start){
 
 
 /**
- * \brief Allocates new linked block
- * \param[in] page_pool_idx
- * \return chblix or chblix_fail
+ * \brief       Allocates new linked block
+ * \param[in]   page_pool: pointer to page pool
+ * \return      chblix or chblix_fail
  */
 
-chblix_t lb_alloc(int64_t page_pool_idx) {
-    return lb_alloc_m(page_pool_idx, sizeof(linked_block_t));
+chblix_t lb_alloc(page_pool_t* page_pool) {
+    return lb_alloc_m(page_pool, sizeof(linked_block_t));
 }
 
 /**
@@ -158,65 +159,34 @@ int lb_dealloc_nova(page_pool_t* ppl, linked_block_t* lb){
 }
 
 /**
- * \brief       Dealloc linked block
- * \param[in]   pplidx: Fist page index of page pool
- * \param[in]   chblix: Chunk Block Index
- * \return      LB_SUCCESS or LB_FAIL
+ * @brief       Deallocates linked block
+ * @param[in]   ppidx: Fist page index of page pool
+ * @param[in]   chblix: Chunk Block Index
+ * @return      LB_SUCCESS on success, LB_FAIL otherwise
  */
 
-
-int lb_dealloc(int64_t pplidx, const chblix_t* chblix){
-
-    /* Loading Page Pool*/
-    page_pool_t *ppl = ppl_load(pplidx);
-    if (ppl == NULL) {
+int lb_dealloc(int64_t ppidx, chblix_t* chblix){
+    page_pool_t* page_pool = lb_ppl_load(ppidx);
+    if(page_pool == NULL){
         logger(LL_ERROR, __func__, "Unable to load page pool");
         return LB_FAIL;
     }
+    chunk_t *chunk = ppl_load_chunk(chblix->chunk_idx);
+    if(chunk == NULL){
+        logger(LL_ERROR, __func__, "Unable to load chunk");
+        return LB_FAIL;
+    }
 
-    /* Loading Linked Block */
-    linked_block_t* lb = malloc(ppl->block_size); /* Don't forget to free it */
-    if (lb_load(pplidx, chblix, lb) == LB_FAIL) {
+    linked_block_t* lb = malloc(page_pool->block_size); /* Don't forget to free it */
+    if (lb_load_nova_pppp(page_pool,chunk, chblix, lb) == LB_FAIL) {
         logger(LL_ERROR, __func__, "Unable to read block");
         free(lb);
         return LB_FAIL;
     }
-
-    chblix_t fail = chblix_fail();
-    while (chblix_cmp(&lb->next_block, &fail) != 0) {
-        chblix_t next_block_idx = lb->next_block;
-
-        /* Setting flag to free */
-        lb->flag = LB_FREE;
-        lb_update(pplidx, &lb->chblix, lb);
-
-        /* Deallocating block */
-        if (ppl_dealloc(pplidx, &lb->chblix) == PPL_FAIL) {
-            logger(LL_ERROR, __func__, "Unable to deallocate block");
-            free(lb);
-            return LB_FAIL;
-        }
-
-        /* Loading next block */
-        if (lb_load(pplidx, &next_block_idx, lb) == LB_FAIL) {
-            logger(LL_ERROR, __func__, "Unable to read block");
-            free(lb);
-            return LB_FAIL;
-        }
-
-    }
-
-    /* Setting flag to free */
-    lb->flag = LB_FREE;
-    lb_update(pplidx, &lb->chblix, lb);
-
-    /* Deallocating block */
-    if (ppl_dealloc(pplidx, &lb->chblix) == PPL_FAIL) {
-        logger(LL_ERROR, __func__, "Unable to deallocate block");
-        free(lb);
+    if(lb_dealloc_nova(page_pool, lb) == LB_FAIL){
+        logger(LL_ERROR, __func__, "Failed to deallocate row");
         return LB_FAIL;
     }
-
     free(lb);
     return LB_SUCCESS;
 }
@@ -241,7 +211,7 @@ chblix_t lb_get_next_nova(page_pool_t* ppl, const chblix_t* chblix){
     chblix_t next_block_idx = lb->next_block;
     if (chblix_cmp(&next_block_idx, &fail) == 0) {
         /* Allocating new block */
-        next_block_idx = lb_alloc(ppl->lp_header.page_index);
+        next_block_idx = lb_alloc(ppl);
         if (next_block_idx.block_idx == -1) {
             logger(LL_ERROR, __func__, "Unable to allocate block");
             free(lb);
@@ -312,7 +282,7 @@ static chblix_t lb_get_next(int64_t page_pool_index,
     chblix_t next_block_idx = lb->next_block;
     if (chblix_cmp(&next_block_idx, &fail) == 0) {
         /* Allocating new block */
-        next_block_idx = lb_alloc(page_pool_index);
+        next_block_idx = lb_alloc(ppl);
         if (next_block_idx.block_idx == -1) {
             logger(LL_ERROR, __func__, "Unable to allocate block");
             free(lb);

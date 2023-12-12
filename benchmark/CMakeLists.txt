@@ -9,6 +9,8 @@ target_link_libraries(bench_stubs PUBLIC db m)
 file(GLOB_RECURSE bench_sources CONFIGURE_DEPENDS
         benchs/table-delete.c
         benchs/table-insert.c
+        benchs/table-mem.c
+        benchs/table-update.c
 )
 
 foreach(bench_source IN LISTS bench_sources)

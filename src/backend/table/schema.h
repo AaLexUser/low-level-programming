@@ -60,11 +60,13 @@ typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schem
 
 
 
-#define sch_add_int_field(schidx, name) sch_add_field(schidx, name, DT_INT, sizeof(int64_t))
-#define sch_add_char_field(schidx, name, size) sch_add_field(schidx, name, DT_CHAR, size)
-#define sch_add_varchar_field(schidx, name) sch_add_field(schidx, name, DT_VARCHAR, sizeof(vch_ticket_t))
-#define sch_add_float_field(schidx, name) sch_add_field(schidx, name, DT_FLOAT, sizeof(float))
-#define sch_add_bool_field(schidx, name) sch_add_field(schidx, name, DT_BOOL, sizeof(bool))
+#define sch_add_int_field(schema, name) sch_add_field((schema), name, DT_INT, sizeof(int64_t))
+#define sch_add_char_field(schema, name, size) sch_add_field((schema), name, DT_CHAR, size)
+#define sch_add_varchar_field(schema, name) sch_add_field((schema), name, DT_VARCHAR, sizeof(vch_ticket_t))
+#define sch_add_float_field(schema, name) sch_add_field((schema), name, DT_FLOAT, sizeof(float))
+#define sch_add_bool_field(schema, name) sch_add_field((schema), name, DT_BOOL, sizeof(bool))
+
+#define schema_index(schema) ((schema)->ppl_header.lp_header.page_index)
 
 
 /**
@@ -86,7 +88,7 @@ typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schem
     sch_field_load(schidx, &chblix, &field) != LB_FAIL; \
     ++chblix.block_idx,  chblix = lb_nearest_valid_chblix((page_pool_t*)sch, chblix, &chunk))
 
-int64_t sch_init(void);
-int sch_add_field(int64_t schidx, const char* name, datatype_t type, int64_t size);
-int sch_get_field(int64_t schidx, const char* name, field_t* field);
-int sch_delete_field(int64_t schidx, const char* name);
+void* sch_init(void);
+int sch_add_field(schema_t* schema, const char* name, datatype_t type, int64_t size);
+int sch_get_field(schema_t* schema, const char* name, field_t* field);
+int sch_delete_field(schema_t* schema, const char* name);

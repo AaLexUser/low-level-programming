@@ -1,4 +1,4 @@
-if(CMAKE_CONFIGURATION_TYPES MATCHES Debug)
+if(CMAKE_CONFIGURATION_TYPES MATCHES ASan)
     find_program(CLANG_TIDY clang-tidy)
     message(STATUS "Clang-tidy: ${CLANG_TIDY}")
     if(CLANG_TIDY)

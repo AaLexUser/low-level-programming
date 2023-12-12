@@ -6,11 +6,11 @@ static void* db_create(void){
     if(!db){
         return NULL;
     }
-    db->meta_table_idx = mtab_init();
-    if(db->meta_table_idx == TABLE_FAIL){
+    table_t* meta_tab = mtab_init();
+    if(meta_tab == NULL){
         return NULL;
     }
-
+    db->meta_table_idx = table_index(meta_tab);
     db->varchar_mgr_idx = vch_init();
     if(db->varchar_mgr_idx == TABLE_FAIL){
         return NULL;

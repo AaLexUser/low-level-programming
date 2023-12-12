@@ -12,11 +12,11 @@
 const char* TEST_DB = "test.db";
 const char* CSV_FILE = "table-delete.csv";
 const char* CSV_HEADER= "Time;Allocated\n";
-const int TEST_TIME = 30*60; //10 min
+const int TEST_TIME = 30*60;
 const int ALLOCATION = 2000;
 const int DEALLOCATION = 1800;
 
-void insert_rows(int64_t tablix, int64_t start_index, int64_t number_of_rows) {
+void insert_rows(table_t* table, schema_t* schema, int64_t start_index, int64_t number_of_rows) {
     tab_row(
             int64_t ID;
             char NAME[10];
@@ -29,7 +29,7 @@ void insert_rows(int64_t tablix, int64_t start_index, int64_t number_of_rows) {
         row.SCORE = 9.9f;
         row.AGE = index;
         row.PASS = true;
-        chblix_t block = tab_insert(tablix, &row);
+        chblix_t block = tab_insert(table, schema, &row);
 //            printf("id: %lld\n", j);
         if (chblix_cmp(&block, &CHBLIX_FAIL) == 0) {
             logger(LL_ERROR, __func__, "Failed to insert row ");
@@ -64,14 +64,13 @@ int main(){
     FILE* file = fopen(CSV_FILE, "w+");
     fprintf(file, "%s", CSV_HEADER);
     /* Create table */
-    int64_t schidx = sch_init();
-    schema_t* schema = sch_load(schidx);
-    sch_add_int_field(schidx, "ID");
-    sch_add_char_field(schidx, "NAME", 10);
-    sch_add_float_field(schidx, "SCORE");
-    sch_add_int_field(schidx, "AGE");
-    sch_add_bool_field(schidx, "PASS");
-    int64_t tablix = tab_init(db, "STUDENT", schidx);
+    schema_t* schema = sch_init();
+    sch_add_int_field(schema, "ID");
+    sch_add_char_field(schema, "NAME", 10);
+    sch_add_float_field(schema, "SCORE");
+    sch_add_int_field(schema, "AGE");
+    sch_add_bool_field(schema, "PASS");
+    table_t* table = tab_init(db, "STUDENT", schema);
     tab_row(
             int64_t ID;
             char NAME[10];
@@ -79,9 +78,8 @@ int main(){
             int64_t AGE;
             bool PASS;
     );
-    table_t* table = tab_load(tablix);
     field_t field;
-    if(sch_get_field(schidx, "ID", &field) == SCHEMA_FAIL){
+    if(sch_get_field(schema, "ID", &field) == SCHEMA_FAIL){
         return TABLE_FAIL;
     }
     time_t test_start = time(NULL);
@@ -90,7 +88,7 @@ int main(){
     int64_t rows_inserted = 0;
     int64_t next_insert_start = 0;
     while(test_end - test_start < TEST_TIME) {
-        insert_rows(tablix, next_insert_start, ALLOCATION);
+        insert_rows(table, schema, next_insert_start, ALLOCATION);
         printf("Blocks allocated before delete: %"PRId64"\n", rows_inserted + ALLOCATION);
         time_t start = time(NULL);
         delete_rows(file, db, table, schema, &field, next_insert_start, DEALLOCATION);
