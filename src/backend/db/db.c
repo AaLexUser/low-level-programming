@@ -18,6 +18,11 @@ static void* db_create(void){
     return db;
 }
 
+/**
+ * @brief       Initialize database
+ * @param[in]   filename: name of the file
+ * @return      pointer to database on success, NULL on failure
+ */
 void* db_init(const char* filename){
     if(pg_init(filename) != PAGER_SUCCESS){
         return NULL;
@@ -32,10 +37,18 @@ void* db_init(const char* filename){
     return db;
 }
 
+/**
+ * @brief       Close database
+ * @return      DB_SUCCESS on success, DB_FAIL on failure
+ */
 int db_close(void){
     int res =  pg_close() == PAGER_SUCCESS ? DB_SUCCESS : DB_FAIL;
     return res;
 }
+/**
+ * @brief       Drop database
+ * @return      DB_SUCCESS on success, DB_FAIL on failure
+ */
 int db_drop(void){
     int res = pg_delete() == PAGER_SUCCESS ? DB_SUCCESS : DB_FAIL;
     return res;

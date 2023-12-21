@@ -50,7 +50,7 @@ int select_rows(FILE* file, db_t* db, table_t* table, schema_t* schema, field_t*
     );
     for (int64_t index = start_index; index < start_index + number_of_rows; ++index) {
         clock_gettime(CLOCK_UPTIME_RAW, &start);
-        table_t* sel_table = tab_select_op_nova(db, table, schema, field, "SELECT", COND_EQ, &index, DT_INT);
+        table_t* sel_table = tab_select_op(db, table, schema, field, "SELECT", COND_EQ, &index, DT_INT);
         clock_gettime(CLOCK_UPTIME_RAW, &end);
         if (sel_table == NULL) {
             logger(LL_ERROR, __func__, "Failed to delete row ");

@@ -52,7 +52,7 @@ void update_rows(db_t* db, table_t* table, schema_t* schema, field_t* field, int
         row.AGE = 1;
         row.PASS = true;
         int64_t value = index;
-        int res = tab_update_row_op_nova(db, table, schema, field, COND_EQ, &value, DT_INT,&row);
+        int res = tab_update_row_op(db, table, schema, field, COND_EQ, &value, DT_INT,&row);
         if (res == TABLE_FAIL) {
             logger(LL_ERROR, __func__, "Failed to delete row ");
             return;

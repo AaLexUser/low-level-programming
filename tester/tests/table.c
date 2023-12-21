@@ -131,7 +131,7 @@ DEFINE_TEST(update) {
     field_t field;
     sch_get_field(schema, "CREDIT", &field);
     int64_t element = 30;
-    chblix_t res = tab_get_row(db,table_index(table), &field, &element, DT_INT);
+    chblix_t res = tab_get_row(db,table, schema, &field, &element, DT_INT);
     assert(chblix_cmp(&res, &CHBLIX_FAIL) != 0);
     int64_t new_element = 100;
     assert(tab_update_element(table_index(table), &res, &(field), &new_element) == TABLE_SUCCESS);
@@ -150,11 +150,11 @@ DEFINE_TEST(delete){
     field_t field;
     sch_get_field(schema, "CREDIT", &field);
     int64_t element = 30;
-    chblix_t res = tab_get_row(db, table_index(table), &field, &element, DT_INT);
+    chblix_t res = tab_get_row(db,table, schema, &field, &element, DT_INT);
     chunk_t* chunk = ppl_load_chunk(res.chunk_idx);
     assert(chblix_cmp(&res, &CHBLIX_FAIL) != 0);
     assert(tab_delete_nova(table, chunk, &res) == TABLE_SUCCESS);
-    res = tab_get_row(db, table_index(table), &field, &element, DT_INT);
+    res = tab_get_row(db,table, schema, &field, &element, DT_INT);
     assert(chblix_cmp(&res, &CHBLIX_FAIL) == 0);
     db_drop();
 }
@@ -165,14 +165,20 @@ DEFINE_TEST(get_table_after_close){
     db_close();
     db = db_init("test.db");
     int64_t tabix = mtab_find_table_by_name(db->meta_table_idx, "STUDENTS");
-    assert(table != NULL);
+    table_t *table2 = tab_load(tabix);
+    assert(table2 != NULL);
     db_drop();
 }
 
 DEFINE_TEST(varchar){
     db_t* db = db_init("test.db");
 
-    schema_t* schema = init_schema();
+    char* big_string = "This is a big string\n "
+                       "with multiple lines\n "
+                       "and it is very long\n"
+                       "and it is very long\n";
+
+    schema_t* schema = sch_init();
     sch_add_varchar_field(schema, "NAME");
     sch_add_varchar_field(schema, "SURNAME");
     sch_add_varchar_field(schema, "BIG_STRING");
@@ -184,23 +190,18 @@ DEFINE_TEST(varchar){
     );
     row.NAME = vch_add(db->varchar_mgr_idx, "Alex");
     row.SURNAME = vch_add(db->varchar_mgr_idx, "Smith");
-    row.BIG_STRING = vch_add(db->varchar_mgr_idx, "This is a big string\n "
-                             "with multiple lines\n "
-                             "and it is very long\n"
-                             "and it is very long\n");
+    row.BIG_STRING = vch_add(db->varchar_mgr_idx, big_string);
     chblix_t res = tab_insert(table, schema, &row);
     assert(chblix_cmp(&res, &CHBLIX_FAIL) != 0);
     field_t field;
     sch_get_field(schema, "BIG_STRING", &field);
     vch_ticket_t* element = malloc(field.size);
-    printf("Start table for each element\n");
     tab_for_each_element(table, chunk, chblix, element, &field){
         char* str = malloc(element->size);
         vch_get(db->varchar_mgr_idx, element, str);
-        printf("%s\n", str);
+        assert(!strcmp(big_string, str));
         free(str);
     }
-    printf("End table for each element\n");
     free(element);
     db_drop();
 }
@@ -241,28 +242,43 @@ DEFINE_TEST(print){
     schema_t* schema = init_schema();
     table_t* table = tab_init(db, "test", schema);
     insert_data(table, schema, 2);
-    tab_print(db, table_index(table));
+    tab_print(db, table, schema);
     db_drop();
 }
 
 DEFINE_TEST(join){
     db_t* db = db_init("test.db");
     table_t* left = table_bank(db, 1);
-    tab_print(db, table_index(left));
+    schema_t* left_schema = sch_load(left->schidx);
+    tab_print(db, left, left_schema);
     table_t* right = table_student(db, 1);
-    tab_print(db, table_index(right));
-    int64_t join_tablix = tab_join(db, table_index(left), table_index(right), "NAME", "NAME","JOIN");
-    tab_print(db, join_tablix);
+    schema_t* right_schema = sch_load(right->schidx);
+    tab_print(db, right, right_schema);
+    field_t left_field;
+    sch_get_field(left_schema, "NAME", &left_field);
+    field_t right_field;
+    sch_get_field(right_schema, "NAME", &right_field);
+    table_t* join_tablix = tab_join(db,
+                                   left,
+                                   left_schema,
+                                   right,
+                                   right_schema,
+                                   &left_field,
+                                   &right_field,"JOIN");
+    assert(join_tablix != NULL);
+    tab_print(db, join_tablix, sch_load(join_tablix->schidx));
     db_drop();
 }
 
 DEFINE_TEST(select){
     db_t* db = db_init("test.db");
     table_t* table = table_student(db, 1);
+    schema_t *schema = sch_load(table->schidx);
     float value = 20.0f;
-    int64_t sel_tablix = tab_select_op(db, table_index(table), "SELECT", "SCORE", COND_GT, &value, DT_FLOAT);
-    tab_print(db, sel_tablix);
-    table_t* sel_table_t = tab_load(sel_tablix);
+    field_t sel_field;
+    assert(sch_get_field(schema, "SCORE", &sel_field) == SCHEMA_SUCCESS);
+    table_t* sel_table_t = tab_select_op(db, table, schema, &sel_field, "SELECT",  COND_GT, &value, DT_FLOAT);
+    tab_print(db,sel_table_t, sch_load(sel_table_t->schidx));
     schema_t* sel_schema = sch_load(sel_table_t->schidx);
     field_t* field = malloc(sizeof(field_t));
     assert(sch_get_field(sel_schema,  "SCORE", field) == SCHEMA_SUCCESS);
@@ -272,16 +288,14 @@ DEFINE_TEST(select){
     }
     tab_drop(db, sel_table_t);
 
-    sel_tablix = tab_select_op(db, table_index(table), "SELECT", "SCORE", COND_GTE, &value, DT_FLOAT);
-    sel_table_t = tab_load(sel_tablix);
+    sel_table_t = tab_select_op(db, table, schema, &sel_field, "SELECT", COND_GTE, &value, DT_FLOAT);
     assert(sch_get_field(sel_schema,  "SCORE", field) == SCHEMA_SUCCESS);
     tab_for_each_element(sel_table_t, chunk2, chblix2, &element, field){
         assert(element >= value);
     }
     tab_drop(db, sel_table_t);
 
-    sel_tablix = tab_select_op(db,table_index(table), "SELECT", "SCORE", COND_LT, &value, DT_FLOAT);
-    sel_table_t = tab_load(sel_tablix);
+    sel_table_t = tab_select_op(db,table, schema, &sel_field, "SELECT", COND_LT, &value, DT_FLOAT);
     sel_schema = sch_load(sel_table_t->schidx);
     assert(sch_get_field(sel_schema,  "SCORE", field) == SCHEMA_SUCCESS);
     tab_for_each_element(sel_table_t, chunk3, chblix3, &element, field){
@@ -289,8 +303,7 @@ DEFINE_TEST(select){
     }
     tab_drop(db, sel_table_t);
 
-    sel_tablix = tab_select_op(db, table_index(table), "SELECT", "SCORE", COND_LTE, &value, DT_FLOAT);
-    sel_table_t = tab_load(sel_tablix);
+    sel_table_t = tab_select_op(db,table, schema, &sel_field, "SELECT", COND_LTE, &value, DT_FLOAT);
     sel_schema = sch_load(sel_table_t->schidx);
     assert(sch_get_field(sel_schema,  "SCORE", field) == SCHEMA_SUCCESS);
     tab_for_each_element(sel_table_t, chunk4, chblix4, &element, field){
@@ -299,8 +312,7 @@ DEFINE_TEST(select){
     tab_drop(db, sel_table_t);
 
     value = 10.5f;
-    sel_tablix = tab_select_op(db, table_index(table), "SELECT", "SCORE", COND_NEQ, &value, DT_FLOAT);
-    sel_table_t = tab_load(sel_tablix);
+    sel_table_t = tab_select_op(db,table, schema, &sel_field, "SELECT", COND_NEQ, &value, DT_FLOAT);
     sel_schema = sch_load(sel_table_t->schidx);
     assert(sch_get_field(sel_schema,  "SCORE", field) == SCHEMA_SUCCESS);
     tab_for_each_element(sel_table_t, chunk5, chblix5, &element, field){
@@ -329,10 +341,10 @@ DEFINE_TEST(update_row_op){
     strncpy(row.NAME,"Nick", 10);
     row.SCORE = 10.5f;
     row.PASS = true;
-    int res = tab_update_row_op(db,table_index(table), &row, "SCORE", COND_EQ, &value, DT_FLOAT);
-    assert(res == TABLE_SUCCESS);
     field_t field;
     sch_get_field(schema, "SCORE", &field);
+    int res = tab_update_row_op(db,table, schema, &field, COND_EQ, &value, DT_FLOAT, &row);
+    assert(res == TABLE_SUCCESS);
     bool flag = false;
     tab_for_each_row(table, chunk, chblix, &row, schema){
         if(row.ID == 10){
@@ -391,7 +403,7 @@ DEFINE_TEST(delete_op){
     );
     field_t delete_field;
     assert(sch_get_field(schema, "NAME", &delete_field) == SCHEMA_SUCCESS);
-    int res = tab_delete_op_nova(db,table, schema, &delete_field, COND_EQ, value);
+    int res = tab_delete_op(db,table, schema, &delete_field, COND_EQ, value);
     assert(res == TABLE_SUCCESS);
     field_t field;
     sch_get_field(schema, "SCORE", &field);

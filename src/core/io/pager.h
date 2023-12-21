@@ -11,7 +11,6 @@
 typedef struct pager{
     caching_t ch;
     int64_t deleted_pages; // index of parray page with deleted pages
-
 } pager_t;
 
 enum PagerStatuses{PAGER_SUCCESS = 0, PAGER_FAIL = -1, PAGER_DELETED=-2};

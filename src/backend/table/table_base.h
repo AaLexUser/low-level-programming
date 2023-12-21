@@ -7,8 +7,6 @@ typedef struct table {
     page_pool_t ppl_header;
     int64_t schidx; //schema index
     char name[MAX_NAME_LENGTH];
-    int64_t mtable_idx;
-    int64_t varchar_mgr_idx;
 } table_t;
 
 typedef enum {TABLE_SUCCESS = 0, TABLE_FAIL = -1} table_status_t;

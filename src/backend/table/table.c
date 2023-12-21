@@ -22,24 +22,23 @@ table_t* tab_init(db_t* db, const char* name, schema_t* schema){
 
 /**
  * @brief       Get row by value in column
- * @param       db: pointer to db
- * @param       tablix: index of the table
- * @param       field: pointer to the field
- * @param       value: pointer to the value
- * @param       type: type of the value
+ * @param[in]   db: pointer to db
+ * @param[in]   table: pointer to the table
+ * @param[in]   schema: pointer to the schema
+ * @param[in]   field: pointer to the field
+ * @param[in]   value: pointer to the value
+ * @param[in]   type: type of the value
  * @return      chblix_t of row on success, CHBLIX_FAIL on failure
  */
 
-chblix_t tab_get_row(db_t* db, int64_t tablix, field_t* field, void* value, datatype_t type){
-    table_t* table = tab_load(tablix);
+chblix_t tab_get_row(db_t* db, table_t* table, schema_t* schema, field_t* field, void* value, datatype_t type){
     if(table == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
+        logger(LL_ERROR, __func__, "Invalid argument, table is NULL");
         return CHBLIX_FAIL;
     }
 
-    schema_t* schema = sch_load(table->schidx);
     if(schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %ld", table->schidx);
+        logger(LL_ERROR, __func__, "Invalid argument, schema is NULL");
         return CHBLIX_FAIL;
     }
     void* element = malloc(field->size);
@@ -56,19 +55,18 @@ chblix_t tab_get_row(db_t* db, int64_t tablix, field_t* field, void* value, data
 /**
  * @brief       Print table
  * @param[in]   db: pointer to db
- * @param[in]   tablix: index of the table
+ * @param[in]   table: index of the table
+ * @param[in]   schema: pointer to the schema
  */
 
-void tab_print(db_t* db, int64_t tablix){
-    table_t* table = tab_load(tablix);
+void tab_print(db_t* db, table_t* table, schema_t* schema){
     if(table == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
+        logger(LL_ERROR, __func__, "Invalid argument, table is NULL");
         return;
     }
 
-    schema_t* schema = sch_load(table->schidx);
     if(schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %ld", table->schidx);
+        logger(LL_ERROR, __func__, "Invalid argument, schema is NULL");
         return;
     }
     void* row = malloc(schema->slot_size);
@@ -115,62 +113,62 @@ void tab_print(db_t* db, int64_t tablix){
 /**
  * @brief       Inner join two tables
  * @param[in]   db: pointer to db
- * @param[in]   leftidx: index of the left table
- * @param[in]   rightidx: index of the right table
+ * @param[in]   left: pointer to the left table
+ * @param[in]   left_schema: pointer to the schema of the left table
+ * @param[in]   right: pointer to the right table
+ * @param[in]   right_schema: pointer to the schema of the right table
  * @param[in]   join_field_left: join field of the left table
  * @param[in]   join_field_right: join field of the right table
  * @param[in]   name: name of the new table
- * @return      index of the new table on success, TABLE_FAIL on failure
+ * @return      pointer to the new table on success, NULL on failure
  */
 
-int64_t tab_join(
+table_t* tab_join(
         db_t* db,
-        int64_t leftidx,
-        int64_t rightidx,
-        const char* join_field_left,
-        const char* join_field_right,
+        table_t* left,
+        schema_t* left_schema,
+        table_t* right,
+        schema_t* right_schema,
+        field_t* join_field_left,
+        field_t* join_field_right,
         const char* name){
 
-    /* Load tables */
-    table_t* left = tab_load(leftidx);
+    /* Check if tables are NULL */
     if(left == NULL){
-        logger(LL_ERROR, __func__, "Failed to load right table %"PRId64, leftidx);
-        return TABLE_FAIL;
+        logger(LL_ERROR, __func__, "Invalid argument, left table is NULL");
+        return NULL;
     }
-    table_t* right = tab_load(rightidx);
     if(right == NULL){
-        logger(LL_ERROR, __func__, "Failed to load right table %"PRId64, rightidx);
-        return TABLE_FAIL;
+        logger(LL_ERROR, __func__, "Invalid argument, right table is NULL");
+        return NULL;
     }
 
-    /* Load schemas */
-    schema_t* left_schema = sch_load(left->schidx);
+    /* Check if schemas are NULL */
     if(left_schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load left schema %"PRId64, left->schidx);
-        return TABLE_FAIL;
+        logger(LL_ERROR, __func__, "Invalid argument, left schema is NULL");
+        return NULL;
     }
-    schema_t* right_schema = sch_load(right->schidx);
     if(right_schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load right schema %"PRId64, right->schidx);
-        return TABLE_FAIL;
+        logger(LL_ERROR, __func__, "Invalid argument, right schema is NULL");
+        return NULL;
     }
 
     /* Create new schema */
     schema_t* new_schema = sch_init();
     if(new_schema == NULL){
         logger(LL_ERROR, __func__, "Failed to create new schema");
-        return TABLE_FAIL;
+        return NULL;
     }
-    sch_for_each(left_schema, chunk, left_field, left_chblix, left->schidx){
-        if(sch_add_field(new_schema, left_field.name, left_field.type, (int64_t)left_field.size) == SCHEMA_FAIL){
-            logger(LL_ERROR, __func__, "Failed to add field %s", left_field.name);
-            return TABLE_FAIL;
+    sch_for_each(left_schema, chunk, left_field_t, left_chblix, left->schidx){
+        if(sch_add_field(new_schema, left_field_t.name, left_field_t.type, (int64_t)left_field_t.size) == SCHEMA_FAIL){
+            logger(LL_ERROR, __func__, "Failed to add field %s", left_field_t.name);
+            return NULL;
         }
     }
-    sch_for_each(right_schema,chunk2, right_field, right_chblix, right->schidx){
-        if(sch_add_field(new_schema, right_field.name, right_field.type, (int64_t)right_field.size) == SCHEMA_FAIL){
-            logger(LL_ERROR, __func__, "Failed to add field %s", right_field.name);
-            return TABLE_FAIL;
+    sch_for_each(right_schema,chunk2, right_field_t, right_chblix, right->schidx){
+        if(sch_add_field(new_schema, right_field_t.name, right_field_t.type, (int64_t)right_field_t.size) == SCHEMA_FAIL){
+            logger(LL_ERROR, __func__, "Failed to add field %s", right_field_t.name);
+            return NULL;
         }
     }
 
@@ -178,7 +176,7 @@ int64_t tab_join(
     table_t* table = tab_init(db, name, new_schema);
     if(table == NULL){
         logger(LL_ERROR, __func__, "Failed to create new table");
-        return TABLE_FAIL;
+        return NULL;
     }
 
     /* Create new row */
@@ -187,28 +185,22 @@ int64_t tab_join(
     void* left_row = malloc(left_schema->slot_size);
     void* right_row = malloc(right_schema->slot_size);
 
-    /* Get join fields */
-    field_t join_field_left_f;
-    sch_get_field(left_schema, join_field_left, &join_field_left_f);
-    field_t join_field_right_f;
-    sch_get_field(right_schema, join_field_right, &join_field_right_f);
-
 
 
     /* Join */
-    void* elleft = malloc(join_field_left_f.size);
-    void* elright = malloc(join_field_right_f.size);
+    void* elleft = malloc(join_field_left->size);
+    void* elright = malloc(join_field_right->size);
     tab_for_each_row(left, left_chunk, leftt_chblix, left_row, left_schema){
-        memcpy(elleft, (char*)left_row + join_field_left_f.offset, join_field_left_f.size);
+        memcpy(elleft, (char*)left_row + join_field_left->offset, join_field_left->size);
         tab_for_each_row(right, right_chunk,rightt_chblix, right_row, right_schema){
-            memcpy(elright, (char*)right_row + join_field_right_f.offset, join_field_right_f.size);
-            if(comp_eq(db, join_field_left_f.type, elleft, elright)){
+            memcpy(elright, (char*)right_row + join_field_right->offset, join_field_right->size);
+            if(comp_eq(db, join_field_left->type, elleft, elright)){
                 memcpy(row, left_row, left_schema->slot_size);
                 memcpy((char*)row + left_schema->slot_size, right_row, right_schema->slot_size);
                 chblix_t rowix = tab_insert(table, new_schema, row);
                 if(chblix_cmp(&rowix, &CHBLIX_FAIL) == 0){
                     logger(LL_ERROR, __func__, "Failed to insert row");
-                    return TABLE_FAIL;
+                    return NULL;
                 }
             }
         }
@@ -218,7 +210,7 @@ int64_t tab_join(
     free(row);
     free(left_row);
     free(right_row);
-    return table_index(table);
+    return table;
 }
 
 /**
@@ -234,7 +226,7 @@ int64_t tab_join(
  * @return      pointer to new table on success, NULL on failure
  */
 
-table_t* tab_select_op_nova(db_t* db,
+table_t* tab_select_op(db_t* db,
                             table_t* sel_table,
                             schema_t* sel_schema,
                             field_t* select_field,
@@ -296,49 +288,6 @@ table_t* tab_select_op_nova(db_t* db,
 }
 
 /**
- * @brief       Select row form table on condition
- * @param[in]   db: pointer to db
- * @param[in]   sel_tabidx: index of table from which the selection is made
- * @param[in]   name: name of new table that will be created
- * @param[in]   select_field: the field by which the selection is performed
- * @param[in]   condition: comparison condition
- * @param[in]   value: value to compare with
- * @param[in]   type: the type of value to compare with
- * @return
- */
-
-int64_t tab_select_op(db_t* db,
-                      int64_t sel_tabidx,
-                      const char* name,
-                      const char* select_field,
-                      condition_t condition,
-                      void* value,
-                      datatype_t type){
-
-   /* Load table */
-    table_t* sel_tab = tab_load(sel_tabidx);
-    if(sel_tab == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %"PRId64, sel_tabidx);
-        return TABLE_FAIL;
-    }
-
-    /* Load schema */
-    schema_t* sel_schema = sch_load(sel_tab->schidx);
-    if(sel_schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %"PRId64, sel_tab->schidx);
-        return TABLE_FAIL;
-    }
-
-    /* Load field */
-    field_t select_field_f;
-    if(sch_get_field(sel_schema, select_field, &select_field_f) == SCHEMA_FAIL){
-        logger(LL_ERROR, __func__, "Failed to get field %s", select_field);
-        return TABLE_FAIL;
-    }
-    return table_index(tab_select_op_nova(db, sel_tab, sel_schema, &select_field_f, name, condition, value, type));
-}
-
-/**
  * @brief       Drop a table
  * @param[in]   db: pointer to db
  * @param[in]   table: pointer of the table
@@ -354,7 +303,20 @@ int tab_drop(db_t* db, table_t* table){
     return lb_ppl_destroy(table_index(table));
 }
 
-int tab_update_row_op_nova(db_t* db,
+/**
+ * @brief       Update row in table
+ * @param[in]   db: pointer to db
+ * @param[in]   table: pointer to table
+ * @param[in]   schema: pointer to schema
+ * @param[in]   field: pointer to field
+ * @param[in]   condition: comparison condition
+ * @param[in]   value: value to compare with
+ * @param[in]   type: the type of value to compare with
+ * @param[in]   row: pointer to new row which will replace the old one
+ * @return
+ */
+
+int tab_update_row_op(db_t* db,
                     table_t* table,
                     schema_t* schema,
                     field_t* field,
@@ -385,74 +347,6 @@ int tab_update_row_op_nova(db_t* db,
     return TABLE_SUCCESS;
 }
 
-
-/**
- * @brief       Delete row from table
- * @param[in]   db: pointer to db
- * @param[in]   tablix: index of the table
- * @param[in]   row: row to write
- * @param[in]   field_name: name of the field compare with
- * @param[in]   condition: comparison condition
- * @param[in]   value: value to compare with
- * @param[in]   type: the type of value to compare with
- * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
- */
-
-int tab_update_row_op(db_t* db,
-                    int64_t tablix,
-                    void* row,
-                    const char* field_name,
-                    condition_t condition,
-                    void* value,
-                    datatype_t type){
-
-    /* Load table */
-    table_t* upd_tab = tab_load(tablix);
-    if(upd_tab == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %"PRId64, tablix);
-        return TABLE_FAIL;
-    }
-
-    /* Load schema */
-    schema_t* upd_schema = sch_load(upd_tab->schidx);
-    if(upd_schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %"PRId64, upd_tab->schidx);
-        return TABLE_FAIL;
-    }
-
-    /* Load field */
-    field_t upd_field;
-    if(sch_get_field(upd_schema, field_name, &upd_field) == SCHEMA_FAIL){
-        logger(LL_ERROR, __func__, "Failed to get field %s", field_name);
-        return TABLE_FAIL;
-    }
-
-    /* Check if datatype of field equals datatype of value */
-    if(type != upd_field.type){
-        return TABLE_FAIL;
-    }
-
-    void* el_row = malloc(upd_schema->slot_size);
-    void* el = malloc(upd_field.size);
-    void* comp_val = malloc(upd_field.size);
-    memcpy(comp_val, value, upd_field.size);
-
-    /* Update */
-    tab_for_each_row(upd_tab, upd_chunk,upd_chblix, el_row, upd_schema){
-        memcpy(el, (char*)el_row + upd_field.offset, upd_field.size);
-        if(comp_compare(db, type, el, comp_val, condition)){
-            memcpy(el_row, row, upd_schema->slot_size);
-            if(tab_update_row(tablix, &upd_chblix, el_row) == TABLE_FAIL){
-                logger(LL_ERROR, __func__, "Failed to update row");
-                return TABLE_FAIL;
-            }
-        }
-    }
-    free(comp_val);
-    free(el_row);
-    free(el);
-    return TABLE_SUCCESS;
-}
 
 /**
  * @brief       Update element in table
@@ -544,7 +438,7 @@ int tab_update_element_op(db_t* db,
  * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
  */
 
-int tab_delete_op_nova(db_t* db,
+int tab_delete_op(db_t* db,
                    table_t* table,
                    schema_t* schema,
                    field_t* field_comp,
@@ -592,6 +486,17 @@ int tab_delete_op_nova(db_t* db,
     return TABLE_SUCCESS;
 
 }
+
+
+/** @brief       Create a table on a subset of fields
+ *  @param[in]   db: pointer to db
+ *  @param[in]   table: pointer to table
+ *  @param[in]   schema: pointer to schema
+ *  @param[in]   fields: pointer to fields
+ *  @param[in]   num_of_fields: number of fields
+ *  @param[in]   name: name of the new table
+ *  @return      pointer to new table on success, NULL on failure
+ */
 
 table_t* tab_projection(db_t* db,
                    table_t* table,

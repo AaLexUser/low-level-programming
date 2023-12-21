@@ -44,7 +44,7 @@ void delete_rows(FILE* file, db_t* db, table_t* table, schema_t* schema, field_t
         if(value == 84){
             printf("Stop");
         }
-        int res = tab_delete_op_nova(db, table, schema, field, COND_EQ, &value);
+        int res = tab_delete_op(db, table, schema, field, COND_EQ, &value);
 
         if (res == TABLE_FAIL) {
             logger(LL_ERROR, __func__, "Failed to delete row ");
