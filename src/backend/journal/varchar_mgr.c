@@ -41,6 +41,7 @@ vch_ticket_t vch_add(int64_t vachar_mgr_idx, char* varchar){
  */
 
 int vch_get(int64_t vachar_mgr_idx, vch_ticket_t* ticket, char* varchar){
+    logger(LL_DEBUG, __func__, "ticket->block: %ld", ticket->block);
     return lb_read(
             vachar_mgr_idx,
             &ticket->block,

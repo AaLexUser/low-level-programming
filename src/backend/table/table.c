@@ -1,4 +1,5 @@
 #include "table.h"
+#include <inttypes.h>
 #include <stdio.h>
 
 /**
@@ -133,24 +134,24 @@ int64_t tab_join(
     /* Load tables */
     table_t* left = tab_load(leftidx);
     if(left == NULL){
-        logger(LL_ERROR, __func__, "Failed to load right table %ld", leftidx);
+        logger(LL_ERROR, __func__, "Failed to load right table %"PRId64, leftidx);
         return TABLE_FAIL;
     }
     table_t* right = tab_load(rightidx);
     if(right == NULL){
-        logger(LL_ERROR, __func__, "Failed to load right table %ld", rightidx);
+        logger(LL_ERROR, __func__, "Failed to load right table %"PRId64, rightidx);
         return TABLE_FAIL;
     }
 
     /* Load schemas */
     schema_t* left_schema = sch_load(left->schidx);
     if(left_schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load left schema %ld", left->schidx);
+        logger(LL_ERROR, __func__, "Failed to load left schema %"PRId64, left->schidx);
         return TABLE_FAIL;
     }
     schema_t* right_schema = sch_load(right->schidx);
     if(right_schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load right schema %ld", right->schidx);
+        logger(LL_ERROR, __func__, "Failed to load right schema %"PRId64, right->schidx);
         return TABLE_FAIL;
     }
 
@@ -317,14 +318,14 @@ int64_t tab_select_op(db_t* db,
    /* Load table */
     table_t* sel_tab = tab_load(sel_tabidx);
     if(sel_tab == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %ld", sel_tabidx);
+        logger(LL_ERROR, __func__, "Failed to load table %"PRId64, sel_tabidx);
         return TABLE_FAIL;
     }
 
     /* Load schema */
     schema_t* sel_schema = sch_load(sel_tab->schidx);
     if(sel_schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %ld", sel_tab->schidx);
+        logger(LL_ERROR, __func__, "Failed to load schema %"PRId64, sel_tab->schidx);
         return TABLE_FAIL;
     }
 
@@ -346,7 +347,7 @@ int64_t tab_select_op(db_t* db,
 
 int tab_drop(db_t* db, table_t* table){
     if (mtab_delete(db->meta_table_idx,table_index(table)) == TABLE_FAIL) {
-        logger(LL_ERROR, __func__, "Failed to delete table %ld", table_index(table));
+        logger(LL_ERROR, __func__, "Failed to delete table %"PRId64, table_index(table));
         return PPL_FAIL;
     }
     sch_delete(table->schidx);
@@ -408,14 +409,14 @@ int tab_update_row_op(db_t* db,
     /* Load table */
     table_t* upd_tab = tab_load(tablix);
     if(upd_tab == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
+        logger(LL_ERROR, __func__, "Failed to load table %"PRId64, tablix);
         return TABLE_FAIL;
     }
 
     /* Load schema */
     schema_t* upd_schema = sch_load(upd_tab->schidx);
     if(upd_schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %ld", upd_tab->schidx);
+        logger(LL_ERROR, __func__, "Failed to load schema %"PRId64, upd_tab->schidx);
         return TABLE_FAIL;
     }
 
@@ -477,14 +478,14 @@ int tab_update_element_op(db_t* db,
     /* Load table */
     table_t* upd_tab = tab_load(tablix);
     if(upd_tab == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
+        logger(LL_ERROR, __func__, "Failed to load table %"PRId64, tablix);
         return TABLE_FAIL;
     }
 
     /* Load schema */
     schema_t* upd_schema = sch_load(upd_tab->schidx);
     if(upd_schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %ld", upd_tab->schidx);
+        logger(LL_ERROR, __func__, "Failed to load schema %"PRId64, upd_tab->schidx);
         return TABLE_FAIL;
     }
 
@@ -583,8 +584,8 @@ int tab_delete_op_nova(db_t* db,
     free(comp_val);
     free(el_row);
     free(el);
-    int64_t* val = value;
-    printf("value %llu, counter %llu\n", *val, counter);
+//    int64_t* val = value;
+//    printf("value %llu, counter %llu\n", *val, counter);
     fflush(stdout);
 
 

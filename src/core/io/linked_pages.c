@@ -13,7 +13,7 @@
  */
 
 int64_t lp_init_m(int64_t mem_start){
-    logger(LL_INFO, __func__, "linked_page_t init.");
+    logger(LL_DEBUG, __func__, "linked_page_t init.");
     int64_t page_index = pg_alloc();
     if(page_index == PAGER_FAIL){
         logger(LL_ERROR, __func__, "Unable to allocate page");
@@ -64,13 +64,13 @@ linked_page_t* lp_load(int64_t page_index){
  */
 
 int lp_delete(int64_t page_index) {
-    logger(LL_INFO, __func__, "Deleting linked page %ld", page_index);
+    logger(LL_DEBUG, __func__, "Deleting linked page %ld", page_index);
 
     linked_page_t *current = (linked_page_t *) pg_load_page(page_index);
 
     while (current->next_page != -1) {
         linked_page_t *next = (linked_page_t *) pg_load_page(current->next_page);
-        logger(LL_INFO, __func__, "Deleting linked_page_t %ld", current->page_index);
+        logger(LL_DEBUG, __func__, "Deleting linked_page_t %ld", current->page_index);
         if (pg_dealloc(current->page_index) == PAGER_FAIL) {
             logger(LL_ERROR, __func__, "Unable to deallocate page");
             return LP_FAIL;
@@ -92,7 +92,7 @@ int lp_delete(int64_t page_index) {
  */
 
 int lp_delete_last(int64_t page_index) {
-    logger(LL_INFO, __func__, "Deleting linked_page_t");
+    logger(LL_DEBUG, __func__, "Deleting linked_page_t");
 
     linked_page_t *current = (linked_page_t *) pg_load_page(page_index);
 
@@ -131,7 +131,7 @@ LinkedPage* index = lp;\
  */
 
 int lp_write_page(linked_page_t *lp, void* src, int64_t size, int64_t src_offset){
-    logger(LL_INFO, __func__, "Writing to linked_page_t %ld", lp->page_index);
+    logger(LL_DEBUG, __func__, "Writing to linked_page_t %ld", lp->page_index);
     if(size + src_offset > lp_useful_space_size(lp)){
         logger(LL_ERROR, __func__, "Unable to write to linked_page_t %ld, size %ld + offset %ld is too big",
                lp->page_index, size, src_offset);
@@ -231,7 +231,7 @@ int lp_write(int64_t page_index, void *src, int64_t size, int64_t src_offset) {
     }
 
 
-    logger(LL_INFO, __func__, "Writing to linked_page_t that starts in %ld page.", lp->page_index);
+    logger(LL_DEBUG, __func__, "Writing to linked_page_t that starts in %ld page.", lp->page_index);
     int64_t starting_page = floor((double) src_offset / (double) lp_useful_space_size(lp));
     int64_t starting_offset = src_offset % (int64_t)lp_useful_space_size(lp);
     int64_t pages_needed = ceil((double)(size + starting_offset) / (double )lp_useful_space_size(lp));
@@ -275,7 +275,8 @@ int lp_write(int64_t page_index, void *src, int64_t size, int64_t src_offset) {
  */
 
 int lp_read_copy_page(linked_page_t* lp, void* dest, int64_t size, int64_t src_offset){
-    logger(LL_INFO, __func__, "Reading from linked_page_t %ld", lp->page_index);
+    logger(LL_DEBUG, __func__, "Reading from linked_page_t %ld, size: %"PRId64", offset: %"PRId64".",
+           lp->page_index, size, src_offset);
     if(size + src_offset > lp_useful_space_size(lp)){
         logger(LL_ERROR, __func__, "Unable to read from linked_page_t %ld, size %ld + offset %ld is too big",
                lp->page_index, size, src_offset);
@@ -294,7 +295,7 @@ int lp_read_copy_nova(linked_page_t* lp, void* dest, int64_t size, int64_t src_o
         return LP_FAIL;
     }
 
-    logger(LL_INFO, __func__, "Reading from linked_page_t %ld", lp->page_index);
+    logger(LL_DEBUG, __func__, "Reading from linked_page_t %ld", lp->page_index);
     int64_t starting_page = floor((double) src_offset / (double) lp_useful_space_size(lp));
     int64_t starting_offset = src_offset % (int64_t)lp_useful_space_size(lp);
     int64_t pages_needed = ceil((double)(size + starting_offset) / (double)lp_useful_space_size(lp));
@@ -345,7 +346,7 @@ int lp_read_copy(int64_t page_index, void* dest, int64_t size, int64_t src_offse
         return LP_FAIL;
     }
 
-    logger(LL_INFO, __func__, "Reading from linked_page_t %ld", lp->page_index);
+    logger(LL_DEBUG, __func__, "Reading from linked_page_t %ld", lp->page_index);
     int64_t starting_page = floor((double) src_offset / (double) lp_useful_space_size(lp));
     int64_t starting_offset = src_offset % (int64_t)lp_useful_space_size(lp);
     int64_t pages_needed = ceil((double)(size + starting_offset) / (double)lp_useful_space_size(lp));

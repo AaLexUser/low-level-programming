@@ -14,7 +14,7 @@
  */
 
 chblix_t lb_alloc_m(page_pool_t* page_pool, int64_t mem_start){
-    logger(LL_INFO, __func__, "Linked_block allocating start.");
+    logger(LL_DEBUG, __func__, "Linked_block allocating start.");
     if(page_pool == NULL){
         logger(LL_ERROR, __func__, "Invalid argument: page_pool is NULL");
         return chblix_fail();
@@ -39,7 +39,7 @@ chblix_t lb_alloc_m(page_pool_t* page_pool, int64_t mem_start){
 
     lb_update_nova(page_pool, &chblix, lb);
 
-    logger(LL_INFO, __func__,
+    logger(LL_DEBUG, __func__,
            "Linked_block allocating finished. Linked_block chunk_index: %ld, block_index: %ld",
            chblix.chunk_idx, chblix.block_idx);
 
@@ -343,7 +343,7 @@ int lb_write(int64_t pplidx,
              int64_t size,
              int64_t src_offset) {
 
-    logger(LL_INFO, __func__, "Write to Linked Block %ld %ld size: %ld, offset: %ld"
+    logger(LL_DEBUG, __func__, "Write to Linked Block %ld %ld size: %ld, offset: %ld"
             , chblix->block_idx, chblix->chunk_idx, size, src_offset);
 
     /* Loading Page Pool*/
@@ -424,7 +424,7 @@ int lb_read_nova(page_pool_t* ppl,
                  void *dest,
                  int64_t size,
                  int64_t src_offset){
-    logger(LL_INFO, __func__, "Reading Linked Block %ld %ld size: %ld, offset: %ld"
+    logger(LL_DEBUG, __func__, "Reading Linked Block %ld %ld size: %ld, offset: %ld"
             , chblix->block_idx, chblix->chunk_idx, size, src_offset);
     if(!ppl || !chunk->capacity || !chblix){
         logger(LL_ERROR, __func__, "Invalid arguments");
@@ -511,7 +511,7 @@ int lb_read(int64_t pplidx,
             int64_t size,
             int64_t src_offset){
 
-    logger(LL_INFO, __func__, "Reading Linked Block %ld %ld size: %ld, offset: %ld"
+    logger(LL_DEBUG, __func__, "Reading Linked Block %ld %ld size: %ld, offset: %ld"
             , chblix->block_idx, chblix->chunk_idx, size, src_offset);
 
     /* Loading Page Pool*/
@@ -644,7 +644,9 @@ page_pool_t* lb_ppl_load(int64_t ppidx){
  */
 
 static int64_t lb_nearest_valid_block(page_pool_t* ppl, chunk_t* chunk, int64_t block_idx){
-
+    logger(LL_DEBUG, __func__, "Searching for nearest valid block\n"
+                            " pool: %ld, block: %ld, chunk: %ld",
+        ppl->lp_header.page_index, block_idx, chunk->page_index);
     chblix_t chblix = {.block_idx = block_idx, .chunk_idx = chunk->page_index};
     linked_block_t* temp = malloc(ppl->block_size);
     while (chblix.block_idx != chunk->capacity){

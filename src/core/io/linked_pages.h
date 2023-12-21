@@ -1,4 +1,5 @@
 #pragma once
+#include <inttypes.h>
 #include <stdint.h>
 
 typedef struct linked_page{
