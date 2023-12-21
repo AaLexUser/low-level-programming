@@ -223,6 +223,80 @@ int64_t tab_join(
 /**
  * @brief       Select row form table on condition
  * @param[in]   db: pointer to db
+ * @param[in]   sel_table: pointer to table from which the selection is made
+ * @param[in]   sel_schema: pointer to schema of the table from which the selection is made
+ * @param[in]   select_field: the field by which the selection is performed
+ * @param[in]   name: name of new table that will be created
+ * @param[in]   condition: comparison condition
+ * @param[in]   value: value to compare with
+ * @param[in]   type: the type of value to compare with
+ * @return      pointer to new table on success, NULL on failure
+ */
+
+table_t* tab_select_op_nova(db_t* db,
+                            table_t* sel_table,
+                            schema_t* sel_schema,
+                            field_t* select_field,
+                            const char* name,
+                            condition_t condition,
+                            void* value,
+                            datatype_t type) {
+    /* Create new schema */
+    schema_t* schema = sch_init();
+    if(schema == NULL){
+        logger(LL_ERROR, __func__, "Failed to create new schema");
+        return NULL;
+    }
+    sch_for_each(sel_schema, sch_chunk, field, chblix, sel_table->schidx){
+        if(sch_add_field(schema, field.name, field.type, (int64_t)field.size) == SCHEMA_FAIL){
+            logger(LL_ERROR, __func__, "Failed to add field %s", field.name);
+            return NULL;
+        }
+    }
+
+    /* Create new table */
+    table_t* table = tab_init(db, name, schema);
+    if(table == NULL){
+        logger(LL_ERROR, __func__, "Failed to create new table");
+        return NULL;
+    }
+
+    /* Create new row */
+    void* row = malloc(schema->slot_size);
+
+    /* Check if datatype of field equals datatype of value */
+    if(type != select_field->type){
+        free(row);
+        return NULL;
+    }
+
+    void* el_row = malloc(sel_schema->slot_size);
+    void* el = malloc(select_field->size);
+    void* comp_val = malloc(select_field->size);
+    memcpy(comp_val, value, select_field->size);
+
+    /* Select */
+    tab_for_each_row(sel_table, tab_chunk, sel_chblix, el_row, sel_schema){
+        memcpy(el, (char*)el_row + select_field->offset, select_field->size);
+        if(comp_compare(db, type, el,comp_val, condition)){
+            memcpy(row, el_row, schema->slot_size);
+            chblix_t rowix = tab_insert(table, schema, row);
+            if(chblix_cmp(&rowix, &CHBLIX_FAIL) == 0){
+                logger(LL_ERROR, __func__, "Failed to insert row");
+                return NULL;
+            }
+        }
+    }
+    free(comp_val);
+    free(row);
+    free(el_row);
+    free(el);
+    return table;
+}
+
+/**
+ * @brief       Select row form table on condition
+ * @param[in]   db: pointer to db
  * @param[in]   sel_tabidx: index of table from which the selection is made
  * @param[in]   name: name of new table that will be created
  * @param[in]   select_field: the field by which the selection is performed
@@ -260,73 +334,23 @@ int64_t tab_select_op(db_t* db,
         logger(LL_ERROR, __func__, "Failed to get field %s", select_field);
         return TABLE_FAIL;
     }
-
-    /* Create new schema */
-    schema_t* schema = sch_init();
-    if(schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to create new schema");
-        return TABLE_FAIL;
-    }
-    sch_for_each(sel_schema, sch_chunk, field, chblix, sel_tab->schidx){
-        if(sch_add_field(schema, field.name, field.type, (int64_t)field.size) == SCHEMA_FAIL){
-            logger(LL_ERROR, __func__, "Failed to add field %s", field.name);
-            return TABLE_FAIL;
-        }
-    }
-
-    /* Create new table */
-    table_t* table = tab_init(db, name, schema);
-    if(table == NULL){
-        logger(LL_ERROR, __func__, "Failed to create new table");
-        return TABLE_FAIL;
-    }
-
-    /* Create new row */
-    void* row = malloc(schema->slot_size);
-
-    /* Check if datatype of field equals datatype of value */
-    if(type != select_field_f.type){
-        free(row);
-        return TABLE_FAIL;
-    }
-
-    void* el_row = malloc(sel_schema->slot_size);
-    void* el = malloc(select_field_f.size);
-    void* comp_val = malloc(select_field_f.size);
-    memcpy(comp_val, value, select_field_f.size);
-
-    /* Select */
-    tab_for_each_row(sel_tab, tab_chunk, sel_chblix, el_row, sel_schema){
-        memcpy(el, (char*)el_row + select_field_f.offset, select_field_f.size);
-        if(comp_compare(db, type, el,comp_val, condition)){
-            memcpy(row, el_row, schema->slot_size);
-            chblix_t rowix = tab_insert(table, schema, row);
-            if(chblix_cmp(&rowix, &CHBLIX_FAIL) == 0){
-                logger(LL_ERROR, __func__, "Failed to insert row");
-                return TABLE_FAIL;
-            }
-        }
-    }
-    free(comp_val);
-    free(row);
-    free(el_row);
-    free(el);
-    return table_index(table);
+    return table_index(tab_select_op_nova(db, sel_tab, sel_schema, &select_field_f, name, condition, value, type));
 }
 
 /**
  * @brief       Drop a table
  * @param[in]   db: pointer to db
- * @param[in]   tablix: index of the table
+ * @param[in]   table: pointer of the table
  * @return      PPL_SUCCESS on success, PPL_FAIL on failure
  */
 
-int tab_drop(db_t* db, int64_t tablix){
-    if (mtab_delete(db->meta_table_idx, tablix) == TABLE_FAIL) {
-        logger(LL_ERROR, __func__, "Failed to delete table %ld", tablix);
+int tab_drop(db_t* db, table_t* table){
+    if (mtab_delete(db->meta_table_idx,table_index(table)) == TABLE_FAIL) {
+        logger(LL_ERROR, __func__, "Failed to delete table %ld", table_index(table));
         return PPL_FAIL;
     }
-    return lb_ppl_destroy(tablix);
+    sch_delete(table->schidx);
+    return lb_ppl_destroy(table_index(table));
 }
 
 int tab_update_row_op_nova(db_t* db,
@@ -568,42 +592,49 @@ int tab_delete_op_nova(db_t* db,
 
 }
 
+table_t* tab_projection(db_t* db,
+                   table_t* table,
+                   schema_t* schema,
+                   field_t* fields,
+                   int64_t num_of_fields,
+                   const char* name){
 
-/**
- * @brief       Delete row from table
- * @param[in]   db: pointer to db
- * @param[in]   tablix: index of the table
- * @param[in]   field_comp: name of the field compare with
- * @param[in]   condition: comparison condition
- * @param[in]   value: value to compare with
- * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
- */
-
-int tab_delete_op(db_t* db,
-                int64_t tablix,
-                const char* field_comp,
-                condition_t condition,
-                void* value){
-    /* Load table */
-    table_t* del_tab = tab_load(tablix);
-    if(del_tab == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
-        return TABLE_FAIL;
+    /* Create new schema */
+    schema_t* new_schema = sch_init();
+    if(new_schema == NULL){
+        logger(LL_ERROR, __func__, "Failed to create new schema");
+        return NULL;
+    }
+    for(int64_t i = 0; i < num_of_fields; ++i){
+        if(sch_add_field(new_schema, fields[i].name, fields[i].type, (int64_t)fields[i].size) == SCHEMA_FAIL){
+            logger(LL_ERROR, __func__, "Failed to add field %s", fields[i].name);
+            return NULL;
+        }
     }
 
-    /* Load schema */
-    schema_t* del_schema = sch_load(del_tab->schidx);
-    if(del_schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %ld", del_tab->schidx);
-        return TABLE_FAIL;
+    /* Create new table */
+    table_t* new_table = tab_init(db, name, new_schema);
+    if(new_table == NULL){
+        logger(LL_ERROR, __func__, "Failed to create new table");
+        return NULL;
     }
 
-    /* Load compare field */
-    field_t comp_field;
-    if(sch_get_field(del_schema, field_comp, &comp_field) == SCHEMA_FAIL){
-        logger(LL_ERROR, __func__, "Failed to get field %s", field_comp);
-        return TABLE_FAIL;
+    /* Create new row */
+    void* row = malloc(new_schema->slot_size);
+
+    /* Projection */
+
+    tab_for_each_row(table, chunk, chblix, row, schema){
+        for(int64_t i = 0; i < num_of_fields; ++i){
+            memcpy((char*)row + fields[i].offset, (char*)row + fields[i].offset, fields[i].size);
+        }
+        chblix_t rowix = tab_insert(new_table, new_schema, row);
+        if(chblix_cmp(&rowix, &CHBLIX_FAIL) == 0){
+            logger(LL_ERROR, __func__, "Failed to insert row");
+            return NULL;
+        }
     }
-    return tab_delete_op_nova(db, del_tab,del_schema, &comp_field, condition, value );
+    free(row);
+    return new_table;
 }
 

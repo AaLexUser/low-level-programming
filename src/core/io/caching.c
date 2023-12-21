@@ -359,6 +359,13 @@ void ch_use_again(caching_t* ch, int64_t page_index){
     time_t now;
     ch->last_used[page_index] = time(&now);
     ch->size++;
+
+//    printf("Cacher size: %ld\n", ch->size);
+//
+//    int counter = ch_print_cached_pages(ch);
+//    if(counter != ch->size){
+//        logger(LL_ERROR, __func__, "Cacher size is not equal to number of cached pages");
+//    }
 }
 /**
  * @brief       Write on page

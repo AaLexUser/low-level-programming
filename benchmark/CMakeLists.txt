@@ -11,6 +11,7 @@ file(GLOB_RECURSE bench_sources CONFIGURE_DEPENDS
         benchs/table-insert.c
         benchs/table-mem.c
         benchs/table-update.c
+        benchs/table-select.c
 )
 
 foreach(bench_source IN LISTS bench_sources)

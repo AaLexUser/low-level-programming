@@ -83,6 +83,14 @@ def table_delete():
     plot(df, 'Allocated', 'Time', 'Table Delete Time', 'Allocated', 'Time mcs',
          'table_delete.png')
 
+def table_select():
+    # subprocess.run(["./benchmark/bench_table_delete"])
+    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-select.csv'
+                     , sep=';')
+    # Plot the data
+    plot(df, 'Allocated', 'Time', 'Table Select Time', 'Allocated', 'Time mcs',
+         'table_select.png')
+
 
 
 if __name__ == '__main__':
@@ -93,4 +101,4 @@ if __name__ == '__main__':
     # subprocess.run(["cmake", "--build", "."])
 
     # Run the benchmark
-    table_update()
+    table_select()

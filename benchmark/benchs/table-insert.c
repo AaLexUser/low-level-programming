@@ -100,7 +100,7 @@ int main(){
         next_insert_start += ALLOCATION;
         fprintf(file, "%"PRIu64";%llu\n", delta_us, rows_inserted);
         fflush(file);
-        logger(LL_WARN, __func__, "File size: %llu, blocks count: %llu", pg_file_size(), rows_inserted);
+        logger(LL_WARN, __func__, "File size: %"PRId64", blocks count: %"PRId64, pg_file_size(), rows_inserted);
         test_end = time(NULL);
     }
     printf("Test time: %jd\n", test_end - test_start);

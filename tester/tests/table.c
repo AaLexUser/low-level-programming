@@ -164,7 +164,7 @@ DEFINE_TEST(get_table_after_close){
     table_t* table = table_student(db, 1);
     db_close();
     db = db_init("test.db");
-    int64_t tabix = mtab_find_tab(db->meta_table_idx, "STUDENTS");
+    int64_t tabix = mtab_find_table_by_name(db->meta_table_idx, "STUDENTS");
     assert(table != NULL);
     db_drop();
 }
@@ -193,12 +193,14 @@ DEFINE_TEST(varchar){
     field_t field;
     sch_get_field(schema, "BIG_STRING", &field);
     vch_ticket_t* element = malloc(field.size);
+    printf("Start table for each element\n");
     tab_for_each_element(table, chunk, chblix, element, &field){
         char* str = malloc(element->size);
         vch_get(db->varchar_mgr_idx, element, str);
         printf("%s\n", str);
         free(str);
     }
+    printf("End table for each element\n");
     free(element);
     db_drop();
 }
@@ -225,10 +227,10 @@ DEFINE_TEST(several_tables){
     sch_add_bool_field(schema2, "PASS");
     table_t* table2 = tab_init(db, "STUDENTS", schema2);
 
-    int64_t read_tablix1 = mtab_find_tab(db->meta_table_idx, "BIG_STR");
+    int64_t read_tablix1 = mtab_find_table_by_name(db->meta_table_idx, "BIG_STR");
     assert(read_tablix1 == table_index(table1));
 
-    int64_t read_tablix2 = mtab_find_tab(db->meta_table_idx, "STUDENTS");
+    int64_t read_tablix2 = mtab_find_table_by_name(db->meta_table_idx, "STUDENTS");
     assert(read_tablix2 == table_index(table2));
 
     db_drop();
@@ -268,7 +270,7 @@ DEFINE_TEST(select){
     tab_for_each_element(sel_table_t,chunk, chblix, &element, field){
         assert(element > value);
     }
-    tab_drop(db, sel_tablix);
+    tab_drop(db, sel_table_t);
 
     sel_tablix = tab_select_op(db, table_index(table), "SELECT", "SCORE", COND_GTE, &value, DT_FLOAT);
     sel_table_t = tab_load(sel_tablix);
@@ -276,7 +278,7 @@ DEFINE_TEST(select){
     tab_for_each_element(sel_table_t, chunk2, chblix2, &element, field){
         assert(element >= value);
     }
-    tab_drop(db, sel_tablix);
+    tab_drop(db, sel_table_t);
 
     sel_tablix = tab_select_op(db,table_index(table), "SELECT", "SCORE", COND_LT, &value, DT_FLOAT);
     sel_table_t = tab_load(sel_tablix);
@@ -285,7 +287,7 @@ DEFINE_TEST(select){
     tab_for_each_element(sel_table_t, chunk3, chblix3, &element, field){
         assert(element < value);
     }
-    tab_drop(db, sel_tablix);
+    tab_drop(db, sel_table_t);
 
     sel_tablix = tab_select_op(db, table_index(table), "SELECT", "SCORE", COND_LTE, &value, DT_FLOAT);
     sel_table_t = tab_load(sel_tablix);
@@ -294,7 +296,7 @@ DEFINE_TEST(select){
     tab_for_each_element(sel_table_t, chunk4, chblix4, &element, field){
         assert(element <= value);
     }
-    tab_drop(db, sel_tablix);
+    tab_drop(db, sel_table_t);
 
     value = 10.5f;
     sel_tablix = tab_select_op(db, table_index(table), "SELECT", "SCORE", COND_NEQ, &value, DT_FLOAT);
@@ -307,7 +309,7 @@ DEFINE_TEST(select){
 
     free(field);
 
-    tab_drop(db, sel_tablix);
+    tab_drop(db, sel_table_t);
     db_drop();
 }
 
@@ -339,7 +341,7 @@ DEFINE_TEST(update_row_op){
         }
     }
     assert(flag);
-    tab_drop(db,table_index(table));
+    tab_drop(db,table);
     db_drop();
 }
 
@@ -370,7 +372,7 @@ DEFINE_TEST(update_element_op){
     }
     assert(flag);
     free(value);
-    tab_drop(db,table_index(table));
+    tab_drop(db,table);
     db_drop();
 }
 
@@ -387,7 +389,9 @@ DEFINE_TEST(delete_op){
             float SCORE;
             bool PASS;
     );
-    int res = tab_delete_op(db,table_index(table), "NAME", COND_EQ, value);
+    field_t delete_field;
+    assert(sch_get_field(schema, "NAME", &delete_field) == SCHEMA_SUCCESS);
+    int res = tab_delete_op_nova(db,table, schema, &delete_field, COND_EQ, value);
     assert(res == TABLE_SUCCESS);
     field_t field;
     sch_get_field(schema, "SCORE", &field);
@@ -397,7 +401,7 @@ DEFINE_TEST(delete_op){
         }
     }
     free(value);
-    tab_drop(db,table_index(table));
+    tab_drop(db,table);
     db_drop();
 }
 

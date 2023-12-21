@@ -10,11 +10,13 @@
 #endif
 
 const char* TEST_DB = "test.db";
-const char* CSV_FILE = "table-delete.csv";
+const char* CSV_FILE = "table-select.csv";
 const char* CSV_HEADER= "Time;Allocated\n";
-const int TEST_TIME = 30*60;
-const int ALLOCATION = 2000;
-const int DEALLOCATION = 1800;
+const int TEST_TIME = 2*60;
+const int ALLOCATION = 50;
+const int SELECT = 30;
+
+struct timespec start, end;
 
 void insert_rows(table_t* table, schema_t* schema, int64_t start_index, int64_t number_of_rows) {
     tab_row(
@@ -38,19 +40,28 @@ void insert_rows(table_t* table, schema_t* schema, int64_t start_index, int64_t 
     }
 }
 
-void delete_rows(FILE* file, db_t* db, table_t* table, schema_t* schema, field_t* field, int64_t start_index, int64_t number_of_rows) {
+int select_rows(FILE* file, db_t* db, table_t* table, schema_t* schema, field_t* field, int64_t start_index, int64_t number_of_rows, int64_t rows_inserted) {
+    tab_row(
+            int64_t ID;
+            char NAME[10];
+            float SCORE;
+            int64_t AGE;
+            bool PASS;
+    );
     for (int64_t index = start_index; index < start_index + number_of_rows; ++index) {
-        int64_t value = index;
-        if(value == 84){
-            printf("Stop");
-        }
-        int res = tab_delete_op_nova(db, table, schema, field, COND_EQ, &value);
-
-        if (res == TABLE_FAIL) {
+        clock_gettime(CLOCK_UPTIME_RAW, &start);
+        table_t* sel_table = tab_select_op_nova(db, table, schema, field, "SELECT", COND_EQ, &index, DT_INT);
+        clock_gettime(CLOCK_UPTIME_RAW, &end);
+        if (sel_table == NULL) {
             logger(LL_ERROR, __func__, "Failed to delete row ");
-            return;
+            return -1;
         }
+        tab_drop(db,sel_table);
     }
+    int64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+    fprintf(file, "%f;%"PRId64"\n", (double)delta_us / (double)SELECT, rows_inserted);
+    fflush(file);
+    return 0;
 }
 
 
@@ -80,8 +91,6 @@ int main(){
     );
     field_t field;
     if(sch_get_field(schema, "ID", &field) == SCHEMA_FAIL){
-        fclose(file);
-        db_drop();
         return TABLE_FAIL;
     }
     time_t test_start = time(NULL);
@@ -91,16 +100,12 @@ int main(){
     int64_t next_insert_start = 0;
     while(test_end - test_start < TEST_TIME) {
         insert_rows(table, schema, next_insert_start, ALLOCATION);
-        printf("Blocks allocated before delete: %"PRId64"\n", rows_inserted + ALLOCATION);
-        time_t start = time(NULL);
-        delete_rows(file, db, table, schema, &field, next_insert_start, DEALLOCATION);
-        time_t end = time(NULL);
-        double delta_us = (double)(end - start) / (double)DEALLOCATION;
+        rows_inserted = rows_inserted + ALLOCATION;
+        if(select_rows(file, db, table, schema, &field, next_insert_start, SELECT, rows_inserted) == -1){
+            exit(EXIT_FAILURE);
+        };
         next_insert_start += ALLOCATION;
-        rows_inserted = rows_inserted + ALLOCATION - DEALLOCATION;
-        printf("Blocks allocated after delete: %"PRId64"\n", rows_inserted);
-        fprintf(file, "%f;%"PRId64"\n", delta_us, rows_inserted);
-        fflush(file);
+        printf("Blocks allocated: %"PRId64"\n", rows_inserted);
 //        logger(LL_WARN, __func__, "File size: %llu, blocks count: %llu", pg_file_size(), deallocation);
         i++;
         test_end = time(NULL);

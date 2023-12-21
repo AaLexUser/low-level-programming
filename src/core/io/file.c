@@ -34,8 +34,8 @@ int64_t fl_current_page_index(file_t* file){
 #include <sys/mman.h>
 #include <unistd.h>
 #if defined(__linux__)
-#include <zconf.h>
 #include <sched.h>
+#include <zconf.h>
 int ftruncate(int fd, off_t i);
 
 #endif

@@ -16,6 +16,14 @@ int64_t tab_join(
         const char* join_field_left,
         const char* join_field_right,
         const char* name);
+table_t* tab_select_op_nova(db_t* db,
+                            table_t* sel_table,
+                            schema_t* sel_schema,
+                            field_t* select_field,
+                            const char* name,
+                            condition_t condition,
+                            void* value,
+                            datatype_t type);
 
 int64_t tab_select_op(db_t* db,
                       int64_t sel_tabidx,
@@ -24,7 +32,7 @@ int64_t tab_select_op(db_t* db,
                       condition_t condition,
                       void* value,
                       datatype_t type);
-int tab_drop(db_t* db, int64_t tablix);
+int tab_drop(db_t* db, table_t* table);
 int tab_update_row_op_nova(db_t* db,
                            table_t* table,
                            schema_t* schema,
@@ -54,8 +62,10 @@ int tab_delete_op_nova(db_t* db,
                    field_t* comp,
                    condition_t condition,
                    void* value);
-int tab_delete_op(db_t* db,
-                  int64_t tablix,
-                  const char* field_comp,
-                  condition_t condition,
-                  void* value);
+
+table_t* tab_projection(db_t* db,
+                        table_t* table,
+                        schema_t* schema,
+                        field_t* fields,
+                        int64_t num_of_fields,
+                        const char* name);

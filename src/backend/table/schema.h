@@ -36,7 +36,7 @@ typedef enum {SCHEMA_SUCCESS = 0, SCHEMA_FAIL = -1, SCHEMA_NOT_FOUND = -2} schem
  * @return      SCHEMA_SUCCESS on success, SCHEMA_FAIL on failure
  */
 
-#define sch_delete(schidx) (lb_ppl_destroy(schidx)))
+#define sch_delete(schidx) (lb_ppl_destroy((schidx)))
 
 /**
  * @brief      Load field

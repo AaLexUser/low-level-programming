@@ -34,7 +34,7 @@ table_t* mtab_init(void){
  * @return      index of the table on success, TABLE_FAIL on failure
  */
 
-int64_t mtab_find_tab(int64_t metatab_idx, const char* name){
+int64_t mtab_find_table_by_name(int64_t metatab_idx, const char* name){
     table_t* meta_table = tab_load(metatab_idx);
     if(meta_table == NULL){
         logger(LL_ERROR, __func__, "Invalid argument: meta_table is NULL");
