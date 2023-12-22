@@ -49,6 +49,11 @@ chblix_t lb_go_to_nova(page_pool_t* ppl,
                        chblix_t* chblix,
                        int64_t current_block_idx,
                        int64_t block_idx);
+int lb_write_nova(page_pool_t* ppl,
+                  chblix_t* chblix,
+                  void *src,
+                  int64_t size,
+                  int64_t src_offset);
 int lb_write(int64_t pplidx,
              chblix_t* chblix,
              void *src,
@@ -77,4 +82,4 @@ chblix_t lb_nearest_valid_chblix(page_pool_t* ppl, chblix_t chblix, chunk_t** ch
 chblix_t lb_pool_start(page_pool_t* ppl, chunk_t** chunk);
 #define lb_ppl_destroy(ppidx) ppl_destroy(ppidx)
 bool lb_valid(page_pool_t* ppl, chunk_t* chunk, chblix_t chblix);
-
+int64_t lb_print_used(page_pool_t* ppl);

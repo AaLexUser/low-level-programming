@@ -30,7 +30,7 @@ DEFINE_TEST(several_write){
     for(int64_t i = 0; i < count; i++){
         chblix_t block = lb_alloc(page_pool);
         blocks[i] = block;
-        lb_write(page_pool_index(page_pool), &block, str, sizeof(str), 0);
+        lb_write_nova(page_pool, &block, str, sizeof(str), 0);
     }
     for(int64_t i = 0; i < count; i++){
         chblix_t block = blocks[i];
@@ -54,7 +54,7 @@ DEFINE_TEST(close_and_open){
     for(int64_t i = 0; i < count ; i++){
         chblix_t block = lb_alloc(page_pool);
         blocks[i] = block;
-        lb_write(ppidx, &block, str, sizeof(str), 0);
+        lb_write_nova(page_pool, &block, str, sizeof(str), 0);
     }
     pg_close();
     assert(pg_init("test.db") == PAGER_SUCCESS);
@@ -104,7 +104,7 @@ DEFINE_TEST(ultra_wide_page){
     for(int64_t i = 0; i < count; i++){
         chblix_t block = lb_alloc(ppl);
         blocks[i] = block;
-        lb_write(ppidx, &block, str, sizeof(str), PAGE_SIZE+1000);
+        lb_write_nova(ppl, &block, str, sizeof(str), PAGE_SIZE+1000);
     }
     for(int64_t i = 0; i < count; i++){
         chblix_t block = blocks[i];
@@ -127,11 +127,11 @@ DEFINE_TEST(varchar){
     chblix_t blocks[count];
     chblix_t block = lb_alloc(ppl);
     blocks[0] = block;
-    lb_write(ppidx, &block, str1, sizeof(str1), 0);
+    lb_write_nova(ppl, &block, str1, sizeof(str1), 0);
 
     block = lb_alloc(ppl);
     blocks[1] = block;
-    lb_write(ppidx, &block, str2, sizeof(str2), 0);
+    lb_write_nova(ppl, &block, str2, sizeof(str2), 0);
 
     char* read_str1 = malloc(sizeof(str1));
     lb_read(ppidx, &blocks[0], read_str1, sizeof(str1), 0);
@@ -157,7 +157,7 @@ DEFINE_TEST(foreach){
     for(int64_t i = 0; i < count; i++){
         chblix_t block = lb_alloc(ppl);
         blocks[i] = block;
-        lb_write(page_pool_index(ppl), &block, str, sizeof(str), 0);
+        lb_write_nova(ppl, &block, str, sizeof(str), 0);
     }
     lb_for_each(chunk, chblix, ppl){
         char* read_srt = malloc(sizeof(str));
@@ -174,7 +174,7 @@ DEFINE_TEST(insert_number){
     int64_t pool_idx = lb_ppl_init(sizeof(num));
     page_pool_t* ppl = lb_ppl_load(pool_idx);
     chblix_t block = lb_alloc(ppl);
-    lb_write(pool_idx, &block, &num, sizeof(num), 0);
+    lb_write_nova(ppl, &block, &num, sizeof(num), 0);
     int64_t read_num;
     lb_read(pool_idx, &block, &read_num, sizeof(num), 0);
     assert(num == read_num);
@@ -190,7 +190,7 @@ DEFINE_TEST(big_string){
     int64_t pplidx = lb_ppl_init(30);
     page_pool_t* ppl = lb_ppl_load(pplidx);
     chblix_t block = lb_alloc(ppl);
-    lb_write(pplidx, &block, str, strlen(str) + 1, 0);
+    lb_write_nova(ppl, &block, str, strlen(str) + 1, 0);
     char* read_str = malloc(strlen(str) + 1);
     lb_read(pplidx, &block, read_str, strlen(str) + 1, 0);
     assert(strcmp(str, read_str) == 0);

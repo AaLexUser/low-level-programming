@@ -329,18 +329,24 @@ int tab_update_row_op(db_t* db,
     void* el = malloc(field->size);
     void* comp_val = malloc(field->size);
     memcpy(comp_val, value, field->size);
+    int64_t counter = 0;
 
     /* Update */
     tab_for_each_row(table, upd_chunk,upd_chblix, el_row, schema){
+        counter++;
         memcpy(el, (char*)el_row + field->offset, field->size);
         if(comp_compare(db, type, el, comp_val, condition)){
             memcpy(el_row, row, schema->slot_size);
-            if(tab_update_row(table_index(table), &upd_chblix, el_row) == TABLE_FAIL){
+            if(tab_update_row(table,schema, &upd_chblix, el_row) == TABLE_FAIL){
                 logger(LL_ERROR, __func__, "Failed to update row");
                 return TABLE_FAIL;
             }
         }
+        if(counter == 488){
+            printf("stop");
+        }
     }
+    printf("counter %llu\n", counter);
     free(comp_val);
     free(el_row);
     free(el);
@@ -413,13 +419,12 @@ int tab_update_element_op(db_t* db,
         memcpy(el, (char*)el_row + comp_field.offset, comp_field.size);
         if(comp_compare(db, type, el, comp_val, condition)){
             memcpy(upd_el, element, upd_field.size);
-            if(tab_update_element(tablix, &upd_chblix, &upd_field, upd_el) == TABLE_FAIL){
+            if(tab_update_element(upd_tab, &upd_chblix, &upd_field, upd_el) == TABLE_FAIL){
                 logger(LL_ERROR, __func__, "Failed to update row");
                 return TABLE_FAIL;
             }
         }
     }
-
     free(upd_el);
     free(comp_val);
     free(el_row);

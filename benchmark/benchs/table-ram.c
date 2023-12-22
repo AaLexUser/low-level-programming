@@ -1,23 +1,21 @@
 #include "../src/bench.h"
 #include "backend/table/table.h"
-#include <sys/time.h>
-#include <time.h>
+#include "utils/logger.h"
 
 const char* TEST_DB = "test.db";
-const char* CSV_FILE = "table-insert.csv";
-const char* CSV_HEADER= "Time;Rows\n";
-const int TEST_TIME = 20*60;
+const char* CSV_FILE = "table-ram.csv";
+const char* CSV_HEADER= "RAMSize;Rows\n";
+const int TEST_TIME = 2*60;
 const int ALLOCATION = 500;
 const int DEALLOCATION = 400;
-
 
 void insert_rows(table_t* table, schema_t* schema, int64_t start_index, int64_t number_of_rows) {
     tab_row(
             int64_t ID;
-            char NAME[10];
-            float SCORE;
-            int64_t AGE;
-            bool PASS;
+    char NAME[10];
+    float SCORE;
+    int64_t AGE;
+    bool PASS;
     );
     for (int64_t index = start_index; index < start_index + number_of_rows; ++index) {
         row.ID = index;
@@ -36,6 +34,7 @@ void delete_rows(db_t* db, table_t* table, schema_t* schema, field_t* field, int
     for (int64_t index = start_index; index < start_index + number_of_rows; ++index) {
         int64_t value = index;
         int res = tab_delete_op(db, table, schema, field, COND_EQ, &value);
+
         if (res == TABLE_FAIL) {
             logger(LL_ERROR, __func__, "Failed to delete row ");
             return;
@@ -51,8 +50,8 @@ int main(){
     }
     FILE* file = fopen(CSV_FILE, "w+");
     fprintf(file, "%s", CSV_HEADER);
-
     /* Create table */
+
     schema_t* schema = sch_init();
     sch_add_int_field(schema, "ID");
     sch_add_char_field(schema, "NAME", 10);
@@ -62,48 +61,32 @@ int main(){
     table_t* table = tab_init(db, "STUDENT", schema);
     tab_row(
             int64_t ID;
-            char NAME[10];
-            float SCORE;
-            int AGE;
-            bool PASS;
-            );
+    char NAME[10];
+    float SCORE;
+    int AGE;
+    bool PASS;
+    );
     strncpy(row.NAME, "STUDENT", 10);
     row.SCORE = 9.9f;
     row.AGE = 20;
     row.PASS = true;
-    field_t field;
-    sch_get_field(schema, "ID", &field);
+    uint64_t max_file_size =  1024u * 1024u * 1; // 11 gb
 
-    time_t test_start = time(NULL);
-    time_t test_end = time(NULL);
     int64_t rows_inserted = 0;
     int64_t next_insert_start = 0;
 
-    int64_t avg = 0;
-    int64_t times_sum = 0;
-    int64_t times_count = 0;
+    field_t field;
+    sch_get_field(schema, "ID", &field);
 
-    struct timespec start, end;
-
-    while(test_end - test_start < TEST_TIME) {
-        clock_gettime(CLOCK_UPTIME_RAW, &start);
+    while(pg_file_size() < max_file_size){
         insert_rows(table, schema, next_insert_start, ALLOCATION);
-        clock_gettime(CLOCK_UPTIME_RAW, &end);
-        int64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
-        delta_us /= ALLOCATION;
-        times_count++;
-        times_sum += delta_us;
-        avg = times_sum / times_count;
         delete_rows(db, table, schema, &field, next_insert_start, DEALLOCATION);
         rows_inserted = rows_inserted + ALLOCATION - DEALLOCATION;
         next_insert_start += ALLOCATION;
-        fprintf(file, "%"PRIu64";%llu\n", delta_us, rows_inserted);
+        fprintf(file, "%zu;%llu\n", pg_cached_size() * PAGE_SIZE, rows_inserted);
         fflush(file);
-        logger(LL_WARN, __func__, "File size: %"PRId64", blocks count: %"PRId64, pg_file_size(), rows_inserted);
-        test_end = time(NULL);
+        logger(LL_WARN, __func__, "File size: %llu, blocks count: %llu", pg_file_size(), rows_inserted);
     }
-    printf("Test time: %jd\n", test_end - test_start);
-    printf("Avg insertion time: %"PRId64"\n", avg);
     fclose(file);
     db_drop();
 }

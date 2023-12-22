@@ -33,10 +33,7 @@ void insert_rows(table_t* table, schema_t* schema, int64_t start_index, int64_t 
 void delete_rows(db_t* db, table_t* table, schema_t* schema, field_t* field, int64_t start_index, int64_t number_of_rows) {
     for (int64_t index = start_index; index < start_index + number_of_rows; ++index) {
         int64_t value = index;
-        if(value == 84){
-            printf("Stop");
-        }
-        int res = tab_delete_op_nova(db, table, schema, field, COND_EQ, &value);
+        int res = tab_delete_op(db, table, schema, field, COND_EQ, &value);
 
         if (res == TABLE_FAIL) {
             logger(LL_ERROR, __func__, "Failed to delete row ");

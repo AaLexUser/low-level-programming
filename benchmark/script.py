@@ -5,11 +5,12 @@ import os
 import sys
 import subprocess
 
-
+root_path = "/Users/aleksei/ITMO/LLP-2023-new/low-level-programming/cmake-build-benchmark/benchmark/"
 def plot(df, x, y, title, xlabel, ylabel, filename):
     # Plot the data
     plt.figure(figsize=(10, 6))
-    plt.scatter(df[x], df[y], s=10)
+    plt.scatter(df[x], df[y], s=15)
+    plt.plot(df[x], df[y])
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(True)
@@ -21,7 +22,7 @@ def plot(df, x, y, title, xlabel, ylabel, filename):
 
 def linked_blocks_mem():
     # subprocess.run(["./benchmark/bench_linked_blocks_mem"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/linked_blocks_mem.csv'
+    df = pd.read_csv(root_path + 'linked_blocks_mem.csv'
                      , sep=';')
     # Plot the data
     plot(df, 'BlocksCount', 'FileSize', 'Linked Blocks Memory Usage', 'Blocks count', 'File size',
@@ -29,7 +30,7 @@ def linked_blocks_mem():
 
 def linked_blocks_wide_mem():
     # subprocess.run(["./benchmark/bench_linked_blocks_wide_mem"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/linked_blocks_wide_mem.csv'
+    df = pd.read_csv(root_path + 'linked_blocks_wide_mem.csv'
                      , sep=';')
     # Plot the data
     plot(df, 'BlocksCount', 'FileSize', 'Linked Blocks Memory Usage', 'Blocks count', 'File size',
@@ -37,7 +38,7 @@ def linked_blocks_wide_mem():
 
 def linked_blocks_insert():
     # subprocess.run(["./benchmark/bench_linked_blocks_insert"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/linked_blocks_insert.csv'
+    df = pd.read_csv(root_path + 'linked_blocks_insert.csv'
                      , sep=';')
     # Plot the data
     plot(df, 'BlocksCount', 'Time', 'Linked Blocks Insertion Time', 'Blocks count', 'Time mcs',
@@ -45,7 +46,7 @@ def linked_blocks_insert():
 
 def linked_blocks_wide_insert():
     # subprocess.run(["./benchmark/bench_linked_blocks_wide_insert"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/linked_blocks_wide_insert.csv'
+    df = pd.read_csv(root_path + 'linked_blocks_wide_insert.csv'
                      , sep=';')
     # Plot the data
     plot(df, 'BlocksCount', 'Time', 'Linked Blocks Wide Insertion Time', 'Blocks count', 'Time mcs',
@@ -53,31 +54,31 @@ def linked_blocks_wide_insert():
 
 def table_insert():
     # subprocess.run(["./benchmark/bench_table_insert"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-insert.csv'
+    df = pd.read_csv(root_path + 'table-insert.csv'
                      , sep=';')
     # Plot the data
-    plot(df, 'Rows', 'Time', 'Table Insertion Time', 'Row count', 'Time s',
+    plot(df, 'Rows', 'Time', 'Table Insertion Time', 'Rows count', 'Time mcs',
          'table_insert.png')
 
 def table_mem():
     # subprocess.run(["./benchmark/bench_table_mem"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-mem.csv'
+    df = pd.read_csv(root_path + 'table-mem.csv'
                      , sep=';')
     # Plot the data
-    plot(df, 'Rows', 'FileSize', 'Table Memory Usage', 'Row count', 'File size',
+    plot(df, 'Rows', 'FileSize', 'Table Memory Usage', 'Rows count', 'File size',
          'table_mem.png')
 
 def table_update():
     # subprocess.run(["./benchmark/bench_table_update"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-update.csv'
+    df = pd.read_csv(root_path + 'table-update.csv'
                      , sep=';')
     # Plot the data
-    plot(df, 'Allocated', 'Time', 'Table Update Time', 'Row count', 'Time mcs',
+    plot(df, 'Allocated', 'Time', 'Table Update Time', 'Rows count', 'Time mcs',
          'table_update.png')
 
 def table_delete():
     # subprocess.run(["./benchmark/bench_table_delete"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-delete.csv'
+    df = pd.read_csv(root_path + 'table-delete.csv'
                      , sep=';')
     # Plot the data
     plot(df, 'Allocated', 'Time', 'Table Delete Time', 'Allocated', 'Time mcs',
@@ -85,11 +86,19 @@ def table_delete():
 
 def table_select():
     # subprocess.run(["./benchmark/bench_table_delete"])
-    df = pd.read_csv('/Users/aleksei/ITMO/LLP-2023/LLP-Lab1/cmake-build-benchmark/benchmark/table-select.csv'
+    df = pd.read_csv(root_path + 'table-select.csv'
                      , sep=';')
     # Plot the data
     plot(df, 'Allocated', 'Time', 'Table Select Time', 'Allocated', 'Time mcs',
          'table_select.png')
+
+def table_ram():
+    # subprocess.run(["./benchmark/bench_table_mem"])
+    df = pd.read_csv(root_path + 'table-ram.csv'
+                     , sep=';')
+    # Plot the data
+    plot(df, 'Rows', 'RAMSize', 'RAM Memory Usage', 'Rows count', 'RAM size',
+         'table_mem.png')
 
 
 
@@ -101,4 +110,4 @@ if __name__ == '__main__':
     # subprocess.run(["cmake", "--build", "."])
 
     # Run the benchmark
-    table_select()
+    table_ram()

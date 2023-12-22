@@ -1,4 +1,4 @@
-#include "comporator.h"
+#include "comparator.h"
 
 /**
  * @brief       Compare two values

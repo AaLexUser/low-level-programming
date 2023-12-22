@@ -27,5 +27,6 @@ int pg_write(int64_t page_index, void* src, size_t size, off_t offset);
 int pg_copy_read(int64_t page_index, void* dest, size_t size, off_t offset);
 off_t pg_file_size(void);
 int64_t pg_max_page_index(void);
+size_t pg_cached_size(void);
 
 

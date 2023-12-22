@@ -326,6 +326,75 @@ static chblix_t lb_go_to(int64_t pplidx,
     return res;
 }
 
+int lb_write_nova(page_pool_t* ppl,
+                  chblix_t* chblix,
+                  void *src,
+                  int64_t size,
+                  int64_t src_offset){
+    /* Check Page Pool*/
+    if (ppl == NULL) {
+        logger(LL_ERROR, __func__, "Invalid argument, page pool is NULL");
+        return LB_FAIL;
+    }
+
+    logger(LL_DEBUG, __func__, "Write to Linked Block %ld %ld size: %ld, offset: %ld"
+            , chblix->block_idx, chblix->chunk_idx, size, src_offset);
+
+    /* Loading Linked Block */
+    linked_block_t* lb = malloc(ppl->block_size); /* Don't forget to free it */
+    if (lb_load(page_pool_index(ppl), chblix, lb) == LB_FAIL) {
+        logger(LL_ERROR, __func__, "Unable to read block");
+        free(lb);
+        return LB_FAIL;
+    }
+
+    /* Initializing variables */
+    int64_t useful_space_size = ppl->block_size - lb->mem_start;
+    int64_t start_block = floor((double) src_offset / (double) useful_space_size);
+    int64_t start_offset = src_offset % useful_space_size;
+    int64_t blocks_needed = ceil((double)(size + start_offset) / (double) useful_space_size);
+    int64_t total_size = size;
+    int64_t current_block_idx = 0;
+    int64_t header_offset =  lb->mem_start;
+
+    /* Go to start block of write and allocate new blocks if needed */
+    chblix_t start_point = chblix_fail();
+    start_point = lb_go_to(page_pool_index(ppl), chblix, current_block_idx, start_block);
+
+    /* Write to blocks until all data is written */
+    while (blocks_needed > 0){
+        /* Calculate size to write */
+        int64_t size_to_write = total_size > useful_space_size - start_offset
+                                ? useful_space_size - start_offset : total_size;
+
+        /* Write to block */
+        if (ppl_write_block_nova(ppl, &start_point, src, size_to_write, header_offset + start_offset) == PPL_FAIL) {
+            logger(LL_ERROR, __func__, "Unable to write to block");
+            free(lb);
+            return LB_FAIL;
+        }
+
+        /* Update variables */
+        blocks_needed--;
+
+        if(blocks_needed > 0){
+            total_size -= useful_space_size - start_offset;
+            src = (uint8_t*)src + useful_space_size - start_offset;
+            start_offset = 0;
+
+            /* Go to next block */
+            start_point = lb_get_next(page_pool_index(ppl), &lb->chblix);
+            lb_load(page_pool_index(ppl), &start_point, lb);
+
+        }
+
+    }
+
+    free(lb);
+    return LB_SUCCESS;
+}
+
+
 
 /**
  * \brief       Read from linked block
@@ -343,68 +412,13 @@ int lb_write(int64_t pplidx,
              int64_t size,
              int64_t src_offset) {
 
-    logger(LL_DEBUG, __func__, "Write to Linked Block %ld %ld size: %ld, offset: %ld"
-            , chblix->block_idx, chblix->chunk_idx, size, src_offset);
-
     /* Loading Page Pool*/
     page_pool_t *ppl = ppl_load(pplidx);
     if (ppl == NULL) {
         logger(LL_ERROR, __func__, "Unable to load page pool");
         return LB_FAIL;
     }
-
-    /* Loading Linked Block */
-    linked_block_t* lb = malloc(ppl->block_size); /* Don't forget to free it */
-    if (lb_load(pplidx, chblix, lb) == LB_FAIL) {
-        logger(LL_ERROR, __func__, "Unable to read block");
-        free(lb);
-        return LB_FAIL;
-    }
-
-    /* Initializing variables */
-    int64_t useful_space_size = ppl->block_size - lb->mem_start;
-    int64_t start_block = floor((double) src_offset / (double) useful_space_size);
-    int64_t start_offset = src_offset % useful_space_size;
-    int64_t blocks_needed = ceil((double)(size + start_offset) / (double) useful_space_size);
-    int64_t total_size = size;
-    int64_t current_block_idx = 0;
-    int64_t header_offset =  lb->mem_start;
-
-    /* Go to start block of write and allocate new blocks if needed */
-    chblix_t start_point = chblix_fail();
-    start_point = lb_go_to(pplidx, chblix, current_block_idx, start_block);
-
-    /* Write to blocks until all data is written */
-    while (blocks_needed > 0){
-        /* Calculate size to write */
-        int64_t size_to_write = total_size > useful_space_size - start_offset
-                                ? useful_space_size - start_offset : total_size;
-
-        /* Write to block */
-        if (ppl_write_block(pplidx, &start_point, src, size_to_write, header_offset + start_offset) == PPL_FAIL) {
-            logger(LL_ERROR, __func__, "Unable to write to block");
-            free(lb);
-            return LB_FAIL;
-        }
-
-        /* Update variables */
-        blocks_needed--;
-
-        if(blocks_needed > 0){
-            total_size -= useful_space_size - start_offset;
-            src = (uint8_t*)src + useful_space_size - start_offset;
-            start_offset = 0;
-
-            /* Go to next block */
-            start_point = lb_get_next(pplidx, &lb->chblix);
-            lb_load(pplidx, &start_point, lb);
-
-        }
-
-    }
-
-    free(lb);
-    return LB_SUCCESS;
+    return lb_write_nova(ppl, chblix, src, size, src_offset);
 }
 
 /**
@@ -770,6 +784,25 @@ int lb_load_nova_ppp(page_pool_t* ppl, chblix_t* chblix, linked_block_t* linked_
                                linked_block,
                                ppl->block_size,
                                0) == PPL_FAIL ? LB_FAIL : LB_SUCCESS;
+}
+
+int64_t lb_print_used(page_pool_t* ppl){
+    int64_t count = 0;
+    chunk_t* chunk = ppl_load_chunk(ppl->head);
+    chblix_t chblix = lb_pool_start(ppl, &chunk);
+    int64_t prev_chunk_idx = -1;
+    for (;
+    chblix_cmp(&chblix, &CHBLIX_FAIL) != 0;
+    ++chblix.block_idx, chblix = lb_nearest_valid_chblix(ppl,chblix, &chunk)){
+        if(prev_chunk_idx != chunk->page_index){
+            printf("\nChunk: %"PRId64"\n", chblix.chunk_idx);
+            prev_chunk_idx = chunk->page_index;
+        }
+        count++;
+        printf("%"PRId64"\t", chblix.block_idx);
+    }
+    printf("\n");
+    return count;
 }
 
 

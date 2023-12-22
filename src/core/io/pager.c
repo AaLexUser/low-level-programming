@@ -207,5 +207,12 @@ off_t pg_file_size(void){
  int64_t pg_max_page_index(void){
      return $pg_max_page_index();
  }
+/**
+ * @brief   Get current cached size
+ * @return  cached size
+ */
+size_t pg_cached_size(void){
+    return ch_size(&PAGER->ch);
+ }
 
 

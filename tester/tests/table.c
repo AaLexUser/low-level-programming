@@ -134,7 +134,7 @@ DEFINE_TEST(update) {
     chblix_t res = tab_get_row(db,table, schema, &field, &element, DT_INT);
     assert(chblix_cmp(&res, &CHBLIX_FAIL) != 0);
     int64_t new_element = 100;
-    assert(tab_update_element(table_index(table), &res, &(field), &new_element) == TABLE_SUCCESS);
+    assert(tab_update_element(table, &res, &(field), &new_element) == TABLE_SUCCESS);
     int64_t read_element;
     assert(tab_get_element(table_index(table), &res, &(field), &read_element) == TABLE_SUCCESS);
     assert(read_element == 100);

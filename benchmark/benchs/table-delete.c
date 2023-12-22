@@ -12,9 +12,9 @@
 const char* TEST_DB = "test.db";
 const char* CSV_FILE = "table-delete.csv";
 const char* CSV_HEADER= "Time;Allocated\n";
-const int TEST_TIME = 30*60;
-const int ALLOCATION = 2000;
-const int DEALLOCATION = 1800;
+const int TEST_TIME = 2*60;
+const int ALLOCATION = 500;
+const int DEALLOCATION = 300;
 
 void insert_rows(table_t* table, schema_t* schema, int64_t start_index, int64_t number_of_rows) {
     tab_row(
@@ -41,9 +41,6 @@ void insert_rows(table_t* table, schema_t* schema, int64_t start_index, int64_t 
 void delete_rows(FILE* file, db_t* db, table_t* table, schema_t* schema, field_t* field, int64_t start_index, int64_t number_of_rows) {
     for (int64_t index = start_index; index < start_index + number_of_rows; ++index) {
         int64_t value = index;
-        if(value == 84){
-            printf("Stop");
-        }
         int res = tab_delete_op(db, table, schema, field, COND_EQ, &value);
 
         if (res == TABLE_FAIL) {
@@ -55,6 +52,8 @@ void delete_rows(FILE* file, db_t* db, table_t* table, schema_t* schema, field_t
 
 
 int main(){
+    struct timespec start, end;
+
     db_t* db = db_init(TEST_DB);
     if(pg_file_size() > 0){
         db_drop();
@@ -92,10 +91,11 @@ int main(){
     while(test_end - test_start < TEST_TIME) {
         insert_rows(table, schema, next_insert_start, ALLOCATION);
         printf("Blocks allocated before delete: %"PRId64"\n", rows_inserted + ALLOCATION);
-        time_t start = time(NULL);
+        clock_gettime(CLOCK_UPTIME_RAW, &start);
         delete_rows(file, db, table, schema, &field, next_insert_start, DEALLOCATION);
-        time_t end = time(NULL);
-        double delta_us = (double)(end - start) / (double)DEALLOCATION;
+        clock_gettime(CLOCK_UPTIME_RAW, &end);
+        double delta_us = (double)(end.tv_sec - start.tv_sec) * 1000000 + (double)(end.tv_nsec - start.tv_nsec) / 1000;
+        delta_us /= DEALLOCATION;
         next_insert_start += ALLOCATION;
         rows_inserted = rows_inserted + ALLOCATION - DEALLOCATION;
         printf("Blocks allocated after delete: %"PRId64"\n", rows_inserted);

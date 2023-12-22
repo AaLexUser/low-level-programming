@@ -30,7 +30,7 @@ set(sources
         backend/journal/metatab.c
         backend/journal/materializer.c
         backend/journal/varchar_mgr.c
-        backend/comporator/comporator.c
+        backend/comparator/comparator.c
         backend/db/db.c
 
 )

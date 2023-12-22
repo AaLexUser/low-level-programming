@@ -1,5 +1,6 @@
 #include "../src/bench.h"
 #include "backend/table/table.h"
+#include "core/page_pool/linked_blocks.h"
 #include "utils/logger.h"
 #include <sys/time.h>
 #include <inttypes.h>
@@ -52,6 +53,7 @@ void update_rows(db_t* db, table_t* table, schema_t* schema, field_t* field, int
         row.AGE = 1;
         row.PASS = true;
         int64_t value = index;
+        printf("index: %lld ", index);
         int res = tab_update_row_op(db, table, schema, field, COND_EQ, &value, DT_INT,&row);
         if (res == TABLE_FAIL) {
             logger(LL_ERROR, __func__, "Failed to delete row ");
@@ -62,6 +64,8 @@ void update_rows(db_t* db, table_t* table, schema_t* schema, field_t* field, int
 
 
 int main(){
+    struct timespec start, end;
+
     db_t* db = db_init(TEST_DB);
     if(pg_file_size() > 0){
         db_drop();
@@ -96,10 +100,13 @@ int main(){
     int64_t next_insert_start = 0;
     while(test_end - test_start < TEST_TIME) {
         insert_rows(table, schema, next_insert_start, ALLOCATION);
-        time_t start = time(NULL);
+        int64_t count = lb_print_used(&table->ppl_header);
+        printf("Used: %"PRId64"\n", count);
+        clock_gettime(CLOCK_UPTIME_RAW, &start);
         update_rows(db, table, schema, &field, next_insert_start, UPDATE);
-        time_t end = time(NULL);
-        double delta_us = (double)(end - start) / (double)UPDATE;
+        clock_gettime(CLOCK_UPTIME_RAW, &end);
+        double delta_us = (double)(end.tv_sec - start.tv_sec) * 1000000 + (double)(end.tv_nsec - start.tv_nsec) / 1000;
+        delta_us /= (double)UPDATE;
         next_insert_start += ALLOCATION;
         rows_inserted = rows_inserted + ALLOCATION;
         printf("Blocks allocated: %"PRId64"\n", rows_inserted);

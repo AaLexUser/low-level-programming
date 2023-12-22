@@ -52,7 +52,7 @@ chblix_t tab_insert(table_t* table, schema_t* schema, void* src){
         return CHBLIX_FAIL;
     }
 
-    if(lb_write(table_index(table), &rowix, src,schema->slot_size , 0) == LB_FAIL){
+    if(lb_write_nova(&table->ppl_header, &rowix, src,schema->slot_size , 0) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to write row");
         return CHBLIX_FAIL;
     }
@@ -115,26 +115,25 @@ int tab_delete_nova(table_t* table, chunk_t* chunk, chblix_t* rowix){
 
 /**
  * @brief       Update a row
- * @param[in]   tablix: index of the table
+ * @param[in]   table: pointer to table
+ * @param[in]   schema: pointer to schema
  * @param[in]   rowix: chblix of the row
  * @param[in]   row: row to be written
  * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
  */
 
-int tab_update_row(int64_t tablix, chblix_t* rowix, void* row){
-    table_t* table = tab_load(tablix);
+int tab_update_row(table_t* table, schema_t* schema, chblix_t* rowix, void* row){
     if(table == NULL){
-        logger(LL_ERROR, __func__, "Failed to load table %ld", tablix);
+        logger(LL_ERROR, __func__, "Invalid argument: table is NULL");
         return TABLE_FAIL;
     }
 
-    schema_t* schema = sch_load(table->schidx);
     if(schema == NULL){
-        logger(LL_ERROR, __func__, "Failed to load schema %ld", table->schidx);
+        logger(LL_ERROR, __func__, "Invalid argument: schema is NULL");
         return TABLE_FAIL;
     }
 
-    if(lb_write(tablix, rowix, row, schema->slot_size, 0) == LB_FAIL){
+    if(lb_write_nova(&table->ppl_header, rowix, row, schema->slot_size, 0) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to write row");
         return TABLE_FAIL;
     }
@@ -143,15 +142,15 @@ int tab_update_row(int64_t tablix, chblix_t* rowix, void* row){
 
 /**
  * @brief       Update an element
- * @param[in]   tablix: index of the table
+ * @param[in]   table: pointer to table
  * @param[in]   rowix: chblix of the row
  * @param[in]   field: pointer to the field
  * @param[in]   element: pointer to the element to be written
  * @return      TABLE_SUCCESS on success, TABLE_FAIL on failure
  */
 
-int tab_update_element(int64_t tablix, chblix_t* rowix, field_t* field, void* element){
-    if(lb_write(tablix, rowix, element, (int64_t)field->size, (int64_t)field->offset) == LB_FAIL){
+int tab_update_element(table_t* table, chblix_t* rowix, field_t* field, void* element){
+    if(lb_write_nova(&table->ppl_header, rowix, element, (int64_t)field->size, (int64_t)field->offset) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to write row");
         return TABLE_FAIL;
     }
