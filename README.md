@@ -1,4 +1,10 @@
 # LLP Database
 ## Quick Start
-run `cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_BENCHMARK=ON -S ./build -B build` 
-to configure the project
+To run tests:
+```
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_BENCHMARK=OFF -DBUILD_TESTING=ON ..
+cmake --build .  
+ctest
+``` 
