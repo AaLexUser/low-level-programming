@@ -18,7 +18,6 @@ set(sources
         utils/logger.c
         core/io/caching.c
         core/io/pager.c
-        core/pstack/pstack.c
         core/page_pool/page_pool.c
         core/io/linked_pages.c
         backend/utils/parray.c

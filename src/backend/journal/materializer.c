@@ -29,7 +29,7 @@ table_t* materializer_materialize(int64_t mater_idx, schema_t* input_schema){
         return NULL;
     }
     tab_row_t row;
-    sprintf(row._name, "MATER_%"PRId64, material_tab->next_index);
+    snprintf(row._name, sizeof(row._name),"MATER_%"PRId64, material_tab->next_index);
     table_t* new_table = tab_base_init(row._name, input_schema);
     if (!new_table) {
         logger(LL_ERROR, __func__, "tab_base_init returned NULL");
