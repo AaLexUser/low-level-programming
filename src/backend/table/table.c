@@ -346,7 +346,7 @@ int tab_update_row_op(db_t* db,
             printf("stop");
         }
     }
-    printf("counter %llu\n", counter);
+    printf("counter %"PRId64"\n", counter);
     free(comp_val);
     free(el_row);
     free(el);

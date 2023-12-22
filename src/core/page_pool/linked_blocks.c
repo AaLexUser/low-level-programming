@@ -326,7 +326,17 @@ static chblix_t lb_go_to(int64_t pplidx,
     return res;
 }
 
-int lb_write_nova(page_pool_t* ppl,
+/**
+ * \brief       Read from linked block
+ * \param[in]   ppl: Page Pool pointer
+ * \param[in]   chblix: Chunk Block Index
+ * \param[in]   src: Source to write
+ * \param[in]   size: Size to read
+ * \param[in]   src_offset: Offset in block to write
+ * \return      LB_SUCCESS on success, LB_FAIL otherwise
+ */
+
+int lb_write(page_pool_t* ppl,
                   chblix_t* chblix,
                   void *src,
                   int64_t size,
@@ -395,31 +405,6 @@ int lb_write_nova(page_pool_t* ppl,
 }
 
 
-
-/**
- * \brief       Read from linked block
- * \param[in]   page_pool_index: Fist page index of page pool
- * \param[in]   chblix: Chunk Block Index
- * \param[in]   src: Source to write
- * \param[in]   size: Size to read
- * \param[in]   src_offset: Offset in block to write
- * \return      LB_SUCCESS on success, LB_FAIL otherwise
- */
-
-int lb_write(int64_t pplidx,
-             chblix_t* chblix,
-             void *src,
-             int64_t size,
-             int64_t src_offset) {
-
-    /* Loading Page Pool*/
-    page_pool_t *ppl = ppl_load(pplidx);
-    if (ppl == NULL) {
-        logger(LL_ERROR, __func__, "Unable to load page pool");
-        return LB_FAIL;
-    }
-    return lb_write_nova(ppl, chblix, src, size, src_offset);
-}
 
 /**
  * @brief       Read from linked block

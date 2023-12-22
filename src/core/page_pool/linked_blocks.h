@@ -49,12 +49,7 @@ chblix_t lb_go_to_nova(page_pool_t* ppl,
                        chblix_t* chblix,
                        int64_t current_block_idx,
                        int64_t block_idx);
-int lb_write_nova(page_pool_t* ppl,
-                  chblix_t* chblix,
-                  void *src,
-                  int64_t size,
-                  int64_t src_offset);
-int lb_write(int64_t pplidx,
+int lb_write(page_pool_t* ppl,
              chblix_t* chblix,
              void *src,
              int64_t size,

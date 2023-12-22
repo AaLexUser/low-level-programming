@@ -110,4 +110,4 @@ if __name__ == '__main__':
     # subprocess.run(["cmake", "--build", "."])
 
     # Run the benchmark
-    table_ram()
+    table_insert()

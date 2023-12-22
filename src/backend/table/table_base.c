@@ -52,7 +52,7 @@ chblix_t tab_insert(table_t* table, schema_t* schema, void* src){
         return CHBLIX_FAIL;
     }
 
-    if(lb_write_nova(&table->ppl_header, &rowix, src,schema->slot_size , 0) == LB_FAIL){
+    if(lb_write(&table->ppl_header, &rowix, src, schema->slot_size, 0) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to write row");
         return CHBLIX_FAIL;
     }
@@ -133,7 +133,7 @@ int tab_update_row(table_t* table, schema_t* schema, chblix_t* rowix, void* row)
         return TABLE_FAIL;
     }
 
-    if(lb_write_nova(&table->ppl_header, rowix, row, schema->slot_size, 0) == LB_FAIL){
+    if(lb_write(&table->ppl_header, rowix, row, schema->slot_size, 0) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to write row");
         return TABLE_FAIL;
     }
@@ -150,7 +150,7 @@ int tab_update_row(table_t* table, schema_t* schema, chblix_t* rowix, void* row)
  */
 
 int tab_update_element(table_t* table, chblix_t* rowix, field_t* field, void* element){
-    if(lb_write_nova(&table->ppl_header, rowix, element, (int64_t)field->size, (int64_t)field->offset) == LB_FAIL){
+    if(lb_write(&table->ppl_header, rowix, element, (int64_t) field->size, (int64_t) field->offset) == LB_FAIL){
         logger(LL_ERROR, __func__, "Failed to write row");
         return TABLE_FAIL;
     }
